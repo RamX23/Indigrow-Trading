@@ -181,7 +181,7 @@ const distributeCommission = async () => {
       SELECT phone, SUM(total_money) AS total_money
       FROM (
         SELECT phone, SUM(money + fee) AS total_money
-        FROM minutes_1
+        FROM minutes_2
         WHERE time > ? AND time <= ?
         GROUP BY phone
         UNION ALL
@@ -364,8 +364,9 @@ const JOIN_COLOR_MAP = {
 };
 
 const betWinGo = async (req, res) => {
-  let { typeid, join, x, money } = req.body;
+  let { typeid, startPrice,coinType, x, money,join } = req.body;
   let auth = req.cookies.auth;
+  console.log(req.body);
 
   if (typeid != 1 && typeid != 3 && typeid != 5 && typeid != 10) {
     return res.status(200).json({
@@ -513,39 +514,44 @@ const betWinGo = async (req, res) => {
   let checkTime = timerJoin(date.getTime());
 
   if (check >= 0) {
-    const sql = `INSERT INTO minutes_1 SET 
-        id_product = ?,
-        phone = ?,
-        code = ?,
-        invite = ?,
-        stage = ?,
-        level = ?,
-        money = ?,
-        amount = ?,
-        fee = ?,
-        get = ?,
-        game = ?,
-        bet = ?,
-        status = ?,
-        today = ?,
-        time = ?`;
-    await connection.query(sql, [
-      id_product,
-      userInfo.phone,
-      userInfo.code,
-      userInfo.invite,
-      period,
-      userInfo.level,
-      total,
-      x,
-      fee,
-      0,
-      gameJoin,
-      join,
-      0,
-      checkTime,
-      timeNow,
-    ]);
+    const sql = `INSERT INTO minutes_2 SET 
+    id_product = ?,
+    phone = ?,
+    code = ?,
+    invite = ?,
+    stage = ?,
+    level = ?,
+    money = ?,
+    amount = ?,
+    fee = ?,
+    \`get\`  = ?,
+    game = ?,
+    bet = ?,
+    status = ?,
+    today = ?,
+    time = ?,
+    startPrice = ?,
+    coinType = ?`;
+  
+  await connection.query(sql, [
+    id_product,
+    userInfo.phone,
+    userInfo.code,
+    userInfo.invite,
+    period,
+    userInfo.level,
+    total,
+    x,
+    fee,
+    0,
+    gameJoin,
+    join,
+    0,
+    checkTime,
+    timeNow,
+    startPrice,   
+    coinType     
+  ]);
 
     const previous_bonus_money = userInfo.bonus_money;
 
@@ -590,6 +596,8 @@ const betWinGo = async (req, res) => {
     });
   }
 };
+
+
 const listOrderOld = async (req, res) => {
   let { typeid, pageno, pageto } = req.body;
 
@@ -713,11 +721,11 @@ const GetMyEmerdList = async (req, res) => {
     [auth],
   );
   const [minutes_1] = await connection.query(
-    "SELECT * FROM minutes_1 WHERE phone = ? AND game = ? ORDER BY id DESC LIMIT ?, ?",
+    "SELECT * FROM minutes_2 WHERE phone = ? AND game = ? ORDER BY id DESC LIMIT ?, ?",
     [user[0].phone, game, Number(pageno), Number(pageto)],
   );
   const [minutes_1All] = await connection.query(
-    "SELECT COUNT(*) as bet_length FROM minutes_1 WHERE phone = ? AND game = ?",
+    "SELECT COUNT(*) as bet_length FROM minutes_2 WHERE phone = ? AND game = ?",
     [user[0].phone, game],
   );
 
@@ -756,237 +764,375 @@ const GetMyEmerdList = async (req, res) => {
   });
 };
 
+// const addWinGo = async (game) => {
+//   try {
+//     let join = "";
+//     if (game == 1) join = "wingo";
+//     if (game == 3) join = "wingo3";
+//     if (game == 5) join = "wingo5";
+//     if (game == 10) join = "wingo10";
+
+//     const [winGoNow] = await connection.query(
+//       "SELECT period FROM wingo WHERE status = 0 AND game = ? ORDER BY id DESC LIMIT 1",
+//       [join],
+//     );
+//     const isPendingGame = winGoNow.length > 0;
+
+//     if (isPendingGame) {
+//       const [setting] = await connection.query("SELECT * FROM `admin_ac` ");
+
+//       let previousPeriod = winGoNow[0].period;
+//       let amount = Math.floor(Math.random() * 10);
+
+//       const [minPlayers] = await connection.query(
+//         "SELECT * FROM minutes_1 WHERE status = 0 AND game = ?",
+//         [join],
+//       );
+
+//       if (minPlayers.length >= 2) {
+//         const betColumns = [
+//           // red_small
+//           { name: "red_0", bets: ["0", "t", "d", "n"] },
+//           { name: "red_2", bets: ["2", "d", "n"] },
+//           { name: "red_4", bets: ["4", "d", "n"] },
+//           // green small
+//           { name: "green_1", bets: ["1", "x", "n"] },
+//           { name: "green_3", bets: ["3", "x", "n"] },
+//           // green big
+//           { name: "green_5", bets: ["5", "x", "t", "l"] },
+//           { name: "green_7", bets: ["7", "x", "l"] },
+//           { name: "green_9", bets: ["9", "x", "l"] },
+//           // red big
+//           { name: "red_6", bets: ["6", "d", "l"] },
+//           { name: "red_8", bets: ["8", "d", "l"] },
+//         ];
+
+//         const totalMoneyPromises = betColumns.map(async (column) => {
+//           // Generate placeholders for the array elements
+//           const placeholders = column.bets.map(() => "?").join(",");
+//           // Prepare the query, using placeholders for the array
+//           const query = `
+//                    SELECT SUM(money) AS total_money
+//                    FROM minutes_1
+//                    WHERE game = ? AND status = 0 AND bet IN (${placeholders})
+//                `;
+//           // Execute the query, spreading the array into the parameters
+//           const [result] = await connection.query(query, [
+//             join,
+//             ...column.bets,
+//           ]);
+//           return {
+//             name: column.name,
+//             total_money: result[0]?.total_money
+//               ? parseInt(result[0].total_money, 10)
+//               : 0,
+//           };
+//         });
+
+//         const categories = await Promise.all(totalMoneyPromises);
+//         let smallestCategory = categories.reduce(
+//           (smallest, category) =>
+//             smallest === null || category.total_money < smallest.total_money
+//               ? category
+//               : smallest,
+//           null,
+//         );
+//         const colorBets = {
+//           red_6: [6],
+//           red_8: [8],
+//           red_2: [2], //0 removed
+//           red_4: [4],
+//           green_3: [3],
+//           green_7: [7], //5 removed
+//           green_9: [9], //
+//           green_1: [1],
+//           green_5: [5],
+//           red_0: [0],
+//         };
+
+//         const betsForCategory = colorBets[smallestCategory.name] || [];
+//         const availableBets = betsForCategory.filter(
+//           (bet) =>
+//             !categories.find(
+//               (category) =>
+//                 category.name === smallestCategory.name &&
+//                 category.total_money < smallestCategory.total_money,
+//             ),
+//         );
+//         let lowestBet;
+//         if (availableBets.length > 0) {
+//           lowestBet = availableBets[0];
+//         } else {
+//           lowestBet = betsForCategory.reduce((lowest, bet) =>
+//             bet < lowest ? bet : lowest,
+//           );
+//         }
+
+//         amount = lowestBet;
+//       } else if (
+//         minPlayers.length === 1 &&
+//         parseFloat(minPlayers[0].money) >= 20
+//       ) {
+//         const betColumns = [
+//           { name: "red_small", bets: ["0", "2", "4", "d", "n"] },
+//           { name: "red_big", bets: ["6", "8", "d", "l"] },
+//           { name: "green_big", bets: ["5", "7", "9", "x", "l"] },
+//           { name: "green_small", bets: ["1", "3", "x", "n"] },
+//           { name: "violet_small", bets: ["0", "t", "n"] },
+//           { name: "violet_big", bets: ["5", "t", "l"] },
+//         ];
+
+//         const categories = await Promise.all(
+//           betColumns.map(async (column) => {
+//             const [result] = await connection.query(
+//               `
+//                      SELECT SUM(money) AS total_money
+//                      FROM minutes_1
+//                      WHERE game = ? AND status = 0 AND bet IN (?)
+//                      `,
+//               [join, column.bets],
+//             );
+//             return {
+//               name: column.name,
+//               total_money: parseInt(result[0]?.total_money) || 0,
+//             };
+//           }),
+//         );
+
+//         const colorBets = {
+//           red_big: [6, 8],
+//           red_small: [2, 4], //0 removed
+//           green_big: [7, 9], //5 removed
+//           green_small: [1, 3],
+//           violet_big: [5],
+//           violet_small: [0],
+//         };
+
+//         const smallestCategory = categories.reduce((smallest, category) =>
+//           !smallest || category.total_money < smallest.total_money
+//             ? category
+//             : smallest,
+//         );
+
+//         const betsForCategory = colorBets[smallestCategory.name] || [];
+//         const availableBets = betsForCategory.filter(
+//           (bet) =>
+//             !categories.find(
+//               (category) =>
+//                 category.name === smallestCategory.name &&
+//                 category.total_money < smallestCategory.total_money,
+//             ),
+//         );
+
+//         const lowestBet =
+//           availableBets.length > 0
+//             ? availableBets[0]
+//             : Math.min(...betsForCategory);
+//         amount = lowestBet;
+//       }
+
+//       let nextResult = "";
+//       if (game == 1) nextResult = setting[0].wingo1;
+//       if (game == 3) nextResult = setting[0].wingo3;
+//       if (game == 5) nextResult = setting[0].wingo5;
+//       if (game == 10) nextResult = setting[0].wingo10;
+
+//       let newArr = "";
+//       if (nextResult == "-1") {
+//         // game algorithm generate result
+//         await connection.query(
+//           "UPDATE wingo SET amount = ?, status = 1, release_status = 1 WHERE period = ? AND game = ?",
+//           [amount, previousPeriod, join],
+//         );
+//         newArr = "-1";
+//       } else {
+//         // admin set result
+//         let result = "";
+//         let arr = nextResult.split("|");
+//         let check = arr.length;
+//         if (check == 1) {
+//           newArr = "-1";
+//         } else {
+//           for (let i = 1; i < arr.length; i++) {
+//             newArr += arr[i] + "|";
+//           }
+//           newArr = newArr.slice(0, -1);
+//         }
+//         result = arr[0];
+//         await connection.query(
+//           "UPDATE wingo SET amount = ?, status = 1, release_status = 1 WHERE period = ? AND game = ?",
+//           [result, previousPeriod, join],
+//         );
+//       }
+
+//       let adminWingoKey = "";
+//       if (game == 1) adminWingoKey = "wingo1";
+//       if (game == 3) adminWingoKey = "wingo3";
+//       if (game == 5) adminWingoKey = "wingo5";
+//       if (game == 10) adminWingoKey = "wingo10";
+
+//       await connection.query(`UPDATE admin_ac SET ${adminWingoKey} = ?`, [
+//         newArr,
+//       ]);
+//     }
+
+//     let timeNow = Date.now();
+//     let gameRepresentationId = GameRepresentationIds.WINGO[game];
+//     let NewGamePeriod = generatePeriod(gameRepresentationId);
+
+//     //console.log(NewGamePeriod, join);
+
+//     await connection.query(
+//       `
+//          INSERT INTO wingo
+//          SET period = ?, amount = 0, game = ?, status = 0, time = ?
+//       `,
+//       [NewGamePeriod, join, timeNow],
+//     );
+//   } catch (error) {
+//     if (error) {
+//       console.log(error);
+//     }
+//   }
+// };
+
+
+
 const addWinGo = async (game) => {
   try {
     let join = "";
-    if (game == 1) join = "wingo";
-    if (game == 3) join = "wingo3";
-    if (game == 5) join = "wingo5";
-    if (game == 10) join = "wingo10";
+    if (game === 1) join = "wingo";
+    else if (game === 3) join = "wingo3";
+    else if (game === 5) join = "wingo5";
+    else if (game === 10) join = "wingo10";
+    else throw new Error("Invalid game type");
 
+    // Fetch current pending game period (if any)
     const [winGoNow] = await connection.query(
       "SELECT period FROM wingo WHERE status = 0 AND game = ? ORDER BY id DESC LIMIT 1",
-      [join],
+      [join]
     );
+
+    // Fetch start price from minutes_2
+    const [startPriceRow] = await connection.query(
+      "SELECT startPrice AS start_point FROM minutes_2 WHERE status = 0 AND game = ? ORDER BY id DESC LIMIT 1",
+      [join]
+    );
+
+    // Safety check for missing start price
+    // console.log(startPriceRow);
+    // if (!startPriceRow || startPriceRow.length === 0 || startPriceRow[0].start_point === undefined) {
+    //   throw new Error("Start price not found in minutes_2");
+    // }
+
+    let startPoint = null;
+    let endPoint = null;
+    let bigTotal = 0;
+    let smallTotal = 0;
+
     const isPendingGame = winGoNow.length > 0;
 
     if (isPendingGame) {
-      const [setting] = await connection.query("SELECT * FROM `admin_ac` ");
+      startPoint = parseFloat(startPriceRow[0].start_point);
+      const previousPeriod = winGoNow[0].period;
 
-      let previousPeriod = winGoNow[0].period;
-      let amount = Math.floor(Math.random() * 10);
+      // Get admin settings
+      const [setting] = await connection.query("SELECT * FROM `admin_ac`");
 
-      const [minPlayers] = await connection.query(
-        "SELECT * FROM minutes_1 WHERE status = 0 AND game = ?",
-        [join],
+      // Get total money for big/small bets
+      const [betResults] = await connection.query(
+        `SELECT 
+            SUM(CASE WHEN bet = 'l' THEN money ELSE 0 END) AS big_total,
+            SUM(CASE WHEN bet = 'n' THEN money ELSE 0 END) AS small_total
+         FROM minutes_2 
+         WHERE game = ? AND status = 0`,
+        [join]
+      );
+      let amount=0;
+      bigTotal = parseFloat(betResults[0].big_total) || 0;
+      smallTotal = parseFloat(betResults[0].small_total) || 0;
+
+      // Determine endPoint based on betting distribution
+      if (bigTotal <= smallTotal) {
+        console.log("Big Total is winning so price will be higher than start")
+        endPoint = parseFloat((startPoint + Math.random() * 0.1).toFixed(2));
+        amount=bigTotal
+      } else {
+        console.log("Small total is winning so price will be lower than start")
+        endPoint = parseFloat((startPoint - Math.random() * 0.1).toFixed(2));
+        amount=smallTotal;
+      }
+
+      // Apply admin override
+      let nextResult = "-1";
+      if (game === 1) nextResult = setting[0].wingo1;
+      if (game === 3) nextResult = setting[0].wingo3;
+      if (game === 5) nextResult = setting[0].wingo5;
+      if (game === 10) nextResult = setting[0].wingo10;
+
+      let newArr = "-1";
+      if (nextResult !== "-1") {
+        const arr = nextResult.split("|");
+        endPoint = parseFloat(arr[arr.length - 1]);  // Override end point
+        newArr = arr.length > 1 ? arr.slice(0, arr.length - 1).join("|") : "-1";
+      }
+
+      // Update game result
+      await connection.query(
+        "UPDATE wingo SET amount = ?, status = 1, release_status = 1 WHERE period = ? AND game = ?",
+        [endPoint, previousPeriod, join]
       );
 
-      if (minPlayers.length >= 2) {
-        const betColumns = [
-          // red_small
-          { name: "red_0", bets: ["0", "t", "d", "n"] },
-          { name: "red_2", bets: ["2", "d", "n"] },
-          { name: "red_4", bets: ["4", "d", "n"] },
-          // green small
-          { name: "green_1", bets: ["1", "x", "n"] },
-          { name: "green_3", bets: ["3", "x", "n"] },
-          // green big
-          { name: "green_5", bets: ["5", "x", "t", "l"] },
-          { name: "green_7", bets: ["7", "x", "l"] },
-          { name: "green_9", bets: ["9", "x", "l"] },
-          // red big
-          { name: "red_6", bets: ["6", "d", "l"] },
-          { name: "red_8", bets: ["8", "d", "l"] },
-        ];
-
-        const totalMoneyPromises = betColumns.map(async (column) => {
-          // Generate placeholders for the array elements
-          const placeholders = column.bets.map(() => "?").join(",");
-          // Prepare the query, using placeholders for the array
-          const query = `
-                   SELECT SUM(money) AS total_money
-                   FROM minutes_1
-                   WHERE game = ? AND status = 0 AND bet IN (${placeholders})
-               `;
-          // Execute the query, spreading the array into the parameters
-          const [result] = await connection.query(query, [
-            join,
-            ...column.bets,
-          ]);
-          return {
-            name: column.name,
-            total_money: result[0]?.total_money
-              ? parseInt(result[0].total_money, 10)
-              : 0,
-          };
-        });
-
-        const categories = await Promise.all(totalMoneyPromises);
-        let smallestCategory = categories.reduce(
-          (smallest, category) =>
-            smallest === null || category.total_money < smallest.total_money
-              ? category
-              : smallest,
-          null,
-        );
-        const colorBets = {
-          red_6: [6],
-          red_8: [8],
-          red_2: [2], //0 removed
-          red_4: [4],
-          green_3: [3],
-          green_7: [7], //5 removed
-          green_9: [9], //
-          green_1: [1],
-          green_5: [5],
-          red_0: [0],
-        };
-
-        const betsForCategory = colorBets[smallestCategory.name] || [];
-        const availableBets = betsForCategory.filter(
-          (bet) =>
-            !categories.find(
-              (category) =>
-                category.name === smallestCategory.name &&
-                category.total_money < smallestCategory.total_money,
-            ),
-        );
-        let lowestBet;
-        if (availableBets.length > 0) {
-          lowestBet = availableBets[0];
-        } else {
-          lowestBet = betsForCategory.reduce((lowest, bet) =>
-            bet < lowest ? bet : lowest,
-          );
-        }
-
-        amount = lowestBet;
-      } else if (
-        minPlayers.length === 1 &&
-        parseFloat(minPlayers[0].money) >= 20
-      ) {
-        const betColumns = [
-          { name: "red_small", bets: ["0", "2", "4", "d", "n"] },
-          { name: "red_big", bets: ["6", "8", "d", "l"] },
-          { name: "green_big", bets: ["5", "7", "9", "x", "l"] },
-          { name: "green_small", bets: ["1", "3", "x", "n"] },
-          { name: "violet_small", bets: ["0", "t", "n"] },
-          { name: "violet_big", bets: ["5", "t", "l"] },
-        ];
-
-        const categories = await Promise.all(
-          betColumns.map(async (column) => {
-            const [result] = await connection.query(
-              `
-                     SELECT SUM(money) AS total_money
-                     FROM minutes_1
-                     WHERE game = ? AND status = 0 AND bet IN (?)
-                     `,
-              [join, column.bets],
-            );
-            return {
-              name: column.name,
-              total_money: parseInt(result[0]?.total_money) || 0,
-            };
-          }),
-        );
-
-        const colorBets = {
-          red_big: [6, 8],
-          red_small: [2, 4], //0 removed
-          green_big: [7, 9], //5 removed
-          green_small: [1, 3],
-          violet_big: [5],
-          violet_small: [0],
-        };
-
-        const smallestCategory = categories.reduce((smallest, category) =>
-          !smallest || category.total_money < smallest.total_money
-            ? category
-            : smallest,
-        );
-
-        const betsForCategory = colorBets[smallestCategory.name] || [];
-        const availableBets = betsForCategory.filter(
-          (bet) =>
-            !categories.find(
-              (category) =>
-                category.name === smallestCategory.name &&
-                category.total_money < smallestCategory.total_money,
-            ),
-        );
-
-        const lowestBet =
-          availableBets.length > 0
-            ? availableBets[0]
-            : Math.min(...betsForCategory);
-        amount = lowestBet;
-      }
-
-      let nextResult = "";
-      if (game == 1) nextResult = setting[0].wingo1;
-      if (game == 3) nextResult = setting[0].wingo3;
-      if (game == 5) nextResult = setting[0].wingo5;
-      if (game == 10) nextResult = setting[0].wingo10;
-
-      let newArr = "";
-      if (nextResult == "-1") {
-        // game algorithm generate result
-        await connection.query(
-          "UPDATE wingo SET amount = ?, status = 1, release_status = 1 WHERE period = ? AND game = ?",
-          [amount, previousPeriod, join],
-        );
-        newArr = "-1";
-      } else {
-        // admin set result
-        let result = "";
-        let arr = nextResult.split("|");
-        let check = arr.length;
-        if (check == 1) {
-          newArr = "-1";
-        } else {
-          for (let i = 1; i < arr.length; i++) {
-            newArr += arr[i] + "|";
-          }
-          newArr = newArr.slice(0, -1);
-        }
-        result = arr[0];
-        await connection.query(
-          "UPDATE wingo SET amount = ?, status = 1, release_status = 1 WHERE period = ? AND game = ?",
-          [result, previousPeriod, join],
-        );
-      }
-
+      // Update admin queue
       let adminWingoKey = "";
-      if (game == 1) adminWingoKey = "wingo1";
-      if (game == 3) adminWingoKey = "wingo3";
-      if (game == 5) adminWingoKey = "wingo5";
-      if (game == 10) adminWingoKey = "wingo10";
+      if (game === 1) adminWingoKey = "wingo1";
+      if (game === 3) adminWingoKey = "wingo3";
+      if (game === 5) adminWingoKey = "wingo5";
+      if (game === 10) adminWingoKey = "wingo10";
 
-      await connection.query(`UPDATE admin_ac SET ${adminWingoKey} = ?`, [
-        newArr,
-      ]);
+      await connection.query(`UPDATE admin_ac SET ${adminWingoKey} = ?`, [newArr]);
     }
 
-    let timeNow = Date.now();
-    let gameRepresentationId = GameRepresentationIds.WINGO[game];
-    let NewGamePeriod = generatePeriod(gameRepresentationId);
+    // Insert new game for the next period
+    const timeNow = Date.now();
+    const gameRepresentationId = GameRepresentationIds.WINGO[game];
+    const NewGamePeriod = generatePeriod(gameRepresentationId);
 
-    //console.log(NewGamePeriod, join);
+    console.log("⏳ About to insert new game:", NewGamePeriod, join, timeNow);
+    try {
+      await connection.query(
+        `INSERT INTO wingo SET period = ?, amount = 0, game = ?, status = 0, time = ?`,
+        [NewGamePeriod, join, timeNow]
+      );
+      console.log("✅ New wingo game inserted");
+    } catch (insertErr) {
+      console.error("❌ INSERT error:", insertErr.message);
+    }
+    
+    console.log("✅ Insert query executed");
+    console.log("Debug Info:", {
+      startPoint,
+      endPoint,
+      bigTotal,
+      smallTotal
+    });
 
-    await connection.query(
-      `
-         INSERT INTO wingo
-         SET period = ?, amount = 0, game = ?, status = 0, time = ?
-      `,
-      [NewGamePeriod, join, timeNow],
-    );
+    return {
+      startPoint,
+      endPoint,
+      bigTotal,
+      smallTotal
+    };
   } catch (error) {
-    if (error) {
-      console.log(error);
-    }
+    console.error("❌ Error in addWinGo:", error.message);
+    throw error;
   }
 };
+
+
+
+
+
 
 const handlingWinGo1P = async (typeid) => {
   try {
@@ -1006,7 +1152,7 @@ const handlingWinGo1P = async (typeid) => {
     }
 
     await connection.query(
-      "UPDATE minutes_1 SET result = ? WHERE status = 0 AND game = ?",
+      "UPDATE minutes_2 SET result = ? WHERE status = 0 AND game = ?",
       [winGoNow[0].amount, game],
     );
 
@@ -1015,7 +1161,7 @@ const handlingWinGo1P = async (typeid) => {
     await batchUpdateBetStatus(result, game);
 
     const [order] = await connection.query(
-      "SELECT * FROM minutes_1 WHERE status = 0 AND game = ?",
+      "SELECT * FROM minutes_2 WHERE status = 0 AND game = ?",
       [game],
     );
 
@@ -1036,7 +1182,7 @@ const handlingWinGo1P = async (typeid) => {
       let totals = parseFloat(users[0].money) + parseFloat(winAmount);
 
       await connection.query(
-        "UPDATE `minutes_1` SET `get` = ?, `status` = 1 WHERE `id` = ?",
+        "UPDATE `minutes_2` SET `get` = ?, `status` = 1 WHERE `id` = ?",
         [parseFloat(winAmount), id],
       );
 
@@ -1055,6 +1201,8 @@ const handlingWinGo1P = async (typeid) => {
   }
 };
 
+
+
 const batchUpdateBetStatus = async (result, game) => {
   const validBets = getValidBets(result);
   const batchSize = 1000; // Adjust this based on your data volume and server capacity
@@ -1062,7 +1210,7 @@ const batchUpdateBetStatus = async (result, game) => {
 
   while (true) {
     const [rows] = await connection.execute(
-      `UPDATE minutes_1 SET status = 2 
+      `UPDATE minutes_2 SET status = 2 
        WHERE status = 0 AND game = ? AND bet NOT IN (${validBets.map(() => "?").join(",")})
        LIMIT ${batchSize}`,
       [game, ...validBets],

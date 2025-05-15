@@ -95,7 +95,7 @@ const Admin = async (req, res) => {
   // Reset DataBase Level
   await connection.execute("DELETE FROM admin_ac");
   await connection.execute(
-    "INSERT INTO `admin_ac` (`id`, `wingo1`, `wingo3`, `wingo5`, `wingo10`, `k5d`, `k5d3`, `k5d5`, `k5d10`, `win_rate`, `telegram`, `cskh`, `app`) VALUES (NULL, '-1', '-1', '-1', '-1', '-1', '-1', '-1', '-1', '80', 'https://t.me/dreamsister', 'https://t.me/ChenQiaoYing', '#')",
+    "INSERT INTO `admin_ac` (`id`, `wingo1`, `wingo3`, `wingo5`, `wingo10`, `k5d`, `k5d3`, `k5d5`, `k5d10`, `win_rate`, `telegram`, `cskh`, `app`) VALUES (NULL, '-1', '-1', '-1', '-1', '-1', '-1', '-1', '-1', '80', 'https://t.me/Olivia_XDR', 'https://t.me/Olivia_XDR', '#')",
   );
 };
 

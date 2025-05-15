@@ -1609,7 +1609,7 @@ const Mn = H(En, [["__scopeId", "data-v-ce3e6ca0"]]),
               I(K, {
                 title: "VIP",
                 backgroundColor:
-                  "linear-gradient(90deg, #B1835A 0%, #D9AD82 100%)",
+                  "linear-gradient(90deg, #2b3270 0%, #D9AD82 100%)",
                 "left-arrow": "",
                 onClickLeft: m[0] || (m[0] = (X) => l(f).go(-1)),
               }),

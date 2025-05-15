@@ -1219,7 +1219,7 @@ const createBonus = async (req, res) => {
       });
     }
 
-    let GiftCode = generateGiftCode(16);
+    let GiftCode = generateGiftCode(32);
 
     if (expireDate) {
       let sql = `INSERT INTO redenvelopes SET id_redenvelope = ?, phone = ?, money = ?, used = ?, amount = ?, status = ?, for_new_users = ?, time = ?, expire_date = ?`;

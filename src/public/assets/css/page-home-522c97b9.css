@@ -30399,7 +30399,8 @@ html:lang(ar) .Betting__Popup-agree[data-v-7f36fe93] {
     height: 7.61333rem;
     width: calc(100% - .69333rem);
     margin: .29333rem auto 0;
-    background: var(--darkBg, var(--bg_color_L2));
+    /* background: var(--darkBg, var(--bg_color_L2)); */
+    background-color:#151515;
     box-shadow: var(--boxShadowColor-35);
     border-radius: .26667rem;
     padding: .18667rem .26667rem .25333rem .18667rem;

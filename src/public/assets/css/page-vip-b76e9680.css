@@ -6,7 +6,7 @@
   word-break: break-word !important;
 }
 .cg-default.van-button[data-v-c164b937] {
-  box-shadow: 0 0.05333rem #896646;
+  box-shadow: 0 0.05333rem #61a9ff;
   font-weight: 700;
   font-size: 0.4rem;
 }
@@ -464,7 +464,7 @@ html:lang(ar) .vip-content-card .itemInfo-right[data-v-c164b937] {
   word-break: break-word !important;
 }
 .cg-default.van-button[data-v-32afb31a] {
-  box-shadow: 0 0.05333rem #896646;
+  box-shadow: 0 0.05333rem #61a9ff;
   font-weight: 700;
   font-size: 0.4rem;
 }
@@ -481,7 +481,7 @@ html:lang(ar) .vip-content-card .itemInfo-right[data-v-c164b937] {
   height: 80%;
 }
 [data-v-32afb31a] .red {
-  color: #b1835a;
+  color: #2b3270;
 }
 [data-v-32afb31a] .yellow {
   color: #ff7d06;
@@ -610,7 +610,7 @@ html:lang(ar) .vip-content-card .itemInfo-right[data-v-c164b937] {
   -webkit-box-pack: center;
   -webkit-justify-content: center;
   justify-content: center;
-  color: #896646;
+  color: #61a9ff;
 }
 .vip-content-weal-con > div:nth-of-type(3) > p > img[data-v-32afb31a] {
   width: 0.4rem;
@@ -625,9 +625,9 @@ html:lang(ar) .vip-content-card .itemInfo-right[data-v-c164b937] {
 }
 .vip-content-weal-con > div:nth-of-type(3) > p.max[data-v-32afb31a] {
   min-height: 0.66667rem;
-  color: #896646;
+  color: #61a9ff;
   background-color: transparent;
-  border: 0.01333rem solid #b1835a;
+  border: 0.01333rem solid #2b3270;
 }
 .vip-content-weal-con > div:nth-of-type(3) > p.max > img[data-v-32afb31a] {
   width: 0.64rem;
@@ -642,7 +642,7 @@ html:lang(ar) .vip-content-card .itemInfo-right[data-v-c164b937] {
   word-break: break-word !important;
 }
 .cg-default.van-button[data-v-7f8fb247] {
-  box-shadow: 0 0.05333rem #896646;
+  box-shadow: 0 0.05333rem #61a9ff;
   font-weight: 700;
   font-size: 0.4rem;
 }
@@ -659,7 +659,7 @@ html:lang(ar) .vip-content-card .itemInfo-right[data-v-c164b937] {
   height: 80%;
 }
 [data-v-7f8fb247] .red {
-  color: #b1835a;
+  color: #2b3270;
 }
 [data-v-7f8fb247] .yellow {
   color: #ff7d06;
@@ -745,8 +745,8 @@ html:lang(ar) .vip-content-card .itemInfo-right[data-v-c164b937] {
   width: 100%;
   bottom: 0;
   height: 0.53333rem;
-  background: -webkit-linear-gradient(right, #b1835a 0%, #d9ad82 100%);
-  background: linear-gradient(270deg, #b1835a 0%, #d9ad82 100%);
+  background: -webkit-linear-gradient(right, #2b3270 0%, #d9ad82 100%);
+  background: linear-gradient(270deg, #2b3270 0%, #d9ad82 100%);
   display: -webkit-box;
   display: -webkit-flex;
   display: flex;
@@ -805,10 +805,10 @@ html:lang(ar)
   height: 0.8rem;
   line-height: 0.8rem;
   border-radius: 1.06667rem;
-  border: 0.00667rem #b1835a solid;
+  border: 0.00667rem #2b3270 solid;
   text-align: center;
   margin-top: 0.26667rem;
-  color: #b1835a;
+  color: #2b3270;
   font-size: 0.34667rem;
   letter-spacing: 0.01387rem;
 }
@@ -830,9 +830,9 @@ html:lang(ar)
   box-shadow: 0 0.05333rem #b6bad0;
 }
 .vip-content-myWelfare-con .cards button.active[data-v-7f8fb247] {
-  background: -webkit-linear-gradient(top, #d9ad82 0%, #b1835a 100%);
-  background: linear-gradient(180deg, #d9ad82 0%, #b1835a 100%);
-  box-shadow: 0 0.05333rem #896646;
+  background: -webkit-linear-gradient(top, #d9ad82 0%, #2b3270 100%);
+  background: linear-gradient(180deg, #d9ad82 0%, #2b3270 100%);
+  box-shadow: 0 0.05333rem #61a9ff;
 }
 [data-v-ce3e6ca0]:root {
   --van-popup-background: #f0f0f5;
@@ -841,7 +841,7 @@ html:lang(ar)
   word-break: break-word !important;
 }
 .cg-default.van-button[data-v-ce3e6ca0] {
-  box-shadow: 0 0.05333rem #896646;
+  box-shadow: 0 0.05333rem #61a9ff;
   font-weight: 700;
   font-size: 0.4rem;
 }
@@ -858,7 +858,7 @@ html:lang(ar)
   height: 80%;
 }
 [data-v-ce3e6ca0] .red {
-  color: #b1835a;
+  color: #2b3270;
 }
 [data-v-ce3e6ca0] .yellow {
   color: #ff7d06;
@@ -881,8 +881,8 @@ html:lang(ar)
   background: #ffffff;
 }
 .vip-content-recordVsrule-head > button.active[data-v-ce3e6ca0] {
-  background: -webkit-linear-gradient(325deg, #b1835a 0%, #d9ad82 100%);
-  background: linear-gradient(125deg, #b1835a 0%, #d9ad82 100%);
+  background: -webkit-linear-gradient(325deg, #2b3270 0%, #d9ad82 100%);
+  background: linear-gradient(125deg, #2b3270 0%, #d9ad82 100%);
   box-shadow: inset 0 -0.05333rem 0.13333rem #fff6f4;
   border-radius: 0.16rem;
   color: #fff;
@@ -927,7 +927,7 @@ html:lang(ar)
   color: #fb8921;
 }
 .vip-content-recordVsrule-con .item span.red[data-v-ce3e6ca0] {
-  color: #b1835a;
+  color: #2b3270;
 }
 .vip-content-recordVsrule-con .item span.blue[data-v-ce3e6ca0] {
   color: #00f;
@@ -965,7 +965,7 @@ html:lang(ar)
   display: -webkit-box;
   display: -webkit-flex;
   display: flex;
-  color: #b1835a;
+  color: #2b3270;
   -webkit-margin-start: auto;
   margin-inline-start: auto;
   text-align: end;
@@ -1018,7 +1018,7 @@ html:lang(ar)
 .vip-content-recordVsrule-con .con-content__rules-item[data-v-ce3e6ca0] {
   position: relative;
   padding: 0.57333rem 0.24rem 1.06667rem;
-  border: 0.01333rem solid #b1835a;
+  border: 0.01333rem solid #2b3270;
   border-top-left-radius: 0.26667rem;
   border-top-right-radius: 0.26667rem;
   background: #fff;
@@ -1065,9 +1065,9 @@ html:lang(ar)
   left: -0.01333rem;
   width: 0.68rem;
   height: 0.68rem;
-  border-top: 0.06667rem solid #b1835a;
-  -webkit-border-start: 0.06667rem solid #b1835a;
-  border-inline-start: 0.06667rem solid #b1835a;
+  border-top: 0.06667rem solid #2b3270;
+  -webkit-border-start: 0.06667rem solid #2b3270;
+  border-inline-start: 0.06667rem solid #2b3270;
   border-start-start-radius: 0.26667rem;
 }
 html:lang(ar)
@@ -1087,7 +1087,7 @@ html:lang(ar)
   width: 0.13333rem;
   height: 0.13333rem;
   border-radius: 50%;
-  background-color: #b1835a;
+  background-color: #2b3270;
 }
 .vip-content-recordVsrule-con
   .con-content__rules-item__borderTopStyle
@@ -1095,9 +1095,9 @@ html:lang(ar)
   right: 0;
   width: 0.68rem;
   height: 0.68rem;
-  border-top: 0.06667rem solid #b1835a;
-  -webkit-border-end: 0.06667rem solid #b1835a;
-  border-inline-end: 0.06667rem solid #b1835a;
+  border-top: 0.06667rem solid #2b3270;
+  -webkit-border-end: 0.06667rem solid #2b3270;
+  border-inline-end: 0.06667rem solid #2b3270;
   border-start-end-radius: 0.26667rem;
 }
 html:lang(ar)
@@ -1117,7 +1117,7 @@ html:lang(ar)
   width: 0.13333rem;
   height: 0.13333rem;
   border-radius: 50%;
-  background-color: #b1835a;
+  background-color: #2b3270;
 }
 .vip-content-recordVsrule-con
   .con-content__rules-item__titleLeft[data-v-ce3e6ca0] {
@@ -1125,7 +1125,7 @@ html:lang(ar)
   top: -0.26667rem;
   width: 0.26667rem;
   height: 0.53333rem;
-  background-color: #b1835a;
+  background-color: #2b3270;
   -webkit-clip-path: polygon(
     50% 0%,
     100% 0%,
@@ -1146,7 +1146,7 @@ html:lang(ar)
   top: -0.26667rem;
   width: 0.26667rem;
   height: 0.53333rem;
-  background-color: #b1835a;
+  background-color: #2b3270;
   -webkit-clip-path: polygon(
     50% 0%,
     100% 0%,
@@ -1173,7 +1173,7 @@ html:lang(ar)
   font-size: 0.32rem;
   text-align: center;
   line-height: 0.53333rem;
-  background-color: #b1835a;
+  background-color: #2b3270;
   -webkit-clip-path: polygon(
     2% 0%,
     98% 0%,
@@ -1235,7 +1235,7 @@ html:lang(ar)
   color: #fff;
   font-size: 0.34667rem;
   line-height: 1.33333rem;
-  background: #b1835a;
+  background: #2b3270;
 }
 .vip-content-recordVsrule-con
   .con-content__rules-item__commission
@@ -1268,12 +1268,12 @@ html:lang(ar)
 }
 .vip-content-recordVsrule > button[data-v-ce3e6ca0] {
   background-color: transparent;
-  border: 0.01333rem solid #b1835a;
+  border: 0.01333rem solid #2b3270;
   border-radius: 0.53333rem;
   height: 0.93333rem;
   width: 100%;
   line-height: 0.93333rem;
-  color: #b1835a;
+  color: #2b3270;
   letter-spacing: 0.04em;
   font-size: 0.4rem;
   background: none;
@@ -1286,7 +1286,7 @@ html:lang(ar)
   word-break: break-word !important;
 }
 .cg-default.van-button[data-v-8f27a2e4] {
-  box-shadow: 0 0.05333rem #896646;
+  box-shadow: 0 0.05333rem #61a9ff;
   font-weight: 700;
   font-size: 0.4rem;
 }
@@ -1303,7 +1303,7 @@ html:lang(ar)
   height: 80%;
 }
 [data-v-8f27a2e4] .red {
-  color: #b1835a;
+  color: #2b3270;
 }
 [data-v-8f27a2e4] .yellow {
   color: #ff7d06;
@@ -1317,8 +1317,8 @@ html:lang(ar)
   padding-bottom: 0.8rem;
 }
 .vip-header[data-v-8f27a2e4] {
-  background: -webkit-linear-gradient(left, #b1835a 0%, #d9ad82 100%);
-  background: linear-gradient(90deg, #b1835a 0%, #d9ad82 100%);
+  background: -webkit-linear-gradient(left, #2b3270 0%, #d9ad82 100%);
+  background: linear-gradient(90deg, #2b3270 0%, #d9ad82 100%);
   height: 4.4rem;
   width: 100%;
   color: #fff;
@@ -1651,7 +1651,7 @@ html:lang(ar)
   > div:nth-of-type(1)
   > p[data-v-8f27a2e4]:nth-of-type(1) {
   background-color: transparent;
-  border: 0.01333rem solid #896646;
+  border: 0.01333rem solid #61a9ff;
 }
 .vip
   .van-dialog__content-note
@@ -1698,8 +1698,8 @@ html:lang(ar)
   padding: 0.26667rem 0;
   width: 95%;
   margin-bottom: 0.26667rem;
-  background: -webkit-linear-gradient(top, #d9ad82 0%, #b1835a 100%);
-  background: linear-gradient(180deg, #d9ad82 0%, #b1835a 100%);
+  background: -webkit-linear-gradient(top, #d9ad82 0%, #2b3270 100%);
+  background: linear-gradient(180deg, #d9ad82 0%, #2b3270 100%);
   color: #fff;
 }
 [data-v-e21f063b]:root {
@@ -1709,7 +1709,7 @@ html:lang(ar)
   word-break: break-word !important;
 }
 .cg-default.van-button[data-v-e21f063b] {
-  box-shadow: 0 0.05333rem #896646;
+  box-shadow: 0 0.05333rem #61a9ff;
   font-weight: 700;
   font-size: 0.4rem;
 }
@@ -1729,7 +1729,7 @@ html:lang(ar)
   padding: 0.26667rem;
 }
 .vip-RebateDetails > h1[data-v-e21f063b] {
-  color: #b1835a;
+  color: #2b3270;
   font-size: 0.4rem;
   font-weight: 700;
   text-align: center;
@@ -1822,8 +1822,8 @@ html:lang(ar)
 }
 .vip-RebateDetails-items .item .line[data-v-e21f063b] {
   height: 0.33333rem;
-  -webkit-border-start: dashed 0.01333rem #b1835a;
-  border-inline-start: dashed 0.01333rem #b1835a;
+  -webkit-border-start: dashed 0.01333rem #2b3270;
+  border-inline-start: dashed 0.01333rem #2b3270;
   -webkit-margin-start: 0.12rem;
   margin-inline-start: 0.12rem;
 }
@@ -1834,7 +1834,7 @@ html:lang(ar)
   word-break: break-word !important;
 }
 .cg-default.van-button[data-v-ba16fb3d] {
-  box-shadow: 0 0.05333rem #896646;
+  box-shadow: 0 0.05333rem #61a9ff;
   font-weight: 700;
   font-size: 0.4rem;
 }
@@ -1851,7 +1851,7 @@ html:lang(ar)
   height: 80%;
 }
 [data-v-ba16fb3d] .red {
-  color: #b1835a;
+  color: #2b3270;
 }
 [data-v-ba16fb3d] .yellow {
   color: #ff7d06;

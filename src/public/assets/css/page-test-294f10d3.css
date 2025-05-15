@@ -5,7 +5,7 @@
   word-break: break-word !important;
 }
 .cg-default.van-button[data-v-9c8849f5] {
-  box-shadow: 0 0.05333rem #896646;
+  box-shadow: 0 0.05333rem #61a9ff;
   font-weight: 700;
   font-size: 0.4rem;
 }
@@ -229,7 +229,7 @@ html:lang(ar) .dialog-main[data-v-9c8849f5] {
   word-break: break-word !important;
 }
 .cg-default.van-button[data-v-f47148b3] {
-  box-shadow: 0 0.05333rem #896646;
+  box-shadow: 0 0.05333rem #61a9ff;
   font-weight: 700;
   font-size: 0.4rem;
 }
@@ -248,8 +248,8 @@ html:lang(ar) .dialog-main[data-v-9c8849f5] {
 .security[data-v-f47148b3] {
   width: 9.33333rem;
   height: 10rem;
-  background: -webkit-linear-gradient(top, #d9ad82 0%, #b1835a 74.07%);
-  background: linear-gradient(180deg, #d9ad82 0%, #b1835a 74.07%);
+  background: -webkit-linear-gradient(top, #d9ad82 0%, #2b3270 74.07%);
+  background: linear-gradient(180deg, #d9ad82 0%, #2b3270 74.07%);
   border-radius: 0.26667rem;
   display: -webkit-box;
   display: -webkit-flex;
@@ -395,8 +395,8 @@ html:lang(ar) .dialog-main[data-v-9c8849f5] {
   height: 100%;
 }
 .security-code[data-v-f47148b3] {
-  background: -webkit-linear-gradient(top, #b1835a 0%, #e3c29f 100%);
-  background: linear-gradient(180deg, #b1835a 0%, #e3c29f 100%);
+  background: -webkit-linear-gradient(top, #2b3270 0%, #e3c29f 100%);
+  background: linear-gradient(180deg, #2b3270 0%, #e3c29f 100%);
   box-shadow: 0 -0.05333rem 0.13333rem #fff6f4 inset;
   -webkit-filter: drop-shadow(0 0.05333rem 0.21333rem #d0d0ed);
   filter: drop-shadow(0 0.05333rem 0.21333rem #d0d0ed);
@@ -415,10 +415,10 @@ html:lang(ar) .dialog-main[data-v-9c8849f5] {
   flex-direction: column;
 }
 .security-btns .van-button--primary[data-v-f47148b3] {
-  background: -webkit-linear-gradient(top, #d9ad82 0%, #b1835a 100%);
-  background: linear-gradient(180deg, #d9ad82 0%, #b1835a 100%);
-  -webkit-filter: drop-shadow(0 0.05333rem 0 #896646);
-  filter: drop-shadow(0 0.05333rem 0 #896646);
+  background: -webkit-linear-gradient(top, #d9ad82 0%, #2b3270 100%);
+  background: linear-gradient(180deg, #d9ad82 0%, #2b3270 100%);
+  -webkit-filter: drop-shadow(0 0.05333rem 0 #61a9ff);
+  filter: drop-shadow(0 0.05333rem 0 #61a9ff);
   border: none;
 }
 .security-btns .van-button--primary .van-button[data-v-f47148b3] {
@@ -436,7 +436,7 @@ html:lang(ar) .dialog-main[data-v-9c8849f5] {
   margin-bottom: 0.37333rem;
 }
 .security-btns .van-button--default[data-v-f47148b3] {
-  border-color: #b1835a;
-  color: #b1835a;
+  border-color: #2b3270;
+  color: #2b3270;
   margin-bottom: 0.37333rem;
 }

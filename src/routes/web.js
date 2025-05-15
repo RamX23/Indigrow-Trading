@@ -114,7 +114,7 @@ const initWebRouter = (app) => {
   router.get("/", (req, res) => {
     return res.redirect("/home");
   });
-  router.get("/home", homeController.homePage);
+  // router.get("/home", homeController.homePage);
   router.get("/support", homeController.supportPage);
   router.get("/checkIn", middlewareController, homeController.checkInPage);
   router.get("/activity", middlewareController, homeController.activityPage);
@@ -488,6 +488,7 @@ const initWebRouter = (app) => {
 
   // BET wingo
   router.get("/wingo", middlewareController, winGoController.winGoPage);
+  router.get("/home", middlewareController, winGoController.winGoPage);
   // router.get("/win", middlewareController, winGoController.winGoPage)
   // router.get("/win/3", middlewareController, winGoController.winGoPage3)
   // router.get("/win/5", middlewareController, winGoController.winGoPage5)

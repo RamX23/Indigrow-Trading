@@ -7391,7 +7391,7 @@ const Yt = H(Rv, [["__scopeId", "data-v-b3a5ca79"]]),
             P.beginPath(),
             P.moveTo(G == 0 ? 14 : G * 27 + 14, 0),
             P.lineTo(R == 0 ? 14 : R * 27 + 14, O.height),
-            (P.strokeStyle = "#B1835A"),
+            (P.strokeStyle = "#2b3270"),
             P.stroke(),
             P.closePath();
         }
@@ -8630,7 +8630,7 @@ const os = H(dp, [["__scopeId", "data-v-8a2fbe28"]]),
                 "left-arrow": "",
                 onClickLeft: P,
                 "background-color":
-                  "linear-gradient(90deg, #B1835A 0%, #D9AD82 100%)",
+                  "linear-gradient(90deg, #2b3270 0%, #D9AD82 100%)",
                 headLogo: !0,
               },
               {
@@ -15273,7 +15273,7 @@ const sy = H(ty, [["__scopeId", "data-v-7de531bd"]]),
                   "left-arrow": "",
                   title: v.$t("loongAssistant"),
                   "background-color":
-                    "linear-gradient(90deg, #B1835A 0%, #D9AD82 100%)",
+                    "linear-gradient(90deg, #2b3270 0%, #D9AD82 100%)",
                   onClickLeft: u,
                 },
                 null,
@@ -18035,7 +18035,7 @@ const V8 = H(O8, [["__scopeId", "data-v-01e7b6bf"]]),
                 "left-arrow": "",
                 onClickLeft: O,
                 "background-color":
-                  "linear-gradient(90deg, #B1835A 0%, #D9AD82 100%)",
+                  "linear-gradient(90deg, #2b3270 0%, #D9AD82 100%)",
                 headLogo: !0,
               },
               {
@@ -25547,7 +25547,7 @@ const nI = H(sI, [["__scopeId", "data-v-c52f94a7"]]),
             R.beginPath(),
             R.moveTo(x == 0 ? 15 : x * 29 + 15, 0),
             R.lineTo(S == 0 ? 15 : S * 29 + 15, G.height),
-            (R.strokeStyle = "#B1835A"),
+            (R.strokeStyle = "#2b3270"),
             R.stroke(),
             R.closePath();
         }
@@ -26249,7 +26249,7 @@ const ro = H(AI, [["__scopeId", "data-v-646d4ebc"]]),
                 "left-arrow": "",
                 onClickLeft: R,
                 "background-color":
-                  "linear-gradient(90deg, #B1835A 0%, #D9AD82 100%)",
+                  "linear-gradient(90deg, #2b3270 0%, #D9AD82 100%)",
                 headLogo: !0,
               },
               {
@@ -26973,7 +26973,7 @@ const uS = H(cS, [["__scopeId", "data-v-a9b34bec"]]),
                 "left-arrow": "",
                 onClickLeft: S,
                 "background-color":
-                  "linear-gradient(90deg, #B1835A 0%, #D9AD82 100%)",
+                  "linear-gradient(90deg, #2b3270 0%, #D9AD82 100%)",
                 headLogo: !0,
               },
               {

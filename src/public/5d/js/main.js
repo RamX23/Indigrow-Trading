@@ -924,7 +924,7 @@ function drawChartLineInCanvas(topBoxNumber, bottomBoxNumber, canvasId) {
   const myCanvas = document.getElementById(canvasId);
   let boxXList = [5, 35, 65, 95, 123, 152, 181, 210, 239, 268];
   const ctx0 = myCanvas.getContext("2d");
-  ctx0.strokeStyle = "#B1835A";
+  ctx0.strokeStyle = "#2b3270";
   ctx0.beginPath();
   ctx0.moveTo(boxXList[topBoxNumber], 21);
   ctx0.lineTo(boxXList[bottomBoxNumber], 128);

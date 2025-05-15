@@ -31772,7 +31772,7 @@ html:lang(ar) .game_container .driver[data-v-f52c66fe]:after {
   height: 0.90667rem;
   text-align: center;
   border-radius: 0.45333rem;
-  color: #b1835a;
+  color: #2b3270;
   font-size: 0.32rem;
   font-style: normal;
   font-weight: 400;
@@ -31951,8 +31951,8 @@ html:lang(ar) .game_container .driver[data-v-f52c66fe]:after {
   text-align: center;
   line-height: 0.93333rem;
   background: var(--main_gradient-color);
-  -webkit-filter: drop-shadow(0 0.05333rem 0 #896646);
-  filter: drop-shadow(0 0.05333rem 0 #896646);
+  -webkit-filter: drop-shadow(0 0.05333rem 0 #61a9ff);
+  filter: drop-shadow(0 0.05333rem 0 #61a9ff);
   border-radius: 1.06667rem;
   z-index: 100;
   font-weight: 700;

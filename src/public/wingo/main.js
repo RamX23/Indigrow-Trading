@@ -128,9 +128,9 @@ function countDownTimer({ GAME_TYPE_ID }) {
       $(".van-overlay").fadeOut();
       $(".popup-join").fadeOut();
 
-      $(".Betting__C-mark").css("display", "flex");
-      $(".Betting__C-mark div:eq(0)").text(seconds1);
-      $(".Betting__C-mark div:eq(1)").text(seconds2);
+      $(".Betting__C-mark").css("display", "none");
+      // $(".Betting__C-mark div:eq(0)").text(seconds1);
+      // $(".Betting__C-mark div:eq(1)").text(seconds2);
     } else {
       $(".Betting__C-mark").css("display", "none");
     }
@@ -199,7 +199,7 @@ function drawChartLineInCanvas(topBoxNumber, bottomBoxNumber, canvasId) {
   const myCanvas = document.getElementById(canvasId);
   let boxXList = [10, 40, 70, 100, 128, 157, 186, 215, 244, 273];
   const ctx0 = myCanvas.getContext("2d");
-  ctx0.strokeStyle = "#B1835A";
+  ctx0.strokeStyle = "#2b3270";
   ctx0.beginPath();
   ctx0.moveTo(boxXList[topBoxNumber], 21);
   ctx0.lineTo(boxXList[bottomBoxNumber], 128);
@@ -335,15 +335,11 @@ function showGameHistoryData(list_orders) {
       }
 
       return `
-         <div data-v-c52f94a7="" class="van-row">
-            <div data-v-c52f94a7="" class="van-col van-col--8">${list_order.period}</div>
-            <div data-v-c52f94a7="" class="van-col van-col--5 numcenter"><div data-v-c52f94a7="" class="GameRecord__C-body-num ${colorClass}">${list_order.amount}</div></div>
-            <div data-v-c52f94a7="" class="van-col van-col--5"><span data-v-c52f94a7="">${list_order.amount < 5 ? "Small" : "Big"}</span></div>
-            <div data-v-c52f94a7="" class="van-col van-col--6">
-               <div data-v-c52f94a7="" class="GameRecord__C-origin">
-                  ${colorHtml}
-               </div>
-            </div>
+         <div data-v-c52f94a7="" class="van-row"  style="background-color: #38353588;">
+            <div data-v-c52f94a7="" class="van-col van-col--12">${list_order.period}</div>
+           
+            <div data-v-c52f94a7="" class="van-col van-col--12"><span data-v-c52f94a7="">${list_order.amount < 5 ? "Small" : "Big"}</span></div>
+        
          </div>`;
     })
     .join(" ");
@@ -598,15 +594,14 @@ function initGameLogics({
   // --------------------- wingo game logic ---------------------
 
   function totalMoney() {
-    let value = parseInt($("#van-field-1-input").val().trim());
+    let value = parseInt($("#van-field-1-input").val()?.trim() || 0);
     let money = parseInt(
-      $(".Betting__Popup-body-money-main").attr("data-current-money"),
+      $(".Betting__Popup-body-money-main").attr("data-current-money") || 0
     );
-    console.log($("#van-field-1-input").val());
-    console.log(money);
+    
     let total = value * money;
     $("#popup_total_bet_money").text(total + ".00");
-  }
+}
 
   const selectPopupXData = () => {};
   $(".van-overlay").fadeOut();
@@ -690,6 +685,8 @@ function initGameLogics({
     totalMoney();
   });
 
+
+
   $("#join_bet_btn").off("click.join_btn");
   $("#join_bet_btn").on("click.join_btn", function (event) {
     event.preventDefault();
@@ -700,7 +697,20 @@ function initGameLogics({
     if (!join || !currentX || !money) {
       return;
     }
+    const currentStartPoint = JSON.parse(localStorage.getItem("startPoint"));
 
+    if (!currentStartPoint) {
+      alertMessage("Start point not available yet.");
+      return;
+    } else {
+      console.log("Start point:", currentStartPoint); 
+    }
+    
+    const startPrice = currentStartPoint.price || 30;
+    const coinType = currentStartPoint.coin || "BTC";
+    
+    console.log("Start Price:", startPrice);
+    console.log("Coin Type:", coinType);
     $(this).addClass("block-click");
     $.ajax({
       type: "POST",
@@ -710,6 +720,8 @@ function initGameLogics({
         join: join,
         x: currentX,
         money: money,
+        startPrice,
+        coinType
       },
       dataType: "json",
       success: function (response) {
@@ -1251,8 +1263,54 @@ const displayLast5Result = ({ results }) => {
   );
 };
 
+function getCurrentPricePoint() {
+  const coinSelect = document.getElementById('coinSelect');
+  const currentCoin = coinSelect ? coinSelect.value : 'BTC';
+  const currentPrice = window.getCurrentPrice ? window.getCurrentPrice() : null;
+  
+  if (!currentPrice) {
+    console.warn('Current price not available');
+    return null;
+  }
+
+  const result = {
+    coin: currentCoin,
+    price: parseFloat(currentPrice.toFixed(2)),
+    timestamp: Date.now()
+  };
+
+  console.log("Current price returned", result.coin, result.price);
+  return result;
+}
+
+
+let currentStartPoint = null;
+socket.on("getStartPoint", () => {
+  const point = getCurrentPricePoint();
+  if (point) {
+    localStorage.setItem("startPoint", JSON.stringify(point)); 
+    console.log("Start point received", point);
+  }
+});
+
+// socket.on("setEndPoint",()=>{
+//   const point=getCurrentPricePoint();
+//   if(point){
+//     localStorage.setItem("endPoint",JSON.stringify(point));
+//     console.log("End Point received",point);
+//   }
+// })
+
+
+
+
 socket.on("data-server", async function (msg) {
   try {
+    // const point=getCurrentPricePoint();
+    // if(point){
+    //   localStorage.setItem("endPoint",JSON.stringify(point));
+    //   console.log("End Point received",point);
+    // }
     GAME_TYPE_ID = getGameType();
 
     if (msg.data[0].game != GAME_NAME) {
@@ -1351,6 +1409,624 @@ socket.on("data-server", async function (msg) {
 
     $(".Loading").fadeOut(0);
   } catch (error) {
-    console.log(error);
+    console.log(error); 
   }
+});
+
+
+
+
+// betting-chart.js
+
+document.addEventListener('DOMContentLoaded', function() {
+  // Initialize canvas
+  const canvas = document.getElementById('priceChart');
+  const ctx = canvas.getContext('2d');
+  const coinSelect = document.getElementById('coinSelect');
+  
+  // UI Elements
+  const currentPriceDisplay = document.getElementById('currentPriceDisplay');
+  const priceChangeDisplay = document.getElementById('priceChangeDisplay');
+  const currentTimeDisplay = document.getElementById('currentTimeDisplay');
+  
+  // Set proper canvas dimensions
+  function resizeCanvas() {
+      const container = document.querySelector('.Betting__C-numC');
+      canvas.style.width = '100%';
+      canvas.style.height = '100%';
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+  }
+  
+  // Initial resize
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+  
+  // Coin configurations
+  const coinConfigs = {
+      BTC: { basePrice: 60000, color: '#f7931a', name: 'Bitcoin' },
+      ETH: { basePrice: 3000, color: '#627eea', name: 'Ethereum' },
+      BNB: { basePrice: 500, color: '#f3ba2f', name: 'Binance Coin' },
+      ADA: { basePrice: 0.5, color: '#0033ad', name: 'Cardano' }
+  };
+  
+  let currentCoin = coinSelect.value;
+  let coinData = {};
+  let coinLastPrices = {};
+  let coinLastUpdateTime = {};
+  let currentPrice = coinConfigs[currentCoin].basePrice;
+  let previousPrice = currentPrice;
+  
+  // Initialize data for all coins
+  Object.keys(coinConfigs).forEach(coin => {
+      coinData[coin] = loadChartData(coin);
+      coinLastPrices[coin] = coinData[coin].length > 0 ? 
+          coinData[coin][coinData[coin].length - 1].y : 
+          coinConfigs[coin].basePrice;
+      coinLastUpdateTime[coin] = coinData[coin].length > 0 ? 
+          coinData[coin][coinData[coin].length - 1].x : 
+          Date.now();
+      
+      if (coin === currentCoin) {
+          currentPrice = coinLastPrices[coin];
+          previousPrice = coinData[coin].length > 1 ? 
+              coinData[coin][coinData[coin].length - 2].y : 
+              currentPrice;
+      }
+  });
+  
+  // Load saved data from localStorage
+  function loadChartData(coin) {
+      const savedData = localStorage.getItem(`priceChartData_${coin}`);
+      if (savedData) {
+          const parsedData = JSON.parse(savedData);
+          return parsedData.sort((a, b) => a.x - b.x);
+      }
+      return generateInitialData(coin);
+  }
+  
+  // Generate initial data for a coin
+  function generateInitialData(coin) {
+      const now = Date.now();
+      const data = [];
+      const basePrice = coinConfigs[coin].basePrice;
+      
+      // Generate 60 data points (1 per second for 1 minute)
+      for (let i = 0; i < 60; i++) {
+          const timestamp = now - (60 - i) * 1000;
+          const price = i === 0 ? basePrice : 
+              generateNewPrice(data[i-1].y, coin, timestamp);
+          data.push({ x: timestamp, y: price });
+      }
+      
+      return data;
+  }
+  
+  // Save data to localStorage
+  function saveChartData(coin, data) {
+      localStorage.setItem(`priceChartData_${coin}`, JSON.stringify(data));
+  }
+
+  let latestEndPoint = null;
+socket.on("setEndPoint", (data) => {
+  latestEndPoint = data;
+  console.log("Received endpoint from server:", latestEndPoint);
+});
+  
+  // Price generation for line chart
+  // function generateNewPrice(lastPrice, coin, timestamp) {
+  //     const getTimeMSS = (countDownDate) => {
+  //         var now = new Date().getTime();
+  //         var distance = countDownDate - now;
+  //         var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+  //         var minute = Math.ceil(minutes % 60); // Using 60 as default if GAME_TYPE_ID not available
+  //         var seconds1 = Math.floor((distance % (1000 * 60)) / 10000);
+  //         var seconds2 = Math.floor(((distance % (1000 * 60)) / 1000) % 10);
+      
+  //         return { minute, seconds1, seconds2 };
+  //     };
+    
+  //     var countDownDate = new Date("2030-07-16T23:59:59.9999999+03:00").getTime();
+  //     const now = timestamp || Date.now();
+  //     const { minute, seconds1, seconds2 } = getTimeMSS(countDownDate);
+    
+  //     // Check if we should use the endpoint
+  //     if (minute === 0 && seconds1 === 0 && seconds2 === 5) {
+  //         // if (typeof latestEndPoint !== 'undefined' && latestEndPoint !== null) {
+  //         //   console.log(parseFloat(latestEndPoint))
+  //         //     return parseFloat(latestEndPoint);
+  //         // }
+  //          if (latestEndPoint !== null) {
+  //       return parseFloat(latestEndPoint);
+  //     } else {
+  //       console.log("Random change used:", randomChange);
+  //       return lastPrice + randomChange;
+  //     }
+  //   } else {
+  //     return lastPrice + randomChange;
+  //   }
+    
+  //     // Normal price movement
+  //     const volatility = coinConfigs[coin].basePrice * 0.0005; // 0.05% of base price
+  //     let randomChange = (Math.random() * 2 - 1) * volatility;
+      
+  //     // Add slight momentum based on previous trend
+  //     if (coinData[coin] && coinData[coin].length > 1) {
+  //         const prevTrend = coinData[coin][coinData[coin].length - 1].y - 
+  //                         coinData[coin][coinData[coin].length - 2].y;
+  //         randomChange += prevTrend * 0.3; // 30% momentum
+  //     }
+      
+  //     // Ensure price doesn't go negative
+  //     const newPrice = Math.max(0.01, lastPrice + randomChange);
+      
+  //     // Limit price movement to ±2% per step
+  //     const maxChange = lastPrice * 0.02;
+  //     return Math.max(lastPrice - maxChange, Math.min(lastPrice + maxChange, newPrice));
+  // }
+  
+  function generateNewPrice(lastPrice, coin, timestamp) {
+    const getTimeMSS = (countDownDate) => {
+      var now = new Date().getTime();
+      var distance = countDownDate - now;
+      var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+      var minute = Math.ceil(minutes % parseInt(GAME_TYPE_ID));
+      var seconds1 = Math.floor((distance % (1000 * 60)) / 10000);
+      var seconds2 = Math.floor(((distance % (1000 * 60)) / 1000) % 10);
+  
+      return { minute, seconds1, seconds2 };
+    };
+  
+    var countDownDate = new Date("2030-07-16T23:59:59.9999999+03:00").getTime();
+  
+    const now = timestamp || Date.now();
+  
+    // Ensure coinLastUpdateTime is initialized
+    if (!coinLastUpdateTime) coinLastUpdateTime = {};
+    coinLastUpdateTime[coin] = now;
+  
+    const { minute, seconds1, seconds2 } = getTimeMSS(countDownDate);
+  
+    let randomChange = (Math.random() * 2) - 1;
+  
+    if (minute === 0 && seconds1 === 0 && seconds2 === 5) {
+      if (latestEndPoint !== null) {
+        return parseFloat(latestEndPoint);
+      } else {
+        console.log("Random change used:", randomChange);
+        return lastPrice + randomChange;
+      }
+    } else {
+      //  console.log("Random change used:", randomChange);
+      return lastPrice + randomChange;
+    }
+    const volatility = coinConfigs[coin].basePrice * 0.0005; // 0.05% of base price
+        // let randomChange = (Math.random() * 2 - 1) * volatility;
+        
+        // Add slight momentum based on previous trend
+        if (coinData[coin] && coinData[coin].length > 1) {
+            const prevTrend = coinData[coin][coinData[coin].length - 1].y - 
+                            coinData[coin][coinData[coin].length - 2].y;
+            randomChange += prevTrend * 0.3; // 30% momentum
+        }
+        
+        // Ensure price doesn't go negative
+        const newPrice = Math.max(0.01, lastPrice + randomChange);
+        
+        // Limit price movement to ±2% per step
+        const maxChange = lastPrice * 0.02;
+        return Math.max(lastPrice - maxChange, Math.min(lastPrice + maxChange, newPrice));
+  }
+
+
+
+  // Update price info display
+  function updatePriceInfo() {
+      const priceChange = ((currentPrice - previousPrice)).toFixed(2);
+      currentPriceDisplay.textContent = currentPrice.toFixed(2);
+      priceChangeDisplay.textContent = `${priceChange}`;
+      console.log(priceChange,currentPrice,previousPrice)
+      // Set color based on price change
+      if (priceChange > 0) {
+          priceChangeDisplay.style.color = '#10b981';
+      } else if (priceChange < 0) {
+          priceChangeDisplay.style.color = '#ef4444';
+      } else {
+          priceChangeDisplay.style.color = '#6b7280';
+      }
+      
+      // Update current time
+      const now = new Date();
+      currentTimeDisplay.textContent = now.toLocaleTimeString();
+  }
+  
+  // Initialize chart with plugins
+  Chart.register(ChartZoom);
+  // Chart.register(ChartCrosshair);
+  
+  const chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+          datasets: [{
+              label: `${coinConfigs[currentCoin].name} Price`,
+              data: coinData[currentCoin],
+              borderColor: coinConfigs[currentCoin].color,
+              backgroundColor: 'rgba(59, 130, 246, 0.1)',
+              borderWidth: 2,
+              tension: 0.1,
+              fill: true,
+              pointRadius: 0,
+              pointHoverRadius: 5,
+              pointHoverBackgroundColor: coinConfigs[currentCoin].color,
+              pointHoverBorderColor: '#fff',
+              pointHoverBorderWidth: 2
+          }]
+      },
+      options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: { duration: 0 },
+          hover: { animationDuration: 0 },
+          responsiveAnimationDuration: 0,
+          scales: {
+              x: {
+                  type: 'time',
+                  time: {
+                      unit: 'second',
+                      displayFormats: { second: 'mm:ss' },
+                      tooltipFormat: 'HH:mm:ss'
+                  },
+                  min: () => Date.now() - 30 * 1000,
+                  max: () => Date.now() + 60 * 100,
+                  ticks: { 
+                      source: 'auto', 
+                      autoSkip: true, 
+                      maxTicksLimit: 10,
+                      color: '#6b7280'
+                  },
+                  grid: { 
+                      display: false,
+                      color: 'rgba(0, 0, 0, 0.05)'
+                  }
+              },
+              y: {
+                  beginAtZero: false,
+                  ticks: { 
+                      callback: function(value) { 
+                          return value.toFixed(0); 
+                      },
+                      color: '#6b7280'
+                  },
+                  grid: { 
+                      color: 'rgba(0, 0, 0, 0.05)'
+                  }
+              }
+          },
+          plugins: {
+              legend: { display: false },
+              tooltip: {
+                  mode: 'index',
+                  intersect: false,
+                  backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                  titleColor: '#fff',
+                  bodyColor: '#fff',
+                  borderColor: 'rgba(255, 255, 255, 0.1)',
+                  borderWidth: 1,
+                  padding: 12,
+                  callbacks: {
+                      label: function(context) {
+                          return `${coinConfigs[currentCoin].name}: ${context.parsed.y.toFixed(2)}`;
+                      },
+                      title: function(context) {
+                          return new Date(context[0].parsed.x).toLocaleTimeString();
+                      }
+                  }
+              },
+              zoom: {
+                  pan: { 
+                      enabled: true, 
+                      mode: 'x',
+                      modifierKey: 'shift'
+                  },
+                  zoom: { 
+                      wheel: { 
+                          enabled: true,
+                          modifierKey: 'ctrl'
+                      }, 
+                      pinch: { 
+                          enabled: true 
+                      }, 
+                      mode: 'x',
+                      onZoomComplete: ({ chart }) => {
+                          // This update is needed to display up-to-date zoomed range
+                          chart.update('none');
+                      }
+                  },
+                  limits: {
+                      x: { min: 'original', max: 'original' }
+                  }
+              },
+              // crosshair: {
+              //     line: {
+              //         color: '#666',
+              //         width: 1,
+              //         dashPattern: [5, 5]
+              //     },
+              //     sync: {
+              //         enabled: false
+              //     },
+              //     zoom: {
+              //         enabled: false
+              //     },
+              //     snap: {
+              //         enabled: true
+              //     }
+              // }
+          },
+          interaction: {
+              mode: 'nearest',
+              axis: 'x',
+              intersect: false
+          }
+      }
+  });
+  
+  // Reset zoom button
+  function addResetZoomButton() {
+    
+      const resetZoomButton = document.createElement('button');
+      // resetZoomButton.textContent = 'Reset  Zoom';
+      resetZoomButton.innerHTML = '<i class="fas fa-search-minus"></i>';
+      resetZoomButton.style.position = 'absolute';
+      resetZoomButton.style.bottom = '10px';
+      resetZoomButton.style.right = '10px';
+      resetZoomButton.style.zIndex = '100';
+      resetZoomButton.style.padding = '5px 10px';
+      resetZoomButton.style.background = '#000080';
+      resetZoomButton.style.color = 'white';
+      resetZoomButton.style.border = 'none';
+      resetZoomButton.style.borderRadius = '4px';
+      resetZoomButton.style.cursor = 'pointer';
+      
+      resetZoomButton.addEventListener('click', () => {
+          if (chart) {
+              chart.resetZoom();
+          }
+      });
+      
+      document.querySelector('.Betting__C-numC').appendChild(resetZoomButton);
+  }
+  
+  // Update chart with new data for all coins
+  function updateChart(timestamp) {
+      try {
+          const now = timestamp || Date.now();
+          
+          // Update all coins' data in background
+          Object.keys(coinConfigs).forEach(coin => {
+              const lastPrice = coinData[coin].length > 0 ? 
+                  coinData[coin][coinData[coin].length - 1].y : 
+                  coinConfigs[coin].basePrice;
+              
+              const newPrice = generateNewPrice(lastPrice, coin, now);
+              
+              // Store previous price for change calculation
+              if (coin === currentCoin) {
+                  previousPrice = lastPrice;
+              }
+              
+              coinData[coin].push({ x: now, y: newPrice });
+              
+              // Remove data older than 24 hours
+              const oneDayAgo = now - 24 * 60 * 60 * 1000;
+              coinData[coin] = coinData[coin].filter(point => point.x >= oneDayAgo);
+              
+              // Save to localStorage
+              saveChartData(coin, coinData[coin]);
+              
+              if (coin === currentCoin) {
+                  currentPrice = newPrice;
+                  updatePriceInfo();
+              }
+          });
+          
+          // Update chart with current coin's data
+          chart.data.datasets[0].data = coinData[currentCoin];
+          chart.data.datasets[0].label = `${coinConfigs[currentCoin].name} Price`;
+          chart.data.datasets[0].borderColor = coinConfigs[currentCoin].color;
+          chart.data.datasets[0].pointHoverBackgroundColor = coinConfigs[currentCoin].color;
+          
+          // Update x-axis range if not zoomed
+          if (!chart.isZoomedOrPanned()) {
+              chart.options.scales.x.min = now - 60 * 1000;
+              chart.options.scales.x.max = now + 20 * 1000;  //to adjust x-axis range for chart
+          }
+          
+          chart.update('none');
+          
+      } catch (error) {
+          console.error('Error updating chart:', error);
+      }
+  }
+  
+  // Start updates every 500ms
+  let updateInterval = setInterval(updateChart, 1000);
+  
+  // Handle coin change
+  coinSelect.addEventListener('change', function() {
+      currentCoin = this.value;
+      // Update chart with new coin's data
+      chart.data.datasets[0].data = coinData[currentCoin];
+      chart.data.datasets[0].label = `${coinConfigs[currentCoin].name} Price`;
+      chart.data.datasets[0].borderColor = coinConfigs[currentCoin].color;
+      chart.data.datasets[0].pointHoverBackgroundColor = coinConfigs[currentCoin].color;
+      
+      currentPrice = coinData[currentCoin].length > 0 ? 
+          coinData[currentCoin][coinData[currentCoin].length - 1].y : 
+          coinConfigs[currentCoin].basePrice;
+      
+      previousPrice = coinData[currentCoin].length > 1 ? 
+          coinData[currentCoin][coinData[currentCoin].length - 2].y : 
+          currentPrice;
+      
+      updatePriceInfo();
+      
+      // Reset zoom when changing coins
+      chart.resetZoom();
+      chart.update();
+
+
+  });
+  
+  // Handle visibility change
+  document.addEventListener('visibilitychange', function() {
+      if (!document.hidden) {
+          const now = Date.now();
+          chart.data.datasets[0].data = coinData[currentCoin];
+          chart.data.datasets[0].label = `${coinConfigs[currentCoin].name} Price`;
+          
+          if (!chart.isZoomedOrPanned()) {
+              chart.options.scales.x.min = now - 60 * 1000;
+              chart.options.scales.x.max = now;
+          }
+          
+          chart.update();
+          updatePriceInfo();
+      }
+
+  });
+  
+  // Add reset zoom button after chart initialization
+  setTimeout(addResetZoomButton, 500);
+  
+  // Cleanup
+  window.addEventListener('beforeunload', () => {
+      clearInterval(updateInterval);
+      Object.keys(coinConfigs).forEach(coin => saveChartData(coin, coinData[coin]));
+  });
+  window.getCurrentPrice = function() { return currentPrice; };
+  // Initial price info update
+  updatePriceInfo();
+});
+
+// Betting Popup Handling
+$(document).ready(function() {
+  // Handle bet button clicks
+  $(document).on('click', '.bet_button', function() {
+      const betType = $(this).hasClass('Betting__C-foot-b') ? 'Buy' : 'Sell';
+      $('#betting_value').text(betType);
+      
+      // Reset popup values
+      $('#van-field-1-input').val('1');
+      $('.Betting__Popup-body-money-btn').css({
+          'background-color': '',
+          'color': ''
+      }).filter('[data-money="1"]').css({
+          'background-color': '#3f9368',
+          'color': 'white'
+      });
+      
+      $('.Betting__Popup-body-money-main').attr('data-current-money', 1);
+      
+      $('.Betting__Popup-body-x-btn').css({
+          'background-color': '',
+          'color': ''
+      }).filter('[data-x="1"]').css({
+          'background-color': '#3f9368',
+          'color': 'white'
+      });
+      
+      $('.Betting__Popup-body-line-list').attr('data-current-multiplier', 1);
+      
+      // Show overlay and popup
+      $('.van-overlay').fadeIn(200);
+      $('.popup-join').fadeIn(200).css('transform', 'translateY(0)');
+      
+      // Initialize popup values
+      totalMoney();
+  });
+  
+  // Handle popup close
+  $('#cancel_bet_btn, .van-overlay').click(function() {
+      $('.van-overlay').fadeOut(200);
+      $('.popup-join').fadeOut(200).css('transform', 'translateY(100%)');
+  });
+  
+  // Prevent popup close when clicking inside
+  $('.popup-join').click(function(e) {
+      e.stopPropagation();
+  });
+  
+  // Handle money selection
+  $('.Betting__Popup-body-money-btn').click(function() {
+      $('.Betting__Popup-body-money-btn').css({
+          'background-color': '',
+          'color': ''
+      });
+      $(this).css({
+          'background-color': '#3f9368',
+          'color': 'white'
+      });
+      $('.Betting__Popup-body-money-main').attr('data-current-money', $(this).data('money'));
+      totalMoney();
+  });
+  
+  // Handle quantity changes
+  $('.Betting__Popup-minus-btn').click(function() {
+      const input = $('#van-field-1-input');
+      let value = parseInt(input.val()) || 0;
+      if (value > 1) input.val(value - 1);
+      totalMoney();
+  });
+  
+  $('.Betting__Popup-plus-btn').click(function() {
+      const input = $('#van-field-1-input');
+      let value = parseInt(input.val()) || 0;
+      input.val(value + 1);
+      totalMoney();
+  });
+  
+  // Handle quantity input validation
+  $('#van-field-1-input').on('input', function() {
+      let value = $(this).val();
+      if (!/^\d*$/.test(value)) {
+          $(this).val(value.replace(/[^\d]/g, ''));
+      }
+      if ($(this).val() === '') {
+          $(this).val('1');
+      }
+      totalMoney();
+  });
+  
+  // Handle multiplier selection
+  $('.Betting__Popup-body-x-btn').click(function() {
+      $('.Betting__Popup-body-x-btn').css({
+          'background-color': '',
+          'color': ''
+      });
+      $(this).css({
+          'background-color': '#3f9368',
+          'color': 'white'
+      });
+      $('.Betting__Popup-body-line-list').attr('data-current-multiplier', $(this).data('x'));
+      totalMoney();
+  });
+  
+  // Calculate total money
+  function totalMoney() {
+      let inputVal = $('#van-field-1-input').val();
+      let value = inputVal ? parseInt(inputVal) : 1;
+      
+      let money = parseInt($('.Betting__Popup-body-money-main').attr('data-current-money') || 1);
+      let multiplier = parseInt($('.Betting__Popup-body-line-list').attr('data-current-multiplier') || 1);
+      
+      let total = value * money * multiplier;
+      $('#popup_total_bet_money').text(total.toFixed(2));
+  }
+  
+  // Initialize default values
+  $('#van-field-1-input').val('1');
+  $('.Betting__Popup-body-line-list').attr('data-current-multiplier', 1);
+  $('.Betting__Popup-body-money-main').attr('data-current-money', 1);
+  totalMoney();
 });

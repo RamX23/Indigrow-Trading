@@ -2,18 +2,18 @@ import axios from "axios";
 import connection from "../config/connectDB.js";
 
 export const GAME_CATEGORIES_MAP = {
-  SLOT: 1,
-  POKER: 2,
-  LOBBY: 3,
-  FISHING: 5,
-  CASINO: 8,
+  SLOT: 1000,
+  POKER: 2000,
+  LOBBY: 3000,
+  FISHING: 4000,
+  CASINO: 5000,
 };
 
 const gameCategoriesPage = (GameCategoriesId) => async (req, res) => {
   try {
     const response = await axios({
       method: "GET",
-      url: "https://bytefusionapi.com/api/neo_jili/game_list",
+      url: "https://api-jetx.online/api/neo_jili/game_list",
       data: {
         agentId: process.env.JILI_AGENT_ID,
         agentKey: process.env.JILI_AGENT_KEY,
@@ -44,7 +44,7 @@ const gameSlotsPage = (GameCategoriesId) => async (req, res) => {
   try {
     const response = await axios({
       method: "GET",
-      url: "https://bytefusionapi.com/api/neo_jili/game_list",
+      url: "https://api-jetx.online/api/neo_jili/game_list",
       data: {
         agentId: process.env.JILI_AGENT_ID,
         agentKey: process.env.JILI_AGENT_KEY,
@@ -109,7 +109,7 @@ const getGameLink = async (req, res) => {
 
     const response = await axios({
       method: "POST",
-      url: "https://bytefusionapi.com/api/neo_jili/generate_link",
+      url: "https://api-jetx.online/api/neo_jili/generate_link",
       data: {
         gameId: gameId,
         agentId: process.env.JILI_AGENT_ID,
@@ -142,7 +142,7 @@ const gameList = async (req, res) => {
   try {
     const response = await axios({
       method: "GET",
-      url: "https://bytefusionapi.com/api/neo_jili/game_list",
+      url: "https://api-jetx.online/api/neo_jili/game_list",
       data: {
         agentId: process.env.JILI_AGENT_ID,
         agentKey: process.env.JILI_AGENT_KEY,

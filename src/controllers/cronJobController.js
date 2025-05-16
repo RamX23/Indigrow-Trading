@@ -26,7 +26,7 @@ const cronJobGame1p = (io) => {
     console.log("Sent endpoint:", Point.endPoint);
 
     console.log("🔔 Running at 60th second of every minute");
-    await winGoController.handlingWinGo1P(1);
+    await winGoController.handlingWinGo1P(1,Point.bigTotal,Point.smallTotal);
     const [winGo1] = await connection.execute(
       'SELECT * FROM `wingo` WHERE `game` = "wingo" ORDER BY `id` DESC LIMIT 2 ',
       [],
@@ -101,16 +101,27 @@ cron.schedule("1 * * * * *", async () => {
 });
 
   cron.schedule("*/3 * * * *", async () => {
-    await trxWingoController.addTrxWingo(3);  
-    await trxWingoController.handlingTrxWingo1P(3);
-    const [trxWingo] = await connection.execute(
-      `SELECT * FROM trx_wingo_game WHERE game = '${TRX_WINGO_GAME_TYPE_MAP.MIN_3}' ORDER BY id DESC LIMIT 2`,
-      [],
-    );
-    io.emit("data-server-trx-wingo", { data: trxWingo });
+    // await trxWingoController.addTrxWingo(3);  
+    // await trxWingoController.handlingTrxWingo1P(3);
+    // const [trxWingo] = await connection.execute(
+    //   `SELECT * FROM trx_wingo_game WHERE game = '${TRX_WINGO_GAME_TYPE_MAP.MIN_3}' ORDER BY id DESC LIMIT 2`,
+    //   [],
+    // );
+    // io.emit("data-server-trx-wingo", { data: trxWingo });
+    console.log("🔔 Running at 3rd second of every minute");
 
-    await winGoController.addWinGo(3);
-    await winGoController.handlingWinGo1P(3);
+    setTimeout(() => {
+      console.log('Task runs at 3 min 1 sec interval');
+      io.emit("get3minStartPoint");
+      console.log("placed start point in local storage.");
+    }, 1000)
+
+    const Point=await winGoController.addWinGo(3);
+    io.emit("set3minEndPoint", Point.endPoint);
+    console.log("Sent 3min endpoint:", Point.endPoint);
+
+    console.log("🔔 Running at 60th second of every minute");
+    await winGoController.handlingWinGo1P(3,Point.bigTotal,Point.smallTotal);
     const [winGo1] = await connection.execute(
       'SELECT * FROM `wingo` WHERE `game` = "wingo3" ORDER BY `id` DESC LIMIT 2 ',
       [],
@@ -118,36 +129,50 @@ cron.schedule("1 * * * * *", async () => {
     const data = winGo1;
     io.emit("data-server", { data: data });
 
-    await k5Controller.add5D(3);
-    await k5Controller.handling5D(3);
-    const [k5D] = await connection.execute(
-      "SELECT * FROM 5d WHERE `game` = 3 ORDER BY `id` DESC LIMIT 2 ",
-      [],
-    );
-    const data2 = k5D;
-    io.emit("data-server-5d", { data: data2, game: "3" });
 
-    await k3Controller.addK3(3);
-    await k3Controller.handlingK3(3);
-    const [k3] = await connection.execute(
-      "SELECT * FROM k3 WHERE `game` = 3 ORDER BY `id` DESC LIMIT 2 ",
-      [],
-    );
-    const data3 = k3;
-    io.emit("data-server-k3", { data: data3, game: "3" });
+
+    // await k5Controller.add5D(3);
+    // await k5Controller.handling5D(3);
+    // const [k5D] = await connection.execute(
+    //   "SELECT * FROM 5d WHERE `game` = 3 ORDER BY `id` DESC LIMIT 2 ",
+    //   [],
+    // );
+    // const data2 = k5D;
+    // io.emit("data-server-5d", { data: data2, game: "3" });
+
+    // await k3Controller.addK3(3);
+    // await k3Controller.handlingK3(3);
+    // const [k3] = await connection.execute(
+    //   "SELECT * FROM k3 WHERE `game` = 3 ORDER BY `id` DESC LIMIT 2 ",
+    //   [],
+    // );
+    // const data3 = k3;
+    // io.emit("data-server-k3", { data: data3, game: "3" });
   });
 
   cron.schedule("*/5 * * * *", async () => {
-    await trxWingoController.addTrxWingo(5);
-    await trxWingoController.handlingTrxWingo1P(5);
-    const [trxWingo] = await connection.execute(
-      `SELECT * FROM trx_wingo_game WHERE game = '${TRX_WINGO_GAME_TYPE_MAP.MIN_5}' ORDER BY id DESC LIMIT 2`,
-      [],
-    );
-    io.emit("data-server-trx-wingo", { data: trxWingo });
+    // await trxWingoController.addTrxWingo(5);
+    // await trxWingoController.handlingTrxWingo1P(5);
+    // const [trxWingo] = await connection.execute(
+    //   `SELECT * FROM trx_wingo_game WHERE game = '${TRX_WINGO_GAME_TYPE_MAP.MIN_5}' ORDER BY id DESC LIMIT 2`,
+    //   [],
+    // );
+    // io.emit("data-server-trx-wingo", { data: trxWingo });
 
-    await winGoController.addWinGo(5);
-    await winGoController.handlingWinGo1P(5);
+
+    console.log("🔔 Running at 5th second of every minute");
+
+    setTimeout(() => {
+      console.log('Task runs at 5 min 1 sec interval');
+      io.emit("get5minStartPoint");
+      console.log("placed start point in local storage.");
+    }, 1000)
+
+
+    const Point=await winGoController.addWinGo(5);
+    io.emit("set5minEndPoint", Point.endPoint);
+    console.log("Sent 5min endpoint:", Point.endPoint);
+    await winGoController.handlingWinGo1P(5,Point.bigTotal,Point.smallTotal);
     const [winGo1] = await connection.execute(
       'SELECT * FROM `wingo` WHERE `game` = "wingo5" ORDER BY `id` DESC LIMIT 2 ',
       [],
@@ -175,16 +200,27 @@ cron.schedule("1 * * * * *", async () => {
   });
 
   cron.schedule("*/10 * * * *", async () => {
-    await trxWingoController.addTrxWingo(10);
-    await trxWingoController.handlingTrxWingo1P(10);
-    const [trxWingo] = await connection.execute(
-      `SELECT * FROM trx_wingo_game WHERE game = '${TRX_WINGO_GAME_TYPE_MAP.MIN_10}' ORDER BY id DESC LIMIT 2`,
-      [],
-    );
-    io.emit("data-server-trx-wingo", { data: trxWingo });
+    // await trxWingoController.addTrxWingo(10);
+    // await trxWingoController.handlingTrxWingo1P(10);
+    // const [trxWingo] = await connection.execute(
+    //   `SELECT * FROM trx_wingo_game WHERE game = '${TRX_WINGO_GAME_TYPE_MAP.MIN_10}' ORDER BY id DESC LIMIT 2`,
+    //   [],
+    // );
+    // io.emit("data-server-trx-wingo", { data: trxWingo });
 
-    await winGoController.addWinGo(10);
-    await winGoController.handlingWinGo1P(10);
+
+    console.log("🔔 Running at 10th second of every minute");
+
+    setTimeout(() => {
+      console.log('Task runs at 10 min 1 sec interval');
+      io.emit("get10minStartPoint");
+      console.log("placed start point in local storage.");
+    }, 1000)
+
+    const Point=await winGoController.addWinGo(10);
+    io.emit("set10minEndPoint", Point.endPoint);
+    console.log("Sent 10min endpoint:", Point.endPoint);
+    await winGoController.handlingWinGo1P(10,Point.bigTotal,Point.smallTotal);
     const [winGo1] = await connection.execute(
       'SELECT * FROM `wingo` WHERE `game` = "wingo10" ORDER BY `id` DESC LIMIT 2 ',
       [],

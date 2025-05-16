@@ -443,7 +443,7 @@ const betWinGo = async (req, res) => {
   if ((!isNumber(join) && join == "l") || join == "n") {
     checkJoin = `
         <div data-v-a9660e98="" class="van-image" style="width: 30px; height: 30px;">
-            <img src="/images/${join == "n" ? "small" : "big"}.png" class="van-image__img">
+            <img src="/images/${join == "n" ? "Sell" : "Buy"}.png" class="van-image__img">
         </div>
         `;
   } else {
@@ -638,9 +638,11 @@ const listOrderOld = async (req, res) => {
   if (typeid == 10) game = "wingo10";
 
   const [wingo] = await connection.query(
-    "SELECT * FROM wingo WHERE status != 0 AND game = ? ORDER BY id DESC LIMIT ?, ?",
+    "SELECT w.id as id,w.period as period,w.amount as amount,w.game as game,w.status as status,w.release_status as release_status,w.time as time,w.isProcessed as isProcessed,m.bet as bet FROM wingo as w join minutes_2 as m on w.period=m.stage WHERE  w.game = ? ORDER BY id DESC LIMIT ?, ?",
     [game, Number(pageno), Number(pageto)],
   );
+
+
   const [wingoAll] = await connection.query(
     "SELECT COUNT(*) as game_length FROM wingo WHERE status != 0 AND game = ?",
     [game],
@@ -649,6 +651,7 @@ const listOrderOld = async (req, res) => {
     "SELECT period FROM wingo WHERE status = 0 AND game = ? ORDER BY id DESC LIMIT 1",
     [game],
   );
+
 
   if (wingo.length == 0 && period.length !== 0)
     return res.status(200).json({
@@ -1134,7 +1137,7 @@ const addWinGo = async (game) => {
 
 
 
-const handlingWinGo1P = async (typeid) => {
+const handlingWinGo1P = async (typeid, bigtotal, smalltotal) => {
   try {
     let game = "";
     if (typeid == 1) game = "wingo";
@@ -1151,165 +1154,94 @@ const handlingWinGo1P = async (typeid) => {
       return;
     }
 
+    // Determine the winning result
+    const result = bigtotal > smalltotal ? 'n' : 'l'; // 'n'=sell wins, 'l'=buy wins
+    const winningSide = bigtotal > smalltotal ? 'SELL' : 'BUY';
+    const winAmount = bigtotal > smalltotal ? bigtotal : smalltotal;
+    const loseAmount = bigtotal > smalltotal ? smalltotal : bigtotal;
+
+    console.log(`Result: ${winningSide} wins (${result})`);
+    console.log(`Big Total: ${bigtotal}, Small Total: ${smalltotal}`);
+    console.log(`Winning Amount: ${winAmount}, Losing Amount: ${loseAmount}`);
+
+    // Update all open bets with the result
     await connection.query(
       "UPDATE minutes_2 SET result = ? WHERE status = 0 AND game = ?",
-      [winGoNow[0].amount, game],
+      [result, game],
     );
 
-    let result = Number(winGoNow[0].amount);
-
+    // Mark losing bets (status = 2) and keep winning bets (status remains 0 for processing)
     await batchUpdateBetStatus(result, game);
 
-    const [order] = await connection.query(
-      "SELECT * FROM minutes_2 WHERE status = 0 AND game = ?",
-      [game],
+    // Process only winning bets (status still 0)
+    const [winningBets] = await connection.query(
+      "SELECT * FROM minutes_2 WHERE status = 0 AND game = ? AND bet = ?",
+      [game, result],
     );
 
-    for (let i = 0; i < order.length; i++) {
-      let orders = order[i];
-      let result = orders.result;
-      let bet = orders.bet;
-      let total = orders.money;
-      let id = orders.id;
-      let phone = orders.phone;
-      let winAmount = calculateWinAmount(bet, result, total);
+    for (let i = 0; i < winningBets.length; i++) {
+      const bet = winningBets[i];
+      const payout = calculateWinAmount(bet.bet, result, bet.money);
 
       const [users] = await connection.query(
         "SELECT `money` FROM `users` WHERE `phone` = ?",
-        [phone],
+        [bet.phone],
       );
 
-      let totals = parseFloat(users[0].money) + parseFloat(winAmount);
+      const newBalance = parseFloat(users[0].money) + parseFloat(payout);
 
       await connection.query(
         "UPDATE `minutes_2` SET `get` = ?, `status` = 1 WHERE `id` = ?",
-        [parseFloat(winAmount), id],
+        [parseFloat(payout), bet.id],
       );
 
       await connection.query(
         "UPDATE `users` SET `money` = ? WHERE `phone` = ?",
-        [totals, phone],
+        [newBalance, bet.phone],
       );
     }
 
+    // Finalize the game round
     await connection.query(
       "UPDATE wingo SET release_status = 2 WHERE period = ? AND game = ?",
       [winGoNow[0].period, game],
     );
+
   } catch (error) {
-    console.log(error);
+    console.error("Error in handlingWinGo1P:", error);
   }
 };
 
-
-
 const batchUpdateBetStatus = async (result, game) => {
-  const validBets = getValidBets(result);
-  const batchSize = 1000; // Adjust this based on your data volume and server capacity
+  // The losing bet is the opposite of the result
+  const losingBet = result === 'n' ? 'l' : 'n';
+  
+  const batchSize = 1000;
   let offset = 0;
 
   while (true) {
     const [rows] = await connection.execute(
       `UPDATE minutes_2 SET status = 2 
-       WHERE status = 0 AND game = ? AND bet NOT IN (${validBets.map(() => "?").join(",")})
+       WHERE status = 0 AND game = ? AND bet = ?
        LIMIT ${batchSize}`,
-      [game, ...validBets],
+      [game, losingBet]
     );
 
-    if (rows.affectedRows === 0) break; // No more rows to update
+    if (rows.affectedRows === 0) break;
     offset += batchSize;
   }
 };
 
-const getValidBets = (result) => {
-  result = Number(result);
-
-  const baseValidBets = [result.toString()];
-
-  if (result % 2 === 0) baseValidBets.push("d");
-  else baseValidBets.push("x");
-
-  if (result === 0 || result === 5) baseValidBets.push("t");
-
-  if (result <= 4) baseValidBets.push("n");
-  else baseValidBets.push("l");
-
-  return baseValidBets;
-};
-
 const calculateWinAmount = (bet, result, total) => {
-  let winAmount = 0;
-  if (bet == "l" || bet == "n") {
-    winAmount = total * 2;
-  } else {
-    if (result == 0 || result == 5) {
-      if (bet == "d" || bet == "x") {
-        winAmount = total * 1.5;
-      } else if (bet == "t") {
-        winAmount = total * 4.5;
-      } else if (bet == "0" || bet == "5") {
-        winAmount = total * 4.5;
-      }
-    } else {
-      if (result == 1 && bet == "1") {
-        winAmount = total * 9;
-      } else {
-        if (result == 1 && bet == "x") {
-          winAmount = total * 2;
-        }
-      }
-      if (result == 2 && bet == "2") {
-        winAmount = total * 9;
-      } else {
-        if (result == 2 && bet == "d") {
-          winAmount = total * 2;
-        }
-      }
-      if (result == 3 && bet == "3") {
-        winAmount = total * 9;
-      } else {
-        if (result == 3 && bet == "x") {
-          winAmount = total * 2;
-        }
-      }
-      if (result == 4 && bet == "4") {
-        winAmount = total * 9;
-      } else {
-        if (result == 4 && bet == "d") {
-          winAmount = total * 2;
-        }
-      }
-      if (result == 6 && bet == "6") {
-        winAmount = total * 9;
-      } else {
-        if (result == 6 && bet == "d") {
-          winAmount = total * 2;
-        }
-      }
-      if (result == 7 && bet == "7") {
-        winAmount = total * 9;
-      } else {
-        if (result == 7 && bet == "x") {
-          winAmount = total * 2;
-        }
-      }
-      if (result == 8 && bet == "8") {
-        winAmount = total * 9;
-      } else {
-        if (result == 8 && bet == "d") {
-          winAmount = total * 2;
-        }
-      }
-      if (result == 9 && bet == "9") {
-        winAmount = total * 9;
-      } else {
-        if (result == 9 && bet == "x") {
-          winAmount = total * 2;
-        }
-      }
-    }
-  }
-  return winAmount;
+  // Simple payout calculation - adjust multiplier as needed
+  const payoutMultiplier = 1.98; // Standard payout for binary options
+  
+  // Convert to lowercase for case-insensitive comparison
+  bet = bet.toLowerCase();
+  result = result.toLowerCase();
+
+  // Only pay if bet matches result
+  return bet === result ? total * payoutMultiplier : 0;
 };
 
 const winGoController = {

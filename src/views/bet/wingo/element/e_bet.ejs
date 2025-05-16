@@ -104,17 +104,19 @@
   </div>
 </div> -->
 
+
 <div data-v-4aca9bd1="" data-v-40958d9a="" class="Betting__C" voicetype="1" typeid="1" style="height: max-content; padding: 3em 1em;background-color:rgb(2, 26, 63);">
     <!-- Hidden mark div kept for compatibility -->
     <div data-v-4aca9bd1="" class="Betting__C-mark" style="display: none;">
         <div data-v-4aca9bd1="">2</div>
         <div data-v-4aca9bd1="">7</div>
     </div>
-  
-    <!-- Coin selection dropdown -->
+
     
-    <div data-v-4aca9bd1="" class="Betting__C-coin-select" style="margin-bottom: 20px;">
-        <select id="coinSelect" style="padding: 10px; width: 100%; border-radius: 4px; border: 1px solid #ccc; font-size: 16px; background: #f8f9fa;">
+    <div class="chart-header" style="display: flex; justify-content: space-between; align-items: center; ">
+    <!-- Coin selection dropdown -->
+    <div data-v-4aca9bd1="" class="Betting__C-coin-select">
+        <select id="coinSelect" style="padding: 10px; width: 100%; border-radius: 4px; border: 1px solid #ccc; font-size: 16px; background: #05294d; color: white;">
             <option value="BTC">Bitcoin (BTC)</option>
             <option value="ETH">Ethereum (ETH)</option>
             <option value="BNB">Binance Coin (BNB)</option>
@@ -122,10 +124,21 @@
         </select>
         
     </div>
-    
+    <div class="timer">
+    <div data-v-3e4c6499="" class="TimeLeft__C-text" style="color: white;">Time remaining</div>
+    <div data-v-3e4c6499="" class="TimeLeft__C-time" style="font-size: 0.3em;">
+       <div data-v-3e4c6499="">0</div>
+       <div data-v-3e4c6499="">0</div>
+       <div data-v-3e4c6499="">:</div>
+       <div data-v-3e4c6499="">4</div>
+       <div data-v-3e4c6499="">9</div>
+    </div>
+    </div>
+ </div>
+</div>
   
     <!-- Chart container with info panel -->
-    <div data-v-4aca9bd1="" class="Betting__C-numC number-box" style="position: relative; height: 300px; width: 100%; background-color: #352a2a88;">
+    <div data-v-4aca9bd1="" class="Betting__C-numC number-box" style="position: relative; height: 300px; width: 100%; background-color: #0d063db9;">
         <div class="chart-info-panel" style="position: absolute; top: 10px; left: 10px; z-index: 100; background: rgba(0,0,0,0.5); color: white; padding: 8px 12px; border-radius: 4px; font-size: 12px;">
             <div>Current: <span id="currentPriceDisplay">0.00</span></div>
             <div>Change: <span id="priceChangeDisplay">0.00%</span></div>
@@ -135,9 +148,9 @@
     </div>
   
     <!-- Buy/Sell buttons -->
-    <div data-v-4aca9bd1="" class="Betting__C-foot btn-box" style="margin-top: 20px; display: flex; gap: 10px;">
-        <div data-v-4aca9bd1="" class="Betting__C-foot-b bet_button" data-join="l" data-css-value="13" style=" display: flex; justify-content: space-around; align-items: center; flex: 1; background: #10b981; color: white; padding: 12px; text-align: center; border-radius: 6px; cursor: pointer; font-weight: bold;">Buy <i class="fa-solid fa-arrow-up"></i></div>
-        <div data-v-4aca9bd1="" class="Betting__C-foot-s bet_button" data-join="n" data-css-value="14" style="display: flex; justify-content: space-around; align-items: center; flex: 1; background: #ef4444; color: white; padding: 12px; text-align: center; border-radius: 6px; cursor: pointer; font-weight: bold;">Sell  <i class="fa-solid fa-arrow-down"></i> </div>
+    <div data-v-4aca9bd1="" class="Betting__C-foot btn-box" style="margin-top: 20px; display: flex; gap: 10px; margin-inline:2em;">
+        <div data-v-4aca9bd1="" class="Betting__C-foot-b bet_button" data-join="l" data-css-value="13" style=" display: flex; justify-content: space-around; align-items: center; flex: 1; background: #10b981; color: white;text-align: center; border-radius: 6px; cursor: pointer; font-weight: bold;">Buy <i class="fa-solid fa-arrow-up"></i></div>
+        <div data-v-4aca9bd1="" class="Betting__C-foot-s bet_button" data-join="n" data-css-value="14" style="display: flex; justify-content: space-around; align-items: center; flex: 1; background: #ef4444; color: white; text-align: center; border-radius: 6px; cursor: pointer; font-weight: bold;">Sell  <i class="fa-solid fa-arrow-down"></i> </div>
     </div>
   
     <!-- Popup elements -->
@@ -200,9 +213,13 @@
             </div>
         </div>
     </div> -->
-    <div class="van-overlay" data-v-e49b49d6="" style="z-index: 2002;display: none; " ></div>
-    <div role="dialog" tabindex="0" class="popup-join van-popup van-popup--round van-popup--bottom" data-v-e49b49d6=""
-        style="z-index: 2002;display: none;">
+    <div class="van-overlay" data-v-e49b49d6="" style="z-index: 2002;display: none;" ></div>
+    <div role="dialog" tabindex="0" class="popup-join van-popup van-popup--round van-popup--bottom" style=" position: fixed;
+    z-index: 2002;display: none;
+    will-change: transform, left;
+    left: 36.7%;
+    transform: translateX(-50%);" data-v-e49b49d6=""
+        >
         <div data-v-e49b49d6="" class="Betting__Popup-0">
             <div data-v-e49b49d6="" class="Betting__Popup-head">
                 <div data-v-e49b49d6="" class="Betting__Popup-head-title">Win Go 1Min</div>

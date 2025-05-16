@@ -28,23 +28,23 @@ function openAudio() {
   audio2.play();
 }
 
-$("body").off("click.audio");
-$("body").on("click.audio", function (e) {
-  e.preventDefault();
-  if (clicked) return;
-  openAudio();
-  clicked = true;
-});
+// $("body").off("click.audio");
+// $("body").on("click.audio", function (e) {
+//   e.preventDefault();
+//   if (clicked) return;
+//   openAudio();
+//   clicked = true;
+// });
 
-function playAudio1() {
-  audio1.muted = false;
-  audio1.play();
-}
+// function playAudio1() {
+//   audio1.muted = false;
+//   audio1.play();
+// }
 
-function playAudio2() {
-  audio2.muted = false;
-  audio2.play();
-}
+// function playAudio2() {
+//   audio2.muted = false;
+//   audio2.play();
+// }
 
 const initAudio = () => {
   const check_volume = localStorage.getItem("volume");
@@ -101,25 +101,26 @@ function countDownTimer({ GAME_TYPE_ID }) {
     $(".TimeLeft__C-time div:eq(4)").text(seconds2);
   }, 0);
 
-  countDownInterval2 = setInterval(() => {
-    const { minute, seconds1, seconds2 } = getTimeMSS(countDownDate);
-    const check_volume = localStorage.getItem("volume");
+  // sound
+  // countDownInterval2 = setInterval(() => {
+  //   const { minute, seconds1, seconds2 } = getTimeMSS(countDownDate);
+  //   const check_volume = localStorage.getItem("volume");
 
-    if (minute == 0 && seconds1 == 0 && seconds2 <= 5) {
-      if (clicked) {
-        if (check_volume == "on") {
-          playAudio1();
-        }
-      }
-    }
-    if (minute == 0 && seconds1 == 5 && seconds2 == 5) {
-      if (clicked) {
-        if (check_volume == "on") {
-          playAudio2();
-        }
-      }
-    }
-  }, 1000);
+  //   if (minute == 0 && seconds1 == 0 && seconds2 <= 5) {
+  //     if (clicked) {
+  //       if (check_volume == "on") {
+  //         playAudio1();
+  //       }
+  //     }
+  //   }
+  //   if (minute == 0 && seconds1 == 5 && seconds2 == 5) {
+  //     if (clicked) {
+  //       if (check_volume == "on") {
+  //         playAudio2();
+  //       }
+  //     }
+  //   }
+  // }, 1000);
 
   countDownInterval3 = setInterval(function () {
     const { minute, seconds1, seconds2 } = getTimeMSS(countDownDate);
@@ -249,9 +250,9 @@ const displayResultHandler = ({ status, amount, period, result }) => {
   }
 
   if (parseInt(result) >= 5) {
-    bsDisplay = "Big";
+    bsDisplay = "Buy";
   } else {
-    bsDisplay = "Small";
+    bsDisplay = "Sell";
   }
 
   $("#lottery_results_box").removeClass();
@@ -333,12 +334,14 @@ function showGameHistoryData(list_orders) {
                <div data-v-c52f94a7="" class="GameRecord__C-origin-I green"></div>
             `;
       }
-
+  console.log(list_order);
+      
+  
       return `
-         <div data-v-c52f94a7="" class="van-row"  style="background-color: #38353588;">
+         <div data-v-c52f94a7="" class="van-row"  style="background-color: #0d063db9;">
             <div data-v-c52f94a7="" class="van-col van-col--12">${list_order.period}</div>
            
-            <div data-v-c52f94a7="" class="van-col van-col--12"><span data-v-c52f94a7="">${list_order.amount < 5 ? "Small" : "Big"}</span></div>
+             <div data-v-c52f94a7="" class="van-col van-col--12"><span data-v-c52f94a7="">${list_order.bet === 'l' ? "Buy" : "Sell"}</span></div>
         
          </div>`;
     })
@@ -417,7 +420,7 @@ function showMyBetsData(list_orders) {
 
   if (list_orders.length == 0) {
     return $(containerId).html(`
-   <div data-v-a9660e98="" class="van-empty">
+   <div data-v-a9660e98="" class="van-empty" style="background-color: #0d063db9;">
        <div class="van-empty__image">
            <img src="/images/empty-image-default.png" />
        </div>
@@ -433,10 +436,10 @@ function showMyBetsData(list_orders) {
       let color = "";
       if (join == "l") {
         color = "l-big";
-        selected = "Big";
+        selected = "Buy";
       } else if (join == "n") {
         color = "l-small";
-        selected = "Small";
+        selected = "Sell";
       } else if (join == "t") {
         color = "l-violet";
         selected = "Violet";
@@ -697,17 +700,28 @@ function initGameLogics({
     if (!join || !currentX || !money) {
       return;
     }
-    const currentStartPoint = JSON.parse(localStorage.getItem("startPoint"));
-
+    // let currentStartPoint = null;
+    let currentStartPoint = JSON.parse(localStorage.getItem("startPoint"));
+    console.log(GAME_TYPE_ID);
+    if (GAME_TYPE_ID === '1') {
+      currentStartPoint = JSON.parse(localStorage.getItem("startPoint"));
+    } else if (GAME_TYPE_ID === '3') {
+      currentStartPoint = JSON.parse(localStorage.getItem("3minStartPoint"));
+    } else if (GAME_TYPE_ID === '5') {
+      currentStartPoint = JSON.parse(localStorage.getItem("5minStartPoint")); // ✅ fixed
+    } else if (GAME_TYPE_ID === '10') {
+      currentStartPoint = JSON.parse(localStorage.getItem("10minStartPoint")); // ✅ fixed
+    }
+    
     if (!currentStartPoint) {
       alertMessage("Start point not available yet.");
       return;
     } else {
       console.log("Start point:", currentStartPoint); 
     }
-    
-    const startPrice = currentStartPoint.price || 30;
-    const coinType = currentStartPoint.coin || "BTC";
+    console.log(GAME_TYPE_ID)
+    const startPrice = currentStartPoint.price;
+    const coinType = getCoinType();
     
     console.log("Start Price:", startPrice);
     console.log("Coin Type:", coinType);
@@ -864,7 +878,7 @@ function initGameLogics({
       success: function (response) {
         Game_History_Pages = response.page;
         let list_orders = response.data.gameslist;
-
+        
         $("#period").text(response.period);
 
         $("#number_result__gameHistory").text(`${page}/${response.page}`);
@@ -1192,6 +1206,12 @@ function formateT(params) {
   return result;
 }
 
+function getCoinType() {
+  const selectElement = document.getElementById("coinSelect");
+  const selectedCoin = selectElement.value;
+  return selectedCoin;
+}
+
 function timerJoin(params = "", addHours = 0) {
   let date = "";
   if (params) {
@@ -1289,9 +1309,35 @@ socket.on("getStartPoint", () => {
   const point = getCurrentPricePoint();
   if (point) {
     localStorage.setItem("startPoint", JSON.stringify(point)); 
-    console.log("Start point received", point);
+    console.log("Start point set.", point);
   }
 });
+
+socket.on("get3minStartPoint",()=>{
+    const point=getCurrentPricePoint();
+    if(point){
+      localStorage.setItem("3minStartPoint",JSON.stringify(point));
+      console.log("3 min Start Point set.",point); 
+    }
+})
+
+socket.on("get5minStartPoint",()=>{
+  const point=getCurrentPricePoint();
+  if(point){
+    localStorage.setItem("5minStartPoint",JSON.stringify(point));
+    console.log("5 min start point set",point);
+  }
+})
+
+
+socket.on("get10minStartPoint",()=>{
+  const point=getCurrentPricePoint();
+  if(point){
+    localStorage.setItem("10minStartPoint",JSON.stringify(point));
+    console.log("10 min start point set",point);
+  }
+})
+
 
 // socket.on("setEndPoint",()=>{
 //   const point=getCurrentPricePoint();
@@ -1345,6 +1391,7 @@ socket.on("data-server", async function (msg) {
     ]);
 
     const betListData = betDataResponse.data?.data?.gameslist;
+    const betType=gameDataResponse.data?.data?.data?.bet;
     const gameListData = gameDataResponse.data?.data?.gameslist;
 
     const lastGame = gameListData?.[0];
@@ -1512,7 +1559,23 @@ socket.on("setEndPoint", (data) => {
   latestEndPoint = data;
   console.log("Received endpoint from server:", latestEndPoint);
 });
+ let ThreeminEndPoint=null;
+ socket.on("set3minEndPoint",(data)=>{
+  ThreeminEndPoint=data;
+  console.log("Received end point for 3 min Interval.",ThreeminEndPoint)
+ })
   
+ const fiveminEndPoint=null;
+ socket.on("set5minEndPoint",(data)=>{
+   FiveminEndPoint=data;
+   console.log("Received end point for 5 min",FiveminEndPoint);
+ })
+
+ const tenminEndPoint=null;
+ socket.on("set10minEndPoint",(data)=>{
+  TenminEndPoint=data;
+  console.log("Received end point for 10 min",TenminEndPoint);
+ })
   // Price generation for line chart
   // function generateNewPrice(lastPrice, coin, timestamp) {
   //     const getTimeMSS = (countDownDate) => {
@@ -1564,59 +1627,96 @@ socket.on("setEndPoint", (data) => {
   //     const maxChange = lastPrice * 0.02;
   //     return Math.max(lastPrice - maxChange, Math.min(lastPrice + maxChange, newPrice));
   // }
-  
   function generateNewPrice(lastPrice, coin, timestamp) {
     const getTimeMSS = (countDownDate) => {
-      var now = new Date().getTime();
-      var distance = countDownDate - now;
-      var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-      var minute = Math.ceil(minutes % parseInt(GAME_TYPE_ID));
-      var seconds1 = Math.floor((distance % (1000 * 60)) / 10000);
-      var seconds2 = Math.floor(((distance % (1000 * 60)) / 1000) % 10);
-  
+      const now = Date.now();
+      const distance = countDownDate - now;
+      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+      const minute = Math.ceil(minutes % parseInt(GAME_TYPE_ID));
+      const seconds1 = Math.floor((distance % (1000 * 60)) / 10000);
+      const seconds2 = Math.floor(((distance % (1000 * 60)) / 1000) % 10);
       return { minute, seconds1, seconds2 };
     };
   
-    var countDownDate = new Date("2030-07-16T23:59:59.9999999+03:00").getTime();
-  
+    const countDownDate = new Date("2030-07-16T23:59:59.999+03:00").getTime();
     const now = timestamp || Date.now();
   
-    // Ensure coinLastUpdateTime is initialized
     if (!coinLastUpdateTime) coinLastUpdateTime = {};
     coinLastUpdateTime[coin] = now;
   
     const { minute, seconds1, seconds2 } = getTimeMSS(countDownDate);
-  
-    let randomChange = (Math.random() * 2) - 1;
-  
-    if (minute === 0 && seconds1 === 0 && seconds2 === 5) {
-      if (latestEndPoint !== null) {
-        return parseFloat(latestEndPoint);
-      } else {
-        console.log("Random change used:", randomChange);
-        return lastPrice + randomChange;
-      }
-    } else {
-      //  console.log("Random change used:", randomChange);
-      return lastPrice + randomChange;
-    }
-    const volatility = coinConfigs[coin].basePrice * 0.0005; // 0.05% of base price
-        // let randomChange = (Math.random() * 2 - 1) * volatility;
-        
-        // Add slight momentum based on previous trend
-        if (coinData[coin] && coinData[coin].length > 1) {
-            const prevTrend = coinData[coin][coinData[coin].length - 1].y - 
-                            coinData[coin][coinData[coin].length - 2].y;
-            randomChange += prevTrend * 0.3; // 30% momentum
+    const game=getGameType();
+    // console.log(game);
+    // Case 1: Exact trigger time
+    if (minute === 0 && seconds1 === 0 && seconds2 === 0) {
+      if(game=='1'){
+        if (latestEndPoint !== null) {
+          return parseFloat(latestEndPoint);
+        } else {
+          const fallbackChange = (Math.random() * 2) - 1;
+          console.log("Fallback random change used:", fallbackChange);
+          return lastPrice + fallbackChange;
         }
-        
-        // Ensure price doesn't go negative
-        const newPrice = Math.max(0.01, lastPrice + randomChange);
-        
-        // Limit price movement to ±2% per step
-        const maxChange = lastPrice * 0.02;
-        return Math.max(lastPrice - maxChange, Math.min(lastPrice + maxChange, newPrice));
+      }
+      else if(game=='3'){
+        if(ThreeminEndPoint !== null){
+          console.log("3 min EndPoint received from server")
+          return parseFloat(ThreeminEndPoint);
+        }
+        else{
+          const fallbackChange = (Math.random() * 2) - 1;
+          console.log("Fallback random change used:", fallbackChange);
+          return lastPrice + fallbackChange;
+        }
+      }
+      else if(game=='5'){
+        if(FiveminEndPoint !== null){
+          console.log("5 min endPoint received from server")
+          return parseFloat(FiveminEndPoint);
+        }
+        else{
+          const fallbackChange = (Math.random() * 2) - 1;
+          console.log("Fallback random change used:", fallbackChange);
+          return lastPrice + fallbackChange;
+        }
+      }
+      
+      else if(game=='10'){
+        if(tenminEndPoint!=null){
+          console.log("Ten Min endPoint received from server");
+          return parseFloat(tenminEndPoint);
+        }
+        else{
+          const fallbackChange = (Math.random() * 2) - 1;
+          console.log("Fallback random change used:", fallbackChange);
+          return lastPrice + fallbackChange;
+        }
+      }
+
+    }
+  
+    // Case 2: Normal volatility-based price generation
+    const volatility = coinConfigs[coin].basePrice * 0.0005; // 0.05%
+    let randomChange = (Math.random() * 2 - 1) * volatility;
+  
+    // Add slight momentum
+    if (coinData[coin] && coinData[coin].length > 1) {
+      const prevTrend =
+        coinData[coin][coinData[coin].length - 1].y -
+        coinData[coin][coinData[coin].length - 2].y;
+      randomChange += prevTrend * 0.3;
+    }
+  
+    const newPriceRaw = lastPrice + randomChange;
+  
+    // Prevent price from going below 0.01
+    const newPrice = Math.max(0.01, newPriceRaw);
+  
+    // Limit movement to ±2% of lastPrice
+    const maxChange = lastPrice * 0.02;
+    return Math.max(lastPrice - maxChange, Math.min(lastPrice + maxChange, newPrice));
   }
+  
 
 
 
@@ -1645,131 +1745,146 @@ socket.on("setEndPoint", (data) => {
   // Chart.register(ChartCrosshair);
   
   const chart = new Chart(ctx, {
-      type: 'line',
-      data: {
-          datasets: [{
-              label: `${coinConfigs[currentCoin].name} Price`,
-              data: coinData[currentCoin],
-              borderColor: coinConfigs[currentCoin].color,
-              backgroundColor: 'rgba(59, 130, 246, 0.1)',
-              borderWidth: 2,
-              tension: 0.1,
-              fill: true,
-              pointRadius: 0,
-              pointHoverRadius: 5,
-              pointHoverBackgroundColor: coinConfigs[currentCoin].color,
-              pointHoverBorderColor: '#fff',
-              pointHoverBorderWidth: 2
-          }]
-      },
-      options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          animation: { duration: 0 },
-          hover: { animationDuration: 0 },
-          responsiveAnimationDuration: 0,
-          scales: {
-              x: {
-                  type: 'time',
-                  time: {
-                      unit: 'second',
-                      displayFormats: { second: 'mm:ss' },
-                      tooltipFormat: 'HH:mm:ss'
-                  },
-                  min: () => Date.now() - 30 * 1000,
-                  max: () => Date.now() + 60 * 100,
-                  ticks: { 
-                      source: 'auto', 
-                      autoSkip: true, 
-                      maxTicksLimit: 10,
-                      color: '#6b7280'
-                  },
-                  grid: { 
-                      display: false,
-                      color: 'rgba(0, 0, 0, 0.05)'
-                  }
-              },
-              y: {
-                  beginAtZero: false,
-                  ticks: { 
-                      callback: function(value) { 
-                          return value.toFixed(0); 
-                      },
-                      color: '#6b7280'
-                  },
-                  grid: { 
-                      color: 'rgba(0, 0, 0, 0.05)'
-                  }
-              }
-          },
-          plugins: {
-              legend: { display: false },
-              tooltip: {
-                  mode: 'index',
-                  intersect: false,
-                  backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                  titleColor: '#fff',
-                  bodyColor: '#fff',
-                  borderColor: 'rgba(255, 255, 255, 0.1)',
-                  borderWidth: 1,
-                  padding: 12,
-                  callbacks: {
-                      label: function(context) {
-                          return `${coinConfigs[currentCoin].name}: ${context.parsed.y.toFixed(2)}`;
-                      },
-                      title: function(context) {
-                          return new Date(context[0].parsed.x).toLocaleTimeString();
-                      }
-                  }
-              },
-              zoom: {
-                  pan: { 
-                      enabled: true, 
-                      mode: 'x',
-                      modifierKey: 'shift'
-                  },
-                  zoom: { 
-                      wheel: { 
-                          enabled: true,
-                          modifierKey: 'ctrl'
-                      }, 
-                      pinch: { 
-                          enabled: true 
-                      }, 
-                      mode: 'x',
-                      onZoomComplete: ({ chart }) => {
-                          // This update is needed to display up-to-date zoomed range
-                          chart.update('none');
-                      }
-                  },
-                  limits: {
-                      x: { min: 'original', max: 'original' }
-                  }
-              },
-              // crosshair: {
-              //     line: {
-              //         color: '#666',
-              //         width: 1,
-              //         dashPattern: [5, 5]
-              //     },
-              //     sync: {
-              //         enabled: false
-              //     },
-              //     zoom: {
-              //         enabled: false
-              //     },
-              //     snap: {
-              //         enabled: true
-              //     }
-              // }
-          },
-          interaction: {
-              mode: 'nearest',
-              axis: 'x',
-              intersect: false
-          }
-      }
-  });
+    type: 'line',
+    data: {
+        datasets: [{
+            label: `${coinConfigs[currentCoin].name} Price`,
+            data: coinData[currentCoin],
+            borderColor: coinConfigs[currentCoin].color,
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            borderWidth: 2,
+            tension: 0.1,
+            fill: true,
+            pointRadius: 0,
+            pointHoverRadius: 5,
+            pointHoverBackgroundColor: coinConfigs[currentCoin].color,
+            pointHoverBorderColor: '#fff',
+            pointHoverBorderWidth: 2
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 0 },
+        hover: { animationDuration: 0 },
+        responsiveAnimationDuration: 0,
+        scales: {
+            x: {
+                type: 'time',
+                time: {
+                    unit: 'second',
+                    displayFormats: { second: 'mm:ss' },
+                    tooltipFormat: 'HH:mm:ss'
+                },
+                min: () => Date.now() - 10 * 1000,
+                max: () => Date.now() + 60 * 100,
+                ticks: { 
+                    source: 'auto', 
+                    autoSkip: false, 
+                    maxTicksLimit: 10,
+                    color: '#6b7280'
+                },
+                grid: { 
+                    display: true, // Changed to true to show x-axis grid
+                    color: 'rgba(0, 0, 0, 0.05)',
+                    drawBorder: true,
+                    drawOnChartArea: true,
+                    drawTicks: true,
+                    tickColor: 'rgba(0, 0, 0, 0.8)',
+                    borderColor: 'rgba(0, 0, 0, 0.8)',
+                    borderDash: [5, 5], // Dashed grid lines
+                    borderDashOffset: 0,
+                    lineWidth: 1
+                }
+            },
+            y: {
+                beginAtZero: false,
+                ticks: { 
+                    callback: function(value) { 
+                        return value.toFixed(0); 
+                    },
+                    color: '#6b7280',
+                    padding: 5
+                },
+                grid: { 
+                    color: 'rgba(249, 249, 248, 0.2)',
+                    drawBorder: true,
+                    drawOnChartArea: true,
+                    drawTicks: true,
+                    tickColor: 'rgba(0, 0, 0, 0.9)',
+                    borderColor: 'rgba(0, 0, 0, 0.9)',
+                    borderDash: [5, 5], // Dashed grid lines
+                    borderDashOffset: 0,
+                    lineWidth: 1
+                }
+            }
+        },
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                mode: 'index',
+                intersect: false,
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                titleColor: '#fff',
+                bodyColor: '#fff',
+                borderColor: 'rgba(255, 255, 255, 0.1)',
+                borderWidth: 1,
+                padding: 12,
+                callbacks: {
+                    label: function(context) {
+                        return `${coinConfigs[currentCoin].name}: ${context.parsed.y.toFixed(2)}`;
+                    },
+                    title: function(context) {
+                        return new Date(context[0].parsed.x).toLocaleTimeString();
+                    }
+                }
+            },
+            zoom: {
+                pan: { 
+                    enabled: true, 
+                    mode: 'x',
+                    modifierKey: 'shift'
+                },
+                zoom: { 
+                    wheel: { 
+                        enabled: true,
+                        modifierKey: 'ctrl'
+                    }, 
+                    pinch: { 
+                        enabled: true 
+                    }, 
+                    mode: 'x',
+                    onZoomComplete: ({ chart }) => {
+                        chart.update('none');
+                    }
+                },
+                limits: {
+                    x: { min: 'original', max: 'original' }
+                }
+            }
+        },
+        interaction: {
+            mode: 'nearest',
+            axis: 'x',
+            intersect: false
+        },
+        // Additional grid styling for the chart area
+        layout: {
+            padding: {
+                top: 10,
+                right: 10,
+                bottom: 10,
+                left: 10
+            }
+        },
+        elements: {
+            line: {
+                borderCapStyle: 'round',
+                borderJoinStyle: 'round'
+            }
+        }
+    }
+});
   
   // Reset zoom button
   function addResetZoomButton() {
@@ -1838,7 +1953,7 @@ socket.on("setEndPoint", (data) => {
           
           // Update x-axis range if not zoomed
           if (!chart.isZoomedOrPanned()) {
-              chart.options.scales.x.min = now - 60 * 1000;
+              chart.options.scales.x.min = now - 20 * 1000;
               chart.options.scales.x.max = now + 20 * 1000;  //to adjust x-axis range for chart
           }
           
@@ -1915,7 +2030,6 @@ $(document).ready(function() {
   $(document).on('click', '.bet_button', function() {
       const betType = $(this).hasClass('Betting__C-foot-b') ? 'Buy' : 'Sell';
       $('#betting_value').text(betType);
-      
       // Reset popup values
       $('#van-field-1-input').val('1');
       $('.Betting__Popup-body-money-btn').css({
@@ -1948,7 +2062,7 @@ $(document).ready(function() {
   
   // Handle popup close
   $('#cancel_bet_btn, .van-overlay').click(function() {
-      $('.van-overlay').fadeOut(200);
+      $('.van-overlay').fadeOut(400);
       $('.popup-join').fadeOut(200).css('transform', 'translateY(100%)');
   });
   

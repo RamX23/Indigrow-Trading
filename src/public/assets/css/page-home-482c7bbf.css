@@ -30315,21 +30315,22 @@ html:lang(ar) .TimeLeft__C-num[data-v-55cb6917] {
 }
 
 .Betting__Popup-13 .bgcolor[data-v-e49b49d6] {
-  background-color: #ffa82e;
+  background-color: #1A9900;
 }
 
 .Betting__Popup-13 .Betting__Popup-head[data-v-e49b49d6] {
-  background: -webkit-linear-gradient(left, #ffa82e 0%, #ffc511 100%);
-  background: linear-gradient(90deg, #ffa82e 0%, #ffc511 100%);
+  background: -webkit-linear-gradient(left, #00cc00 0%, #1A9900 100%);
+  background: linear-gradient(90deg, #00cc00 0%, #00e600 100%);
 }
 
+
 .Betting__Popup-14 .bgcolor[data-v-e49b49d6] {
-  background-color: #6da7f4;
+  background-color: #ff6666 
 }
 
 .Betting__Popup-14 .Betting__Popup-head[data-v-e49b49d6] {
-  background: -webkit-linear-gradient(left, #6ca6f3 0%, #87bcf5 100%);
-  background: linear-gradient(90deg, #6ca6f3 0%, #87bcf5 100%);
+  background: -webkit-linear-gradient(left, #ff4d4d 0%, #ff6666 100%);
+  background: linear-gradient(90deg, #ff4d4d 0%, #ff6666 100%);
 }
 
 .Betting__Popup-btn[data-v-e49b49d6] {

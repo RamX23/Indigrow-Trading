@@ -8301,7 +8301,7 @@ html:lang(ar) .WinningTip__C[data-v-e05c7c66] {
     position: absolute;
     width: 7.73333rem;
     height: 10.93333rem;
-    background-image: url(/assets/png/missningBg-c1f02bcd.png);
+    /* background-image: url(/assets/png/missningBg-c1f02bcd.png); */
     background-repeat: no-repeat;
     background-position: center;
     background-size: cover;
@@ -8521,11 +8521,11 @@ html:lang(ar) .WinningTip__C-body-l4[data-v-e05c7c66] {
     background-repeat: no-repeat;
     background-size: .8rem;
     background-position: center;
-    position: absolute;
-    left: 50%;
-    -webkit-transform: translateX(-50%) translateY(100%);
-    transform: translate(-50%) translateY(100%);
-    bottom: -.26667rem
+    /* position: absolute;
+    left: 50%; */
+    /* -webkit-transform: translateX(-50%) translateY(100%);
+    transform: translate(-50%) translateY(100%); */
+    /* bottom: -.26667rem */
 }
 
 .van-toast[data-v-0ac3de13] {
@@ -15354,7 +15354,7 @@ html:lang(ar) .WinningTip__C[data-v-2d418cc5] {
     position: absolute;
     width: 7.73333rem;
     height: 10.93333rem;
-    background-image: url(/assets/png/missningBg-c1f02bcd.png);
+    /* background-image: url(/assets/png/missningBg-c1f02bcd.png); */
     background-repeat: no-repeat;
     background-position: center;
     background-size: cover;
@@ -15573,11 +15573,11 @@ html:lang(ar) .WinningTip__C-body-l4[data-v-2d418cc5] {
     background-repeat: no-repeat;
     background-size: .8rem;
     background-position: center;
-    position: absolute;
-    left: 50%;
-    -webkit-transform: translateX(-50%) translateY(100%);
-    transform: translate(-50%) translateY(100%);
-    bottom: -.26667rem
+    /* position: absolute;
+    left: 50%; */
+    /* -webkit-transform: translateX(-50%) translateY(100%);
+    transform: translate(-50%) translateY(100%); */
+    /* bottom: -.26667rem */
 }
 
 .van-toast[data-v-d024c659] {
@@ -26528,11 +26528,11 @@ html:lang(ar) .WinningTip__C-body-l4[data-v-eb0f5940] {
     background-repeat: no-repeat;
     background-size: .8rem;
     background-position: center;
-    position: absolute;
-    left: 50%;
-    -webkit-transform: translateX(-50%) translateY(100%);
-    transform: translate(-50%) translateY(100%);
-    bottom: -.26667rem
+    /* position: absolute;
+    left: 50%; */
+    /* -webkit-transform: translateX(-50%) translateY(100%);
+    transform: translate(-50%) translateY(100%); */
+    /* bottom: -.26667rem */
 }
 
 .van-toast[data-v-b1e14027] {
@@ -30000,9 +30000,9 @@ html:lang(ar) .TimeLeft__C-num[data-v-3e4c6499] {
 .TimeLeft__C-time[data-v-3e4c6499] {
     height: .8rem;
     line-height: .8rem;
-    position: absolute;
+    /* position: absolute;
     bottom: 1.01333rem;
-    right: .34667rem;
+    right: .34667rem; */
     display: -webkit-box;
     display: -webkit-flex;
     display: flex
@@ -31434,10 +31434,12 @@ html:lang(ar) .WinningTip__C[data-v-e44179e3] {
     position: absolute;
     width: 7.73333rem;
     height: 10.93333rem;
-    background-image: url(/assets/png/missningBg-c1f02bcd.png);
+    /* background-image: url(/assets/png/missningBg-c1f02bcd.png); */
     background-repeat: no-repeat;
     background-position: center;
-    background-size: cover;
+    border: 2px solid red;
+    background-color: white;
+    /* background-size: cover; */
     left: 50%;
     top: 50%;
     -webkit-transform: translateX(-50%) translateY(-50%);
@@ -31445,9 +31447,9 @@ html:lang(ar) .WinningTip__C[data-v-e44179e3] {
     padding-top: 3.33333rem
 }
 
-.WinningTip__C-body.isL[data-v-e44179e3] {
+/* .WinningTip__C-body.isL[data-v-e44179e3] {
     background-image: url(/assets/png/missningLBg-ca049a47.png)
-}
+} */
 
 .WinningTip__C-body.isL .WinningTip__C-body-l1[data-v-e44179e3],
 .WinningTip__C-body.isL .WinningTip__C-body-l2[data-v-e44179e3],
@@ -31508,7 +31510,7 @@ html:lang(ar) .WinningTip__C[data-v-e44179e3] {
     border-radius: 50%
 }
 
-.WinningTip__C-body-l2.type0>div[data-v-e44179e3] {
+/* .WinningTip__C-body-l2.type0>div[data-v-e44179e3] {
     background-image: -webkit-linear-gradient(315deg, var(--norm_red-color) 50.96%, var(--norm_Purple-color) 50.97%);
     background-image: linear-gradient(135deg, var(--norm_red-color) 50.96%, var(--norm_Purple-color) 50.97%)
 }
@@ -31516,7 +31518,7 @@ html:lang(ar) .WinningTip__C[data-v-e44179e3] {
 .WinningTip__C-body-l2.type5>div[data-v-e44179e3] {
     background-image: -webkit-linear-gradient(315deg, var(--norm_green-color) 51.48%, var(--norm_Purple-color) 51.49%);
     background-image: linear-gradient(135deg, var(--norm_green-color) 51.48%, var(--norm_Purple-color) 51.49%)
-}
+} */
 
 .WinningTip__C-body-l2.type1>div[data-v-e44179e3],
 .WinningTip__C-body-l2.type3>div[data-v-e44179e3],
@@ -31628,11 +31630,11 @@ html:lang(ar) .WinningTip__C-body-l4[data-v-e44179e3] {
     background-repeat: no-repeat;
     background-size: .8rem;
     background-position: center;
-    position: absolute;
-    left: 50%;
-    -webkit-transform: translateX(-50%) translateY(100%);
-    transform: translate(-50%) translateY(100%);
-    bottom: -.26667rem
+    /* position: absolute;
+    left: 50%; */
+    /* -webkit-transform: translateX(-50%) translateY(100%);
+    transform: translate(-50%) translateY(100%); */
+    /* bottom: -.26667rem */
 }
 
 .van-toast[data-v-5d71c3fd] {

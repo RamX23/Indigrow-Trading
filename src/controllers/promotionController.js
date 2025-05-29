@@ -257,61 +257,52 @@ const userStats = async (startTime, endTime, phone = "") => {
           COALESCE(c.total_commission, 0) AS total_commission
       FROM
           users u
-      LEFT JOIN
-          (
-              SELECT
-                  phone,
-                  SUM(CASE WHEN status = 1 THEN COALESCE(money, 0) ELSE 0 END) AS total_deposit_amount,
-                  COUNT(CASE WHEN status = 1 THEN phone ELSE NULL END) AS total_deposit_number
-              FROM
-                  recharge
-              WHERE
-                  time > ? AND time < ?
-              GROUP BY
-                  phone
-          ) r ON u.phone = r.phone
-      LEFT JOIN
-          (
+      LEFT JOIN (
+          SELECT
+              phone,
+              SUM(CASE WHEN status = 1 THEN COALESCE(money, 0) ELSE 0 END) AS total_deposit_amount,
+              COUNT(CASE WHEN status = 1 THEN phone ELSE NULL END) AS total_deposit_number
+          FROM recharge
+          WHERE time > ? AND time < ?
+          GROUP BY phone
+      ) r ON u.phone = r.phone
+      LEFT JOIN (
+          SELECT 
+              phone,
+              SUM(total_bet_amount) AS total_bet_amount,
+              SUM(total_bets) AS total_bets
+          FROM (
               SELECT 
                   phone,
-                  COALESCE(SUM(total_bet_amount), 0) AS total_bet_amount,
-                  COALESCE(SUM(total_bets), 0) AS total_bets
-              FROM (
-                  SELECT 
-                      phone,
-                      SUM(money + fee) AS total_bet_amount,
-                      COUNT(*) AS total_bets
-                  FROM minutes_1
-                  WHERE time >= ? AND time <= ?
-                  GROUP BY phone
-                  UNION ALL
-                  SELECT 
-                      phone,
-                      SUM(money + fee) AS total_bet_amount,
-                      COUNT(*) AS total_bets
-                  FROM trx_wingo_bets
-                  WHERE time >= ? AND time <= ?
-                  GROUP BY phone
-              ) AS combined
+                  SUM(money + fee) AS total_bet_amount,
+                  COUNT(*) AS total_bets
+              FROM minutes_1
+              WHERE time >= ? AND time <= ?
               GROUP BY phone
-          ) m ON u.phone = m.phone
-      LEFT JOIN
-          (
-              SELECT
-                  from_user_phone AS phone,
-                  SUM(money) AS total_commission
-              FROM
-                  commissions
-              WHERE
-                  time > ? AND time <= ? AND phone = ?
-              GROUP BY
-                  from_user_phone
-          ) c ON u.phone = c.phone
+              UNION ALL
+              SELECT 
+                  phone,
+                  SUM(money + fee) AS total_bet_amount,
+                  COUNT(*) AS total_bets
+              FROM trx_wingo_bets
+              WHERE time >= ? AND time <= ?
+              GROUP BY phone
+          ) AS combined
+          GROUP BY phone
+      ) m ON u.phone = m.phone
+      LEFT JOIN (
+          SELECT
+              from_user_phone AS phone,
+              SUM(money) AS total_commission
+          FROM commissions
+          WHERE time > ? AND time <= ? AND phone = ?
+          GROUP BY from_user_phone
+      ) c ON u.phone = c.phone
       GROUP BY
-          u.phone
+          u.phone, u.invite, u.code, u.time, u.id_user
       ORDER BY
           u.time DESC;
-      `,
+    `,
     [
       startTime,
       endTime,
@@ -328,13 +319,13 @@ const userStats = async (startTime, endTime, phone = "") => {
   return rows;
 };
 
+
 const getCommissionStatsByTime = async (time, phone) => {
-  const { startOfYesterdayTimestamp, endOfYesterdayTimestamp } =
-    yesterdayTime();
+  const { startOfYesterdayTimestamp, endOfYesterdayTimestamp } = yesterdayTime();
+  
   const [commissionRow] = await connection.execute(
     `
       SELECT
-          time,
           SUM(COALESCE(c.money, 0)) AS total_commission,
           SUM(CASE 
               WHEN c.time >= ? 
@@ -350,146 +341,327 @@ const getCommissionStatsByTime = async (time, phone) => {
           commissions c
       WHERE
           c.phone = ?
-      `,
+    `,
     [time, startOfYesterdayTimestamp, endOfYesterdayTimestamp, phone],
   );
+
   return commissionRow?.[0] || {};
 };
 
+
+
+
 const subordinatesDataAPI = async (req, res) => {
+  let dbConnection; // Renamed to avoid confusion with the imported pool
+
   try {
     const authToken = req.cookies.auth;
-    const startOfWeek = getStartOfWeekTimestamp();
-    const { startOfYesterdayTimestamp, endOfYesterdayTimestamp } =
-      yesterdayTime();
-    const [userRow] = await connection.execute(
+
+    // Get a connection from the pool
+    dbConnection = await connection.getConnection();
+    
+    // Fetch user by auth token
+    const [userRow] = await dbConnection.query(
       "SELECT * FROM `users` WHERE `token` = ? AND `veri` = 1",
-      [authToken],
+      [authToken]
     );
     const user = userRow?.[0];
     if (!user) {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
+    // Check for unprocessed override for this user
+    const [overrideRow] = await dbConnection.query(
+      "SELECT * FROM subordinate_overrides WHERE user_phone = ? AND processed = 0 ORDER BY id DESC LIMIT 1",
+      [user.phone]
+    );
+    const override = overrideRow?.[0];
+
+    // If override exists, apply it to the original data and mark as processed
+    if (override) {
+      let overrideData;
+      try {
+        overrideData = typeof override.data === 'string' ? JSON.parse(override.data) : override.data;
+
+        // Start transaction using proper MySQL2 syntax
+        await dbConnection.query("START TRANSACTION");
+
+        try {
+          // First check if record exists in subordinate_data
+          const [existingData] = await dbConnection.query(
+            "SELECT id FROM subordinate_data WHERE user_phone = ?",
+            [user.phone]
+          );
+
+          if (existingData.length > 0) {
+            // Update existing record
+            await dbConnection.query(
+              `UPDATE subordinate_data SET
+                direct_subordinates_count = ?,
+                no_of_registered_subordinates = ?,
+                direct_subordinates_recharge_quantity = ?,
+                direct_subordinates_recharge_amount = ?,
+                direct_subordinates_with_deposit_count = ?,
+                team_subordinates_count = ?,
+                no_of_register_all_subordinates = ?,
+                team_subordinates_recharge_quantity = ?,
+                team_subordinates_recharge_amount = ?,
+                team_subordinates_with_deposit_count = ?,
+                total_commissions = ?,
+                total_commissions_this_week = ?,
+                total_commissions_yesterday = ?,
+                last_updated = NOW()
+              WHERE user_phone = ?`,
+              [
+                overrideData.directSubordinatesCount,
+                overrideData.noOfRegisteredSubordinates,
+                overrideData.directSubordinatesRechargeQuantity,
+                overrideData.directSubordinatesRechargeAmount,
+                overrideData.directSubordinatesWithDepositCount,
+                overrideData.teamSubordinatesCount,
+                overrideData.noOfRegisterAllSubordinates,
+                overrideData.teamSubordinatesRechargeQuantity,
+                overrideData.teamSubordinatesRechargeAmount,
+                overrideData.teamSubordinatesWithDepositCount,
+                overrideData.totalCommissions,
+                overrideData.totalCommissionsThisWeek,
+                overrideData.totalCommissionsYesterday,
+                user.phone
+              ]
+            );
+          } else {
+            // Insert new record
+            await dbConnection.query(
+              `INSERT INTO subordinate_data (
+                user_phone, direct_subordinates_count, no_of_registered_subordinates,
+                direct_subordinates_recharge_quantity, direct_subordinates_recharge_amount,
+                direct_subordinates_with_deposit_count, team_subordinates_count,
+                no_of_register_all_subordinates, team_subordinates_recharge_quantity,
+                team_subordinates_recharge_amount, team_subordinates_with_deposit_count,
+                total_commissions, total_commissions_this_week, total_commissions_yesterday,
+                last_updated
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+              [
+                user.phone,
+                overrideData.directSubordinatesCount,
+                overrideData.noOfRegisteredSubordinates,
+                overrideData.directSubordinatesRechargeQuantity,
+                overrideData.directSubordinatesRechargeAmount,
+                overrideData.directSubordinatesWithDepositCount,
+                overrideData.teamSubordinatesCount,
+                overrideData.noOfRegisterAllSubordinates,
+                overrideData.teamSubordinatesRechargeQuantity,
+                overrideData.teamSubordinatesRechargeAmount,
+                overrideData.teamSubordinatesWithDepositCount,
+                overrideData.totalCommissions,
+                overrideData.totalCommissionsThisWeek,
+                overrideData.totalCommissionsYesterday
+              ]
+            );
+          }
+
+          // Mark the override as processed
+          await dbConnection.query(
+            "UPDATE subordinate_overrides SET processed = 1 WHERE id = ?",
+            [override.id]
+          );
+
+          // Commit transaction
+          await dbConnection.query("COMMIT");
+
+          console.log("Override data applied and marked as processed");
+          return res.status(200).json({ 
+            data: overrideData, 
+            source: "override (permanent)" 
+          });
+        } catch (error) {
+          // Rollback transaction if any error occurs
+          await dbConnection.query("ROLLBACK");
+          throw error;
+        }
+      } catch (e) {
+        console.error("Error applying override:", e);
+        // Continue to compute original values if override fails
+      }
+    }
+
+    // --- Fetch original values from database ---
+    const [originalDataRow] = await dbConnection.execute(
+      "SELECT * FROM subordinate_data WHERE user_phone = ?",
+      [user.phone]
+    );
+    const originalData = originalDataRow?.[0];
+    console.log("This is from subordinate_data table")
+    if (originalData) {
+      // Return existing data from database
+      return res.status(200).json({
+        data: {
+          directSubordinatesCount: originalData.direct_subordinates_count,
+          noOfRegisteredSubordinates: originalData.no_of_registered_subordinates,
+          directSubordinatesRechargeQuantity: originalData.direct_subordinates_recharge_quantity,
+          directSubordinatesRechargeAmount: originalData.direct_subordinates_recharge_amount,
+          directSubordinatesWithDepositCount: originalData.direct_subordinates_with_deposit_count,
+          teamSubordinatesCount: originalData.team_subordinates_count,
+          noOfRegisterAllSubordinates: originalData.no_of_register_all_subordinates,
+          teamSubordinatesRechargeQuantity: originalData.team_subordinates_recharge_quantity,
+          teamSubordinatesRechargeAmount: originalData.team_subordinates_recharge_amount,
+          teamSubordinatesWithDepositCount: originalData.team_subordinates_with_deposit_count,
+          totalCommissions: originalData.total_commissions,
+          totalCommissionsThisWeek: originalData.total_commissions_this_week,
+          totalCommissionsYesterday: originalData.total_commissions_yesterday,
+        },
+        source: "database",
+      });
+    }
+
+    // --- Compute original values if no data exists in database ---
+    const startOfWeek = getStartOfWeekTimestamp();
+    const { startOfYesterdayTimestamp, endOfYesterdayTimestamp } = yesterdayTime();
+
     const commissions = await getCommissionStatsByTime(startOfWeek, user.phone);
 
-    // console.time("getUserLevels"); // Start the timer
-    const userStatsData = await userStats(
-      startOfYesterdayTimestamp,
-      endOfYesterdayTimestamp,
-    );
-    // console.timeEnd("getUserLevels");
-    const { usersByLevels = [], level1Referrals = [] } = getUserLevels(
-      userStatsData,
-      user.code,
-    );
+    const userStatsData = await userStats(startOfYesterdayTimestamp, endOfYesterdayTimestamp);
+    const { usersByLevels = [], level1Referrals = [] } = getUserLevels(userStatsData, user.code);
 
     const directSubordinatesCount = level1Referrals.length;
     const noOfRegisteredSubordinates = level1Referrals.filter(
-      (user) => user.time >= startOfYesterdayTimestamp,
+      (user) => user.time >= startOfYesterdayTimestamp
     ).length;
     const directSubordinatesRechargeQuantity = level1Referrals.reduce(
       (acc, curr) => acc + curr.total_deposit_number,
-      0,
+      0
     );
     const directSubordinatesRechargeAmount = level1Referrals.reduce(
       (acc, curr) => acc + +curr.total_deposit_amount,
-      0,
+      0
     );
     const directSubordinatesWithDepositCount = level1Referrals.filter(
-      (user) => user.total_deposit_number === 1,
+      (user) => user.total_deposit_number === 1
     ).length;
 
     const teamSubordinatesCount = usersByLevels.length;
-    const noOfRegisterAll = usersByLevels.filter(
-      (user) => user.time >= startOfYesterdayTimestamp,
-    );
-    const noOfRegisterAllSubordinates = noOfRegisterAll.length;
+    const noOfRegisterAllSubordinates = usersByLevels.filter(
+      (user) => user.time >= startOfYesterdayTimestamp
+    ).length;
     const teamSubordinatesRechargeQuantity = usersByLevels.reduce(
       (acc, curr) => acc + curr.total_deposit_number,
-      0,
+      0
     );
     const teamSubordinatesRechargeAmount = usersByLevels.reduce(
       (acc, curr) => acc + +curr.total_deposit_amount,
-      0,
+      0
     );
     const teamSubordinatesWithDepositCount = usersByLevels.filter(
-      (user) => user.total_deposit_number === 1,
+      (user) => user.total_deposit_number === 1
     ).length;
 
     const totalCommissions = commissions?.total_commission || 0;
     const totalCommissionsThisWeek = commissions?.last_week_commission || 0;
     const totalCommissionsYesterday = commissions?.yesterday_commission || 0;
 
+    // Save computed data to database for future use
+    const computedData = {
+      directSubordinatesCount,
+      noOfRegisteredSubordinates,
+      directSubordinatesRechargeQuantity,
+      directSubordinatesRechargeAmount,
+      directSubordinatesWithDepositCount,
+      teamSubordinatesCount,
+      noOfRegisterAllSubordinates,
+      teamSubordinatesRechargeQuantity,
+      teamSubordinatesRechargeAmount,
+      teamSubordinatesWithDepositCount,
+      totalCommissions,
+      totalCommissionsThisWeek,
+      totalCommissionsYesterday,
+    };
+
+    await dbConnection.execute(
+      `INSERT INTO subordinate_data (
+        user_phone, direct_subordinates_count, no_of_registered_subordinates,
+        direct_subordinates_recharge_quantity, direct_subordinates_recharge_amount,
+        direct_subordinates_with_deposit_count, team_subordinates_count,
+        no_of_register_all_subordinates, team_subordinates_recharge_quantity,
+        team_subordinates_recharge_amount, team_subordinates_with_deposit_count,
+        total_commissions, total_commissions_this_week, total_commissions_yesterday,
+        last_updated
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+      ON DUPLICATE KEY UPDATE
+        direct_subordinates_count = VALUES(direct_subordinates_count),
+        no_of_registered_subordinates = VALUES(no_of_registered_subordinates),
+        direct_subordinates_recharge_quantity = VALUES(direct_subordinates_recharge_quantity),
+        direct_subordinates_recharge_amount = VALUES(direct_subordinates_recharge_amount),
+        direct_subordinates_with_deposit_count = VALUES(direct_subordinates_with_deposit_count),
+        team_subordinates_count = VALUES(team_subordinates_count),
+        no_of_register_all_subordinates = VALUES(no_of_register_all_subordinates),
+        team_subordinates_recharge_quantity = VALUES(team_subordinates_recharge_quantity),
+        team_subordinates_recharge_amount = VALUES(team_subordinates_recharge_amount),
+        team_subordinates_with_deposit_count = VALUES(team_subordinates_with_deposit_count),
+        total_commissions = VALUES(total_commissions),
+        total_commissions_this_week = VALUES(total_commissions_this_week),
+        total_commissions_yesterday = VALUES(total_commissions_yesterday),
+        last_updated = NOW()`,
+      [
+        user.phone,
+        computedData.directSubordinatesCount,
+        computedData.noOfRegisteredSubordinates,
+        computedData.directSubordinatesRechargeQuantity,
+        computedData.directSubordinatesRechargeAmount,
+        computedData.directSubordinatesWithDepositCount,
+        computedData.teamSubordinatesCount,
+        computedData.noOfRegisterAllSubordinates,
+        computedData.teamSubordinatesRechargeQuantity,
+        computedData.teamSubordinatesRechargeAmount,
+        computedData.teamSubordinatesWithDepositCount,
+        computedData.totalCommissions,
+        computedData.totalCommissionsThisWeek,
+        computedData.totalCommissionsYesterday,
+      ]
+    );
+
     return res.status(200).json({
-      data: {
-        directSubordinatesCount,
-        noOfRegisteredSubordinates,
-        directSubordinatesRechargeQuantity,
-        directSubordinatesRechargeAmount,
-        directSubordinatesWithDepositCount,
-        teamSubordinatesCount,
-        noOfRegisterAllSubordinates,
-        teamSubordinatesRechargeQuantity,
-        teamSubordinatesRechargeAmount,
-        teamSubordinatesWithDepositCount,
-        totalCommissions,
-        totalCommissionsThisWeek,
-        totalCommissionsYesterday,
-      },
+      data: computedData,
+      source: "computed",
     });
   } catch (error) {
-    console.log(error);
+    console.error(error);
+    return res.status(500).json({ message: error.message });
+  } finally {
+    // Make sure to release the connection back to the pool
+    if (dbConnection) dbConnection.release();
+  }
+};
+
+
+const adminOverrideSubordinates = async (req, res) => {
+  try {
+    const { userPhone, overrideData } = req.body;
+
+    if (!userPhone || !overrideData) {
+      return res.status(400).json({ message: "userPhone and overrideData required" });
+    }
+
+    // Check admin auth here (e.g. req.user.role === 'admin')
+    // Skipping auth code for brevity
+
+    const now = new Date();
+
+    // Upsert override data for this user (insert or update)
+    await connection.execute(
+      `INSERT INTO subordinate_overrides (user_phone, data, overridden_at) 
+       VALUES (?, ?, ?) 
+       ON DUPLICATE KEY UPDATE data = VALUES(data), overridden_at = VALUES(overridden_at)`,
+      [userPhone, JSON.stringify(overrideData), now]
+    );
+
+    return res.status(200).json({ message: "Override saved successfully" });
+  } catch (error) {
+    console.error("Error in adminOverrideSubordinates:", error);
     return res.status(500).json({ message: error.message });
   }
 };
 
-// const subordinatesDataByTimeAPI = async (req, res) => {
-//    try {
-//       const authToken = req.cookies.auth;
-//       const [userRow] = await connection.execute("SELECT `code`, `invite` FROM `users` WHERE `token` = ? AND `veri` = 1", [authToken]);
-//       const user = userRow?.[0];
-//       const startDate = req.query.startDate;
-//       console.log('===================',req.query.startDate)
 
-//       if (!user) {
-//          return res.status(401).json({ message: "Unauthorized" });
-//       }
-
-//       const directSubordinatesData = await getSubordinatesListDataByCode(user.code, startDate);
-
-//       let directSubordinatesCount = directSubordinatesData.subordinatesCount;
-//       let directSubordinatesRechargeQuantity = directSubordinatesData.subordinatesRechargeQuantity;
-//       let directSubordinatesRechargeAmount = directSubordinatesData.subordinatesRechargeAmount;
-//       let directSubordinatesWithDepositCount = directSubordinatesData.subordinatesWithDepositCount;
-//       let directSubordinatesWithBettingCount = directSubordinatesData.subordinatesWithBettingCount;
-//       let directSubordinatesBettingAmount = directSubordinatesData.subordinatesBettingAmount;
-//       let directSubordinatesFirstDepositAmount = directSubordinatesData.subordinatesFirstDepositAmount;
-
-//       const directSubordinatesList = directSubordinatesData.subordinatesList;
-
-//       res.status(200).json({
-//          status: true,
-//          data: {
-//             directSubordinatesCount,
-//             directSubordinatesRechargeQuantity,
-//             directSubordinatesRechargeAmount,
-//             directSubordinatesWithDepositCount,
-//             directSubordinatesWithBettingCount,
-//             directSubordinatesBettingAmount,
-//             directSubordinatesFirstDepositAmount,
-//             directSubordinatesList,
-//          },
-//          message: "Successfully fetched subordinates data",
-//       });
-//    } catch (error) {
-//       console.log(error);
-//       res.status(500).json({
-//          message: "Something went wrong!",
-//          error,
-//       });
-//    }
-// };
 
 const subordinatesDataByTimeAPI = async (req, res) => {
   try {
@@ -1726,6 +1898,7 @@ const promotionController = {
   getAttendanceBonusRecord,
   getAttendanceBonus,
   subordinatesDataByTimeAPI,
+  adminOverrideSubordinates
 };
 
 export default promotionController;

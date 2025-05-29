@@ -92,6 +92,7 @@
       .ptr--release .ptr--icon {
          transform: rotate(180deg);
       }
+      
    </style>
 </head>
 
@@ -4072,8 +4073,8 @@
       </symbol>
    </svg>
 
-   <div id="app" data-v-app="">
-      <div data-v-647954c7="" class="ar-loading-view"
+   <div id="app" data-v-app="" style="background-color:rgb(11, 5, 61);">
+      <div data-v-647954c7="" class=""
          style="--f13b4d11-currentFontFamily: 'Roboto', 'Inter', sans-serif; display: none;">
          <div data-v-647954c7="" class="loading-wrapper"><!-- <VanLoading /> -->
             <div data-v-647954c7="" class="loading-animat"><svg xmlns="http://www.w3.org/2000/svg"
@@ -4105,7 +4106,7 @@
                      </g>
                   </g>
                </svg></div>
-            <div data-v-647954c7="" class="com__box" style="display: none;"><!-- loading -->
+            <div data-v-647954c7="" class="com__box" style="display: none; background-color:rgb(11, 5, 61);"><!-- loading -->
                <div class="loading" data-v-647954c7="">
                   <div class="shape shape-1" data-v-647954c7=""></div>
                   <div class="shape shape-2" data-v-647954c7=""></div>
@@ -4153,7 +4154,7 @@
          </div>
       </div><!--v-if--><!-- 头部 -->
       <div data-v-5bd44e74="" data-v-a78765c7="" class="userInfo__container"
-         style="--f13b4d11-currentFontFamily: 'Roboto', 'Inter', sans-serif;">
+         style="--f13b4d11-currentFontFamily: 'Roboto', 'Inter', sans-serif; background-color:rgb(19, 12, 67);">
          <div data-v-12a80a3e="" data-v-5bd44e74="" class="navbar main" style="display: none;">
             <div data-v-12a80a3e="" class="navbar-fixed">
                <div data-v-12a80a3e="" class="navbar__content">
@@ -4169,24 +4170,21 @@
          <div data-v-5bd44e74="" class="userInfo__container-content">
             <div data-v-5bd44e74="" class="userInfo__container-content-wrapper">
                <div data-v-5bd44e74="" class="userInfo__container-content__avatar"><img data-v-5bd44e74=""
-                     id="avatar_display" src="/assets/png/20-a58f23bf.png" class="userAvatar"></div>
+                    src="/assets/png/default_profile.jpg" class="userAvatar"></div>
                <div data-v-5bd44e74="" class="userInfo__container-content__name">
                   <div data-v-5bd44e74="" class="userInfo__container-content-nickname">
                      <h3 data-v-5bd44e74="" id="username_display">Loading...</h3>
-                     <div data-v-5bd44e74="" class="n0"></div><img data-v-5bd44e74="" class="editPencil"
+                   <img data-v-5bd44e74="" class="editPencil"
                         src="/assets/png/editPencil-c89ee923.png" style="display: none;">
                   </div>
-                  <div data-v-5bd44e74="" class="userInfo__container-content-uid"><span
-                        data-v-5bd44e74="">UID</span><span data-v-5bd44e74="">|</span> <span data-v-5bd44e74=""
+                  <div  class="userInfo__container-content-uid"><span
+                        data-v-5bd44e74="">UID</span><span data-v-5bd44e74="">:</span> <span data-v-5bd44e74=""
                         id="phone_number_display">Loading...</span>
-                     <svg data-v-5bd44e74="" class="svg-icon icon-copy">
+                     <svg data-v-5bd44e74="" class="svg-icon icon-copy" >
                         <use xlink:href="#icon-copy"></use>
                      </svg>
                   </div>
-                  <div data-v-5bd44e74="" class="userInfo__container-content-logintime"><span data-v-5bd44e74="">Last
-                        login:&nbsp;</span><span data-v-5bd44e74="">2024-07-04 17:33:44</span></div>
-                  <div data-v-5bd44e74="" class="userInfo__container-content-logintime" style="display: none;"><span
-                        data-v-5bd44e74="">&nbsp;</span></div>
+                 
                </div>
             </div><!-- <div v-show="!isSettingPage" class="userInfo__container-content-right">
          <img v-lazy="getIcons('main', 'myCoin')" alt="" />
@@ -4214,18 +4212,15 @@
             </div>
             <div data-v-5bd44e74="" class="userInfo__container-setting-center-content">
                <h5 data-v-5bd44e74="">UID</h5>
-               <div data-v-5bd44e74=""><span data-v-5bd44e74="">10468189</span><svg data-v-5bd44e74=""
-                     class="svg-icon icon-copy">
-                     <use xlink:href="#icon-copy"></use>
-                  </svg></div>
+               <div data-v-5bd44e74=""><span data-v-5bd44e74="">10468189</span></div>
             </div>
          </div>
          <div data-v-2c18a1cc="" data-v-5bd44e74="" class="info-dialog"><!----><!----></div>
       </div>
       <div data-v-a78765c7="" class="userinfo-content"
          style="--f13b4d11-currentFontFamily: 'Roboto', 'Inter', sans-serif;"><!-- 总余额及钱包 -->
-         <div data-v-7d799898="" data-v-a78765c7="" class="totalSavings__container">
-            <div data-v-7d799898="" class="totalSavings__container-header">
+         <div data-v-7d799898="" data-v-a78765c7="" class="totalSavings__container" style="background: linear-gradient(135deg, rgba(10, 30, 60, 0.9) 0%, rgba(30, 60, 100, 0.9) 100%); backdrop-filter: blur(10px); padding: 20px; border-radius: 16px; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4); margin: 20px auto; max-width: 1000px;">
+            <div data-v-7d799898="" class="totalSavings__container-header" style="display: flex; justify-content: space-between; align-items: center;">
                <div data-v-7d799898="" class="totalSavings__container-header-box ar-1px-b">
                   <div data-v-7d799898="" class="totalSavings__container-header__title"><span data-v-7d799898="">Total
                         balance</span><!-- <img v-lazy="getIcons('main', 'balanceIcon')" alt="" /> --></div>
@@ -4235,8 +4230,20 @@
                         <use xlink:href="#icon-refreshBalance"></use>
                      </svg></p>
                </div>
+            
             </div>
             <div data-v-7d799898="" class="totalSavings__container-content">
+               <div onclick="location.href = '/promotion'" style="display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="29" height="29" viewBox="0 0 65 65" fill="currentColor"
+                    style="color:#ff5722; font-weight:bold;">
+                    <path fill-rule="evenodd"
+                      d="M8.939 1.501A4 4 0 0 1 12.062 0h32.155a4 4 0 0 1 3.124 1.501l7.738 9.673c.427.533.749 1.12.968 1.735H.233a5.99 5.99 0 0 1 .967-1.735zM0 16.091h56.28a5.985 5.985 0 0 1-1.277 2.673l-23.79 28.549a4 4 0 0 1-6.146 0l-23.79-28.55A5.984 5.984 0 0 1 0 16.092m20.556 5.936 7.195 10.102a.5.5 0 0 0 .816-.002l7.118-10.093a2.44 2.44 0 0 1 4.435 1.406v.2h-.223c-.326 0-.782.248-1.304.93-.506.663-6.466 8.686-9.651 13.035a.975.975 0 0 1-1.563.007L17.32 24.26s-.394-.62-1.06-.62h-.14v-.195a2.445 2.445 0 0 1 4.436-1.418"
+                      clip-rule="evenodd" />
+                  </svg>
+                  <span data-v-7d799898="" style="color: white;font-weight: bold;">Promotion</span>
+                </div>
+                
+                
                <div data-v-7d799898="" class="totalSavings__container-content-item" onclick="location.href='/wallet/'">
                   <div data-v-7d799898=""><svg data-v-7d799898="" class="svg-icon icon-wallets">
                         <use xlink:href="#icon-wallets"></use>
@@ -4254,239 +4261,146 @@
                         <use xlink:href="#icon-widthdrawBlue"></use>
                      </svg><span data-v-7d799898="">Withdraw</span></div>
                </div>
-               <div onclick="location.href = '/vip'" data-v-7d799898="" class="totalSavings__container-content-item">
-                  <div data-v-7d799898=""><svg data-v-7d799898="" class="svg-icon icon-VipIcon">
-                        <use xlink:href="#icon-VipIcon"></use>
-                     </svg><span data-v-7d799898="">VIP</span></div>
-               </div>
+          
+               
             </div>
          </div><!-- 保险箱 积分商城 下注-交易-充值-提现 -->
-         <div data-v-acd6d46f="" data-v-a78765c7="" class="financialServices__container">
-            <div data-v-acd6d46f="" class="financialServices__container-footer"><!-- 保险箱 -->
-               <div data-v-acd6d46f=""><svg data-v-acd6d46f="" class="svg-icon icon-vault">
-                     <use xlink:href="#icon-vault"></use>
-                  </svg>
-                  <div data-v-acd6d46f="">
-                     <div data-v-acd6d46f=""><span data-v-acd6d46f="">Safe</span>
-                        <div data-v-acd6d46f="" class="financialServices__container-footer-des"><svg data-v-acd6d46f=""
-                              class="svg-icon icon-vaultSmallIcon">
-                              <use xlink:href="#icon-vaultSmallIcon"></use>
-                           </svg>
-                           <h4 data-v-acd6d46f="">₹0.00</h4><i data-v-acd6d46f=""
-                              class="van-badge__wrapper van-icon van-icon-arrow"
-                              style="color: var(--text_color_L2);"><!----><!----><!----></i>
-                        </div>
-                     </div>
-                     <!-- <span>{{ $t('dailyRate') + dayShareRate }}%，{{ shareTime + $t('minCalculateIncome') }}</span> --><span
-                        data-v-acd6d46f="">Daily interest rate 0.1% + VIP extra income safe, calculated every 1
-                        minute</span>
-                  </div>
-               </div><!-- 积分商城 --><!--v-if-->
-            </div><!-- 下注-交易-充值-提现 -->
-            <div data-v-acd6d46f="" class="financialServices__container-box">
-               <div data-v-acd6d46f="" onclick="location.href = '/game_history'"><svg data-v-acd6d46f=""
-                     class="svg-icon icon-betHistory">
-                     <use xlink:href="#icon-betHistory"></use>
-                  </svg>
-                  <div data-v-acd6d46f="" class="financialServices__container-box-para">
-                     <h3 data-v-acd6d46f="">Game History</h3><span data-v-acd6d46f="">My game history</span>
-                  </div>
+         <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+
+         <style>
+         @keyframes fadeIn {
+           0% { opacity: 0; transform: translateY(10px); }
+           100% { opacity: 1; transform: translateY(0); }
+         }
+         </style><!-- 通知 邀请奖励 礼物兑换 商品订单 游戏统计 语言变更 -->
+       <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+       <div data-v-a30d19b1="" data-v-a78765c7="" class="settingPanel__container" style="background: linear-gradient(135deg, rgba(10, 30, 60, 0.9) 0%, rgba(30, 60, 100, 0.9) 100%); width: 100%; backdrop-filter: blur(10px); padding: 20px; border-radius: 16px; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4); margin: 20px auto; max-width: 600px;">
+         <div data-v-a30d19b1="" class="settingPanel__container-items" style="display: flex; flex-direction: column; gap: 10px;">
+
+            <div data-v-acd6d46f=""  class="settingPanel__container-items__item" onclick="location.href = '/wallet/transactionhistory'" style="background: rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 15px; display: flex; justify-content: start; align-items: center; gap: 15px; cursor: pointer;width: 100%; transition: transform 0.3s ease, box-shadow 0.3s ease; animation: fadeIn 0.5s ease forwards; opacity: 0; animation-delay: 0.1s;" onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 6px 20px rgba(38, 166, 154, 0.5)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">
+               <span class="material-icons" style="font-size: 28px; color: #ffffff; transition: color 0.3s ease;" onmouseover="this.style.color='#FFD700';" onmouseout="this.style.color='#ffffff';">account_balance</span>
+               <div data-v-acd6d46f="" class="financialServices__container-box-para" style="display: flex; flex-direction: column;">
+                 <h5 data-v-acd6d46f="" style="font-family: 'Roboto', sans-serif; font-size: 18px; font-weight: 700; color: #ffffff; margin: 0; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);">Transaction</h5>
                </div>
-               <div data-v-acd6d46f="" onclick="location.href = '/wallet/transactionhistory'"><svg data-v-acd6d46f=""
-                     class="svg-icon icon-tradeHistory">
-                     <use xlink:href="#icon-tradeHistory"></use>
-                  </svg>
-                  <div data-v-acd6d46f="" class="financialServices__container-box-para">
-                     <h3 data-v-acd6d46f="">Transaction</h3><span data-v-acd6d46f="">My transaction history</span>
+             </div>
+
+           <div data-v-a30d19b1="" class="settingPanel__container-items__item" onclick="location.href='/login_notification'" style="background: rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 15px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: transform 0.3s ease, box-shadow 0.3s ease; animation: fadeIn 0.5s ease forwards; opacity: 0; animation-delay: 0.1s; border-bottom: 1px solid rgba(255, 255, 255, 0.1);" onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 4px 15px rgba(38, 166, 154, 0.3)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">
+             <div data-v-a30d19b1="" class="settingPanel__container-items__title" style="display: flex; align-items: center; gap: 12px;">
+               <span class="material-icons" style="font-size: 28px; color: #ffffff; transition: color 0.3s ease;" onmouseover="this.style.color='#FFD700';" onmouseout="this.style.color='#ffffff';">notifications</span>
+               <span data-v-a30d19b1="" style="font-family: 'Roboto', sans-serif; font-size: 16px; font-weight: 600; color: #ffffff;">Notification</span>
+             </div>
+             <div data-v-a30d19b1="" class="settingPanel__container-items-right" style="display: flex; align-items: center; gap: 8px;">
+               <h5 data-v-a30d19b1="" style="background: #ffffff; color: #ffffff; font-family: 'Roboto', sans-serif; font-size: 12px; font-weight: 700; padding: 4px 8px; border-radius: 12px; margin: 0;">3</h5>
+               <span data-v-a30d19b1="" style="display: none; font-family: 'Roboto', sans-serif; font-size: 14px; color: #b0b0b0;">English</span>
+               <span class="material-icons" style="font-size: 20px; color: #666666; transition: color 0.3s ease;" onmouseover="this.style.color='#ffffff';" onmouseout="this.style.color='#666666';">chevron_right</span>
+             </div>
+           </div>
+           <div data-v-a30d19b1="" class="settingPanel__container-items__item" onclick="location.href='/redenvelopes'" style="background: rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 15px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: transform 0.3s ease, box-shadow 0.3s ease; animation: fadeIn 0.5s ease forwards; opacity: 0; animation-delay: 0.2s; border-bottom: 1px solid rgba(255, 255, 255, 0.1);" onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 4px 15px rgba(38, 166, 154, 0.3)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">
+             <div data-v-a30d19b1="" class="settingPanel__container-items__title" style="display: flex; align-items: center; gap: 12px;">
+               <span class="material-icons" style="font-size: 28px; color: #ffffff; transition: color 0.3s ease;" onmouseover="this.style.color='#FFD700';" onmouseout="this.style.color='#ffffff';">card_giftcard</span>
+               <span data-v-a30d19b1="" style="font-family: 'Roboto', sans-serif; font-size: 16px; font-weight: 600; color: #ffffff;">Gifts</span>
+             </div>
+             <div data-v-a30d19b1="" class="settingPanel__container-items-right" style="display: flex; align-items: center; gap: 8px;">
+               <h5 data-v-a30d19b1="" style="display: none; background: #ffffff; color: #ffffff; font-family: 'Roboto', sans-serif; font-size: 12px; font-weight: 700; padding: 4px 8px; border-radius: 12px; margin: 0;">3</h5>
+               <span data-v-a30d19b1="" style="display: none; font-family: 'Roboto', sans-serif; font-size: 14px; color: #b0b0b0;">English</span>
+               <span class="material-icons" style="font-size: 20px; color: #666666; transition: color 0.3s ease;" onmouseover="this.style.color='#ffffff';" onmouseout="this.style.color='#666666';">chevron_right</span>
+             </div>
+           </div>
+           <div data-v-a30d19b1="" class="settingPanel__container-items__item" style="display: none; background: rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 15px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: transform 0.3s ease, box-shadow 0.3s ease; animation: fadeIn 0.5s ease forwards; opacity: 0; animation-delay: 0.3s; border-bottom: 1px solid rgba(255, 255, 255, 0.1);" onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 4px 15px rgba(38, 166, 154, 0.3)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">
+             <div data-v-a30d19b1="" class="settingPanel__container-items__title" style="display: flex; align-items: center; gap: 12px;">
+               <span class="material-icons" style="font-size: 28px; color: #ffffff; transition: color 0.3s ease;" onmouseover="this.style.color='#FFD700';" onmouseout="this.style.color='#ffffff';">emoji_events</span>
+               <span data-v-a30d19b1="" style="font-family: 'Roboto', sans-serif; font-size: 16px; font-weight: 600; color: #ffffff;">My tournament</span>
+             </div>
+             <div data-v-a30d19b1="" class="settingPanel__container-items-right" style="display: flex; align-items: center; gap: 8px;">
+               <h5 data-v-a30d19b1="" style="display: none; background: #ffffff; color: #ffffff; font-family: 'Roboto', sans-serif; font-size: 12px; font-weight: 700; padding: 4px 8px; border-radius: 12px; margin: 0;">3</h5>
+               <span data-v-a30d19b1="" style="display: none; font-family: 'Roboto', sans-serif; font-size: 14px; color: #b0b0b0;">English</span>
+               <span class="material-icons" style="font-size: 20px; color: #666666; transition: color 0.3s ease;" onmouseover="this.style.color='#ffffff';" onmouseout="this.style.color='#666666';">chevron_right</span>
+             </div>
+           </div>
+           <div id="admin_zone" data-v-a30d19b1="" class="settingPanel__container-items__item" onclick="location.href='/admin/manager/index'" style="display: none; background: rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 15px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: transform 0.3s ease, box-shadow 0.3s ease; animation: fadeIn 0.5s ease forwards; opacity: 0; animation-delay: 0.4s; border-bottom: 1px solid rgba(255, 255, 255, 0.1);" onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 4px 15px rgba(38, 166, 154, 0.3)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">
+             <div data-v-a30d19b1="" class="settingPanel__container-items__title" style="display: flex; align-items: center; gap: 12px;">
+               <span class="material-icons" style="font-size: 28px; color: #ffffff; transition: color 0.3s ease;" onmouseover="this.style.color='#FFD700';" onmouseout="this.style.color='#ffffff';">admin_panel_settings</span>
+               <span data-v-a30d19b1="" style="font-family: 'Roboto', sans-serif; font-size: 16px; font-weight: 600; color: #ffffff;">Admin Zone</span>
+             </div>
+             <div data-v-a30d19b1="" class="settingPanel__container-items-right" style="display: flex; align-items: center; gap: 8px;">
+               <h5 data-v-a30d19b1="" style="display: none; background: #fdfdfd; color: #ffffff; font-family: 'Roboto', sans-serif; font-size: 12px; font-weight: 700; padding: 4px 8px; border-radius: 12px; margin: 0;">2</h5>
+               <span data-v-a30d19b1="" style="display: none; font-family: 'Roboto', sans-serif; font-size: 14px; color: #b0b0b0;">English</span>
+               <span class="material-icons" style="font-size: 20px; color: #666666; transition: color 0.3s ease;" onmouseover="this.style.color='#ffffff';" onmouseout="this.style.color='#666666';">chevron_right</span>
+             </div>
+           </div>
+          
+        
+           <div data-v-a30d19b1="" class="settingPanel__container-items__item" style="background: rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 15px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: transform 0.3s ease, box-shadow 0.3s ease; animation: fadeIn 0.5s ease forwards; opacity: 0; animation-delay: 0.3s; border-bottom: 1px solid rgba(255, 255, 255, 0.1);" onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 4px 15px rgba(38, 166, 154, 0.3)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">
+             <div data-v-a30d19b1="" class="settingPanel__container-items__title" style="display: flex; align-items: center; gap: 12px;">
+               <span class="material-icons" style="font-size: 28px; color: #ffffff; transition: color 0.3s ease;" onmouseover="this.style.color='#FFD700';" onmouseout="this.style.color='#ffffff';">language</span>
+               <span data-v-a30d19b1="" style="font-family: 'Roboto', sans-serif; font-size: 16px; font-weight: 600; color: #ffffff;">Language</span>
+             </div>
+             <div data-v-a30d19b1="" class="settingPanel__container-items-right" style="display: flex; align-items: center; gap: 8px;">
+               <h5 data-v-a30d19b1="" style="display: none; background: #ffffff; color: #ffffff; font-family: 'Roboto', sans-serif; font-size: 12px; font-weight: 700; padding: 4px 8px; border-radius: 12px; margin: 0;">3</h5>
+               <span data-v-a30d19b1="" style="font-family: 'Roboto', sans-serif; font-size: 14px; color: #b0b0b0;">English</span>
+               <span class="material-icons" style="font-size: 20px; color: #666666; transition: color 0.3s ease;" onmouseover="this.style.color='#ffffff';" onmouseout="this.style.color='#666666';">chevron_right</span>
+             </div>
+           </div>
+         </div>
+       </div>
+       
+       <style>
+       @keyframes fadeIn {
+         0% { opacity: 0; transform: translateY(10px); }
+         100% { opacity: 1; transform: translateY(0); }
+       }
+       </style><!-- 服务中心 -->
+            <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+         <div data-v-159bf81f="" data-v-a78765c7="" class="serviceCenter-wrap" style="">
+
+            <div data-v-159bf81f="" data-v-a78765c7="" class="serviceCenter-wrap" style="background: linear-gradient(135deg, rgba(10, 30, 60, 0.9) 0%, rgba(30, 60, 100, 0.9) 100%); backdrop-filter: blur(10px); padding: 10px; border-radius: 16px; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4); margin: 20px auto; height: 8rem;">
+              <div data-v-159bf81f="" class="serviceCenter__container" style="height: 1rem; background: none">
+                <h1 data-v-159bf81f="" style="font-family: 'Roboto', sans-serif; font-size: 24px; font-weight: 700; color: #ffffff; text-align: center; margin: 0 0 10px 0; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);">Service Center</h1>
+                <div data-v-159bf81f="" class="serviceCenter__container-items" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+                  <div data-v-159bf81f="" class="serviceCenter__container-items__item" onclick="location.href='/settings'" style="background: rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 15px;padding-block: 1em; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.3s ease, box-shadow 0.3s ease; animation: fadeIn 0.5s ease forwards; opacity: 0; animation-delay: 0.1s; text-align: center;" onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 6px 20px rgba(38, 166, 154, 0.5)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">
+                    <span class="material-icons" style="font-size: 32px; color: #ffffff; margin-bottom: 10px; transition: color 0.3s ease;" onmouseover="this.style.color='#FFD700';" onmouseout="this.style.color='#ffffff';">settings</span>
+                    <span data-v-159bf81f="" style="font-family: 'Roboto', sans-serif; font-size: 14px; font-weight: 600; color: #ffffff;">Settings</span>
                   </div>
-               </div>
-               <div data-v-acd6d46f="" onclick="location.href = '/wallet/rechargerecord'"><svg data-v-acd6d46f=""
-                     class="svg-icon icon-rechargeHistory">
-                     <use xlink:href="#icon-rechargeHistory"></use>
-                  </svg>
-                  <div data-v-acd6d46f="" class="financialServices__container-box-para">
-                     <h3 data-v-acd6d46f="">Deposit</h3><span data-v-acd6d46f="">My deposit history</span>
+                  <div data-v-159bf81f="" class="serviceCenter__container-items__item" onclick="location.href='/feedback'" style="background: rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.3s ease, box-shadow 0.3s ease; animation: fadeIn 0.5s ease forwards; opacity: 0; animation-delay: 0.2s; text-align: center;" onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 6px 20px rgba(38, 166, 154, 0.5)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">
+                    <span class="material-icons" style="font-size: 32px; color: #ffffff; margin-bottom: 10px; transition: color 0.3s ease;" onmouseover="this.style.color='#FFD700';" onmouseout="this.style.color='#ffffff';">feedback</span>
+                    <span data-v-159bf81f="" style="font-family: 'Roboto', sans-serif; font-size: 14px; font-weight: 600; color: #ffffff;">Feedback</span>
                   </div>
-               </div>
-               <div data-v-acd6d46f="" onclick="location.href='/wallet/withdrawalrecord'"><svg data-v-acd6d46f=""
-                     class="svg-icon icon-myWithdrawHistory">
-                     <use xlink:href="#icon-myWithdrawHistory"></use>
-                  </svg>
-                  <div data-v-acd6d46f="" class="financialServices__container-box-para">
-                     <h3 data-v-acd6d46f="">Withdraw</h3><span data-v-acd6d46f="">My withdraw history</span>
+                  <div data-v-159bf81f="" class="serviceCenter__container-items__item" onclick="location.href='/notification'" style="background: rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.3s ease, box-shadow 0.3s ease; animation: fadeIn 0.5s ease forwards; opacity: 0; animation-delay: 0.3s; text-align: center;" onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 6px 20px rgba(38, 166, 154, 0.5)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">
+                    <span class="material-icons" style="font-size: 32px; color: #ffffff; margin-bottom: 10px; transition: color 0.3s ease;" onmouseover="this.style.color='#FFD700';" onmouseout="this.style.color='#ffffff';">notifications</span>
+                    <span data-v-159bf81f="" style="font-family: 'Roboto', sans-serif; font-size: 14px; font-weight: 600; color: #ffffff;">Notification</span>
                   </div>
-               </div>
+                  <div data-v-159bf81f="" class="serviceCenter__container-items__item" onclick="location.href='/support'" style="background: rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.3s ease, box-shadow 0.3s ease; animation: fadeIn 0.5s ease forwards; opacity: 0; animation-delay: 0.4s; text-align: center;" onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 6px 20px rgba(38, 166, 154, 0.5)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">
+                    <span class="material-icons" style="font-size: 32px; color: #ffffff; margin-bottom: 10px; transition: color 0.3s ease;" onmouseover="this.style.color='#FFD700';" onmouseout="this.style.color='#ffffff';">support_agent</span>
+                    <span data-v-159bf81f="" style="font-family: 'Roboto', sans-serif; font-size: 14px; font-weight: 600; color: #ffffff;">Customer Service</span>
+                  </div>
+                  <div data-v-159bf81f="" class="serviceCenter__container-items__item"     style="background: rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.3s ease, box-shadow 0.3s ease; animation: fadeIn 0.5s ease forwards; opacity: 0; animation-delay: 0.5s; text-align: center;" onmouseover Mayor-click="this.style.transform='scale(1.05)'; this.style.boxShadow='0 6px 20px rgba(38, 166, 154, 0.5)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">
+                    <span class="material-icons" style="font-size: 32px; color: #ffffff; margin-bottom: 10px; transition: color 0.3s ease;" onmouseout="this.style.color='#ffffff';">school</span>
+                    <span data-v-159bf81f="" style="font-family: 'Roboto', sans-serif; font-size: 14px; font-weight: 600; color: #ffffff;">Beginner's Guide</span>
+                  </div>
+                  <div data-v-159bf81f="" class="serviceCenter__container-items__item" onclick="location.href='/about'" style="background: rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.3s ease, box-shadow 0.3s ease; animation: fadeIn 0.5s ease forwards; opacity: 0; animation-delay: 0.6s; text-align: center;" onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 6px 20px rgba(38, 166, 154, 0.5)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">
+                    <span class="material-icons" style="font-size: 32px; color: #ffffff; margin-bottom: 10px; transition: color 0.3s ease;" onmouseover="this.style.color='#FFD700';" onmouseout="this.style.color='#ffffff';">info</span>
+                    <span data-v-159bf81f="" style="font-family: 'Roboto', sans-serif; font-size: 14px; font-weight: 600; color: #ffffff;">About Us</span>
+                  </div>
+        
+                </div>
+              </div>
+          
             </div>
-         </div><!-- 通知 邀请奖励 礼物兑换 商品订单 游戏统计 语言变更 -->
-         <div data-v-a30d19b1="" data-v-a78765c7="" class="settingPanel__container">
-            <div data-v-a30d19b1="" class="settingPanel__container-items">
-               <div data-v-a30d19b1="" class="settingPanel__container-items__item ar-1px-b"
-                  onclick="location.href='/login_notification'">
-                  <div data-v-a30d19b1="" class="settingPanel__container-items__title"><svg data-v-a30d19b1=""
-                        class="svg-icon icon-notification">
-                        <use xlink:href="#icon-notification"></use>
-                     </svg><!-- <img :src="getIcons('main', `${item.icon}`)" /> --><span
-                        data-v-a30d19b1="">Notification</span></div>
-                  <div data-v-a30d19b1="" class="settingPanel__container-items-right">
-                     <h5 data-v-a30d19b1="">3</h5><span data-v-a30d19b1="" style="display: none;">English</span><i
-                        data-v-a30d19b1="" class="van-badge__wrapper van-icon van-icon-arrow"
-                        style="color: rgb(102, 102, 102);"><!----><!----><!----></i>
-                  </div>
-               </div>
-               <div data-v-a30d19b1="" class="settingPanel__container-items__item ar-1px-b"
-                  onclick="location.href='/redenvelopes'">
-                  <div data-v-a30d19b1="" class="settingPanel__container-items__title"><svg data-v-a30d19b1=""
-                        class="svg-icon icon-gifts">
-                        <use xlink:href="#icon-gifts"></use>
-                     </svg><!-- <img :src="getIcons('main', `${item.icon}`)" /> --><span data-v-a30d19b1="">Gifts</span>
-                  </div>
-                  <div data-v-a30d19b1="" class="settingPanel__container-items-right">
-                     <h5 data-v-a30d19b1="" style="display: none;">3</h5><span data-v-a30d19b1=""
-                        style="display: none;">English</span><i data-v-a30d19b1=""
-                        class="van-badge__wrapper van-icon van-icon-arrow"
-                        style="color: rgb(102, 102, 102);"><!----><!----><!----></i>
-                  </div>
-               </div>
-               <div data-v-a30d19b1="" class="settingPanel__container-items__item ar-1px-b" style="display: none;">
-                  <div data-v-a30d19b1="" class="settingPanel__container-items__title"><svg data-v-a30d19b1=""
-                        class="svg-icon icon-tournament">
-                        <use xlink:href="#icon-tournament"></use>
-                     </svg><!-- <img :src="getIcons('main', `${item.icon}`)" /> --><span data-v-a30d19b1="">My
-                        tournament</span></div>
-                  <div data-v-a30d19b1="" class="settingPanel__container-items-right">
-                     <h5 data-v-a30d19b1="" style="display: none;">3</h5><span data-v-a30d19b1=""
-                        style="display: none;">English</span><i data-v-a30d19b1=""
-                        class="van-badge__wrapper van-icon van-icon-arrow"
-                        style="color: rgb(102, 102, 102);"><!----><!----><!----></i>
-                  </div>
-               </div>
-               <div id="admin_zone" data-v-a30d19b1="" class="settingPanel__container-items__item ar-1px-b"
-                  style="display: none" onclick="location.href='/admin/manager/index'">
-                  <div data-v-a30d19b1="" class="settingPanel__container-items__title">
-                     <svg data-v-a30d19b1="" class="svg-icon icon-tournament">
-                        <use xlink:href="#icon-tournament"></use>
-                     </svg>
-                     <!-- <img :src="getIcons('main', `${item.icon}`)" /> -->
-                     <span data-v-a30d19b1="">Admin Zone</span>
-                  </div>
-                  <div data-v-a30d19b1="" class="settingPanel__container-items-right">
-                     <h5 data-v-a30d19b1="" style="display: none">2</h5>
-                     <span data-v-a30d19b1="" style="display: none">English</span>
-                     <i data-v-a30d19b1="" class="van-badge__wrapper van-icon van-icon-arrow"
-                        style="color: rgb(102, 102, 102)"></i>
-                  </div>
-               </div>
-               <div data-v-a30d19b1="" class="settingPanel__container-items__item ar-1px-b" style="display: none;">
-                  <div data-v-a30d19b1="" class="settingPanel__container-items__title"><svg data-v-a30d19b1=""
-                        class="svg-icon icon-productCode">
-                        <use xlink:href="#icon-productCode"></use>
-                     </svg><!-- <img :src="getIcons('main', `${item.icon}`)" /> --><span data-v-a30d19b1="">Product
-                        code</span></div>
-                  <div data-v-a30d19b1="" class="settingPanel__container-items-right">
-                     <h5 data-v-a30d19b1="" style="display: none;">3</h5><span data-v-a30d19b1=""
-                        style="display: none;">English</span><i data-v-a30d19b1=""
-                        class="van-badge__wrapper van-icon van-icon-arrow"
-                        style="color: rgb(102, 102, 102);"><!----><!----><!----></i>
-                  </div>
-               </div>
-               <div data-v-a30d19b1="" class="settingPanel__container-items__item ar-1px-b" style="display: none;">
-                  <div data-v-a30d19b1="" class="settingPanel__container-items__title"><svg data-v-a30d19b1=""
-                        class="svg-icon icon-myDraw">
-                        <use xlink:href="#icon-myDraw"></use>
-                     </svg><!-- <img :src="getIcons('main', `${item.icon}`)" /> --><span data-v-a30d19b1="">my
-                        draw</span></div>
-                  <div data-v-a30d19b1="" class="settingPanel__container-items-right">
-                     <h5 data-v-a30d19b1="" style="display: none;">3</h5><span data-v-a30d19b1=""
-                        style="display: none;">English</span><i data-v-a30d19b1=""
-                        class="van-badge__wrapper van-icon van-icon-arrow"
-                        style="color: rgb(102, 102, 102);"><!----><!----><!----></i>
-                  </div>
-               </div>
-               <div data-v-a30d19b1="" class="settingPanel__container-items__item ar-1px-b"
-                  onclick="location.href='/mian/game_statistics'">
-                  <div data-v-a30d19b1="" class="settingPanel__container-items__title">
-                     <svg data-v-a30d19b1="" class="svg-icon icon-statsIcon">
-                        <use xlink:href="#icon-statsIcon"></use>
-                     </svg>
-                     <!-- <img :src="getIcons('main', `${item.icon}`)" /> -->
-                     <span data-v-a30d19b1="">Game statistics</span>
-                  </div>
-                  <div data-v-a30d19b1="" class="settingPanel__container-items-right">
-                     <h5 data-v-a30d19b1="" style="display: none">2</h5>
-                     <span data-v-a30d19b1="" style="display: none">English</span>
-                     <i data-v-a30d19b1="" class="van-badge__wrapper van-icon van-icon-arrow"
-                        style="color: rgb(102, 102, 102)"></i>
-                  </div>
-               </div>
-               <div data-v-a30d19b1="" class="settingPanel__container-items__item ar-1px-b">
-                  <div data-v-a30d19b1="" class="settingPanel__container-items__title"><svg data-v-a30d19b1=""
-                        class="svg-icon icon-language">
-                        <use xlink:href="#icon-language"></use>
-                     </svg><!-- <img :src="getIcons('main', `${item.icon}`)" /> --><span
-                        data-v-a30d19b1="">Language</span></div>
-                  <div data-v-a30d19b1="" class="settingPanel__container-items-right">
-                     <h5 data-v-a30d19b1="" style="display: none;">3</h5><span data-v-a30d19b1="">English</span><i
-                        data-v-a30d19b1="" class="van-badge__wrapper van-icon van-icon-arrow"
-                        style="color: rgb(102, 102, 102);"><!----><!----><!----></i>
-                  </div>
-               </div>
-            </div>
-         </div><!-- 服务中心 -->
-         <div data-v-159bf81f="" data-v-a78765c7="" class="serviceCenter-wrap">
-            <div data-v-159bf81f="" class="serviceCenter__container">
-               <h1 data-v-159bf81f="">Service center</h1>
-               <div data-v-159bf81f="" class="serviceCenter__container-items">
-                  <div data-v-159bf81f="" class="serviceCenter__container-items__item"
-                     onclick="location.href='/settings'">
-                     <svg data-v-159bf81f="" class="svg-icon icon-settingCenter">
-                        <use xlink:href="#icon-settingCenter"></use>
-                     </svg>
-                     <!-- <img v-lazy="getIcons('main', `${item.icon}`)" /> -->
-                     <span data-v-159bf81f="">Settings</span>
-                  </div>
-                  <div data-v-159bf81f="" class="serviceCenter__container-items__item"
-                     onclick="location.href='/feedback'">
-                     <svg data-v-159bf81f="" class="svg-icon icon-feedback">
-                        <use xlink:href="#icon-feedback"></use>
-                     </svg>
-                     <!-- <img v-lazy="getIcons('main', `${item.icon}`)" /> -->
-                     <span data-v-159bf81f="">Feedback</span>
-                  </div>
-                  <div data-v-159bf81f="" class="serviceCenter__container-items__item"
-                     onclick="location.href='/notification'">
-                     <svg data-v-159bf81f="" class="svg-icon icon-notificationCenter">
-                        <use xlink:href="#icon-notificationCenter"></use>
-                     </svg>
-                     <!-- <img v-lazy="getIcons('main', `${item.icon}`)" /> -->
-                     <span data-v-159bf81f="">Notification</span>
-                  </div>
-                  <div data-v-159bf81f="" class="serviceCenter__container-items__item"
-                     onclick="location.href='/support'">
-                     <svg data-v-159bf81f="" class="svg-icon icon-server">
-                        <use xlink:href="#icon-server"></use>
-                     </svg>
-                     <!-- <img v-lazy="getIcons('main', `${item.icon}`)" /> -->
-                     <span data-v-159bf81f="">24/7 Customer service</span>
-                  </div>
-                  <div data-v-159bf81f="" class="serviceCenter__container-items__item"
-                     onclick="location.href = '/guide'">
-                     <svg data-v-159bf81f="" class="svg-icon icon-guide">
-                        <use xlink:href="#icon-guide"></use>
-                     </svg>
-                     <!-- <img v-lazy="getIcons('main', `${item.icon}`)" /> -->
-                     <span data-v-159bf81f="">Beginner's Guide</span>
-                  </div>
-                  <div data-v-159bf81f="" class="serviceCenter__container-items__item" onclick="location.href='/about'">
-                     <svg data-v-159bf81f="" class="svg-icon icon-about">
-                        <use xlink:href="#icon-about"></use>
-                     </svg>
-                     <!-- <img v-lazy="getIcons('main', `${item.icon}`)" /> -->
-                     <span data-v-159bf81f="">About us</span>
-                  </div>
-               </div>
-            </div>
-            <div data-v-159bf81f="" class="serviceCenter-wrap-header">
-               <button data-v-159bf81f="" onclick="logoutHandler()">
+            
+            <style>
+            @keyframes fadeIn {
+              0% { opacity: 0; transform: translateY(10px); }
+              100% { opacity: 1; transform: translateY(0); }
+            }
+            @keyframes popIn {
+              0% { transform: scale(0.9); opacity: 0; }
+              100% { transform: scale(1); opacity: 1; }
+            }
+            </style>
+            <div data-v-159bf81f="" class="serviceCenter-wrap-header" style="margin-top:8em; background: (255,255,255,0.1);">
+               <button data-v-159bf81f="" onclick="logoutHandler()" style="background: (255,255,255,0.1);">
                   <svg data-v-159bf81f="" class="svg-icon icon-logout">
                      <use xlink:href="#icon-logout"></use>
                   </svg>

@@ -108,7 +108,7 @@
                   <span class="info-box-icon elevation-1 bg-primary game">1M</span>
 
                   <div class="info-box-content">
-                    <span class="info-box-text">WinGO 1 min</span>
+                    <span class="info-box-text">1 min</span>
                   </div>
                 </div>
               </div>
@@ -119,7 +119,7 @@
                   <span class="info-box-icon elevation-1 bg-primary game">3M</span>
 
                   <div class="info-box-content">
-                    <span class="info-box-text">WinGO 3 min</span>
+                    <span class="info-box-text">3 min</span>
                   </div>
                 </div>
               </div>
@@ -128,7 +128,7 @@
                   <span class="info-box-icon elevation-1 bg-primary game">5M</span>
 
                   <div class="info-box-content">
-                    <span class="info-box-text">WinGO 5 min</span>
+                    <span class="info-box-text">5 min</span>
                   </div>
                 </div>
               </div>
@@ -137,12 +137,12 @@
                   <span class="info-box-icon elevation-1 bg-primary game">10M</span>
 
                   <div class="info-box-content">
-                    <span class="info-box-text">WinGO 10 min</span>
+                    <span class="info-box-text">10 min</span>
                   </div>
                 </div>
               </div>
             </div>
-            <div class="row">
+            <div class="row" style="display: none;">
               <div class="col-12 col-sm-6 col-md-3">
                 <div class="info-box mb-3">
                   <span class="info-box-icon bg-danger elevation-1">
@@ -192,7 +192,7 @@
                 </div>
               </div>
             </div>
-            <div class="row">
+            <div class="row" style="display: none;">
               <div class="col-12 col-sm-6 col-md-3">
                 <div class="info-box mb-3">
                   <span class="info-box-icon elevation-1 bg-primary">0</span>
@@ -236,7 +236,7 @@
                 </div>
               </div>
             </div>
-            <div class="row">
+            <div class="row" style="display: none;">
               <div class="col-12 col-sm-6 col-md-3">
                 <div class="info-box mb-3">
                   <span class="info-box-icon elevation-1 bg-primary">4</span>
@@ -281,7 +281,7 @@
               </div>
             </div>
             <div class="row">
-              <div class="col-12 col-sm-6 col-md-3">
+              <div class="col-12 col-sm-6 col-md-3" style="display: none;">
                 <div class="info-box mb-3">
                   <span class="info-box-icon bg-primary elevation-1">8</span>
 
@@ -293,7 +293,7 @@
               </div>
               <div class="clearfix hidden-md-up"></div>
 
-              <div class="col-12 col-sm-6 col-md-3">
+              <div class="col-12 col-sm-6 col-md-3" style="display: none;">
                 <div class="info-box mb-3">
                   <span class="info-box-icon elevation-1 bg-primary">9</span>
 
@@ -329,32 +329,7 @@
               <!-- Left col -->
               <div class="col-md-12">
                 <!-- MAP & BOX PANE -->
-                <div class="row">
-                  <div class="col-md-12">
-                    <div class="card direct-chat direct-chat-warning">
-                      <div class="card-header">
-                        <h3 class="card-title">Betting Statistics</h3>
-
-                        <div class="card-tools">
-                          <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                            <i class="fas fa-minus"></i>
-                          </button>
-                          <button type="button" class="btn btn-tool" data-card-widget="remove">
-                            <i class="fas fa-times"></i>
-                          </button>
-                        </div>
-                      </div>
-                      <div class="card-body">
-                        <div class="direct-chat-messages" style="min-height: 520px;">
-                          <div class="direct-chat-msg">
-                            <!---->
-                          </div>
-                        </div>
-                      </div>
-                      <div class="card-footer"></div>
-                    </div>
-                  </div>
-                </div>
+     
                 <div class="row">
                   <div class="col-md-12">
                     <div class="card card-primary">
@@ -374,9 +349,9 @@
                             <div data-v-a9660e98="" class="c-tc van-row"
                               style="text-align: center;border-bottom: 1px solid;padding: 6px">
                               <div data-v-a9660e98="" class="van-col van-col--8">Periods</div>
-                              <div data-v-a9660e98="" class="van-col van-col--5">Number</div>
-                              <div data-v-a9660e98="" class="van-col van-col--5">Big/Small</div>
-                              <div data-v-a9660e98="" class="van-col van-col--6">Colour</div>
+                              <div data-v-a9660e98="" class="van-col van-col--5">StartPrice</div>
+                              <div data-v-a9660e98="" class="van-col van-col--5">Up/Down</div>
+                        
                             </div>
                           </div>
                           <div id="list-orders">
@@ -387,27 +362,32 @@
                     </div>
                   </div>
                 </div>
-                <div class="row">
-                  <div class="col-md-12">
-                    <div class="card card-primary">
-                      <div class="card-header">
-                        <h3 class="card-title">Adjusting the result</h3>
-                      </div>
-                      <div class="card-body">
-                        <div class="form-group">
-                          <b>
-                            0 (Red and Purple) | 5 (Blue and Purple) | 1, 3, 7, 9 (Blue) | 2, 4, 6, 8 (Red) </p>
-                            <label for="editResult" id="ketQua">Next result: 6</label>
-                            <input type="text" class="form-control" id="editResult" value=""
-                              placeholder="Enter the result (e.g., 1)">
+                  <div class="row">
+                    <div class="col-md-12">
+                      <div class="card card-primary">
+                        <div class="card-header">
+                          <h3 class="card-title">Adjusting the result</h3>
                         </div>
-                      </div>
-                      <div class="card-footer" style="text-align: center;">
-                        <button type="submit" class="btn btn-primary start-order">Submit</button>
+                        <div class="card-body">
+                          <div class="form-group">
+                            <b>
+                              <div class="input-group" style="display: flex;  gap: 2em; margin-bottom: 1em; color: white; font-weight: 900;">
+                                <button class="btn btn-outline-secondary" id="editup" type="button" data-value="l" style="background-color: green;">Up ↑</button>
+                                <button class="btn btn-outline-secondary" id="editdown" type="button" data-value="n" style="background-color: red;">Down ↓</button>
+                                <button class="btn btn-outline-secondary" id="editdraw" type="button" data-value="d" style="background-color: rgb(23, 23, 134);">Draw</button>
+                              </div>
+                              <label for="editResult" id="ketQua">Next result: -</label>
+                            </b>
+                          </div>
+                        </div>
+                        <!-- <div class="card-footer" style="text-align: center;">
+                          <button type="submit" class="btn btn-primary start-order">Submit</button>
+                        </div> -->
                       </div>
                     </div>
                   </div>
-                </div>
+           
+
               </div>
             </div>
           </div>

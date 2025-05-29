@@ -207,19 +207,19 @@ function showListOrder4(list_orders, x) {
                         <div data-v-a9660e98="" class="van-col van-col--5">
                             <div data-v-a9660e98="" class="c-tc goItem">
                                 <!---->
-                                <span data-v-a9660e98="" class="${list_orders.amount % 2 == 0 ? "red" : "green"}"> ${list_orders.amount} </span>
+                                <span data-v-a9660e98="" class="${list_orders.bet === 'n' ? "red" : "green"}"> ${list_orders.startPrice } </span>
                             </div>
                         </div>
                         <div data-v-a9660e98="" class="van-col van-col--5">
                             <div data-v-a9660e98="" class="c-tc goItem">
-                                <span data-v-a9660e98=""> ${list_orders.amount < 5 ? "Small" : "Big"} </span>
+                                <span data-v-a9660e98=""> ${list_orders.bet === 'n' ? "Down" : "Up"} </span>
                                 <!---->
                             </div>
                         </div>
                         <div data-v-a9660e98="" class="van-col van-col--6">
                             <div data-v-a9660e98="" class="goItem c-row c-tc c-row-center">
                                 <div data-v-a9660e98="" class="c-tc c-row box c-row-center">
-                                    <span data-v-a9660e98="" class="li ${list_orders.amount % 2 == 0 ? "red" : "green"}"></span>
+                                    <span data-v-a9660e98="" class="li ${list_orders.bet ===  'n' ? "red" : "green"}"></span>
                                     ${list_orders.amount == 0 || list_orders.amount == 5 ? '<span data-v-a9660e98="" class="li violet"></span>' : ""}
                                 </div>
                             </div>
@@ -232,9 +232,19 @@ function showListOrder4(list_orders, x) {
 
 socket.on("data-server", function (msg) {
   if (msg.data[0].game != game) return;
-  $(".direct-chat-msg").html("");
-  $(".info-box-number").text("0");
-  let data1 = msg.data[0];
+
+  $(".orderRed, .orderViolet, .orderGreen, .orderNumber, .orderNumbers, .bigamt, .smallamt")
+  .text("0")
+  .attr("totalmoney", "0");
+
+$(".direct-chat-msg").html("");
+$(".info-box-number").text("0");
+
+
+$(".direct-chat-msg").html("");
+$(".info-box-number").text("0");
+let data1 = msg.data[0];
+$(".reservation-chunk-sub-num").text(data1.period);
   $(".reservation-chunk-sub-num").text(data1.period);
   let data2 = [];
   let data3 = data2.push(msg.data[1]);
@@ -252,91 +262,27 @@ socket.on("data-server", function (msg) {
     },
     dataType: "json",
     success: function (response) {
-      var red = 0;
-      var green = 0;
-      var violet = 0;
-      var n0 = 0;
-      var n1 = 0;
-      var n2 = 0;
-      var n3 = 0;
-      var n4 = 0;
-      var n5 = 0;
-      var n6 = 0;
-      var n7 = 0;
-      var n8 = 0;
-      var n9 = 0;
-      var n = 0;
-      var l = 0;
       var ns = 0;
+      var big=0;
+      var small=0;
+      console.log("Data",response.datas);
       var length = response.datas.length;
       var datas = response.datas;
       for (let i = 0; i < length; i++) {
-        if (datas[i].bet == "0") n0 += datas[i].money;
-        if (datas[i].bet == "1") n1 += datas[i].money;
-        if (datas[i].bet == "2") n2 += datas[i].money;
-        if (datas[i].bet == "3") n3 += datas[i].money;
-        if (datas[i].bet == "4") n4 += datas[i].money;
-        if (datas[i].bet == "5") n5 += datas[i].money;
-        if (datas[i].bet == "6") n6 += datas[i].money;
-        if (datas[i].bet == "7") n7 += datas[i].money;
-        if (datas[i].bet == "8") n8 += datas[i].money;
-        if (datas[i].bet == "9") n9 += datas[i].money;
-        if (datas[i].bet == "x") green += datas[i].money;
-        if (datas[i].bet == "t") violet += datas[i].money;
-        if (datas[i].bet == "d") red += datas[i].money;
-        if (datas[i].bet == "l") l += datas[i].money;
-        if (datas[i].bet == "n") n += datas[i].money;
+        if (datas[i].bet == "l") big += datas[i].money;
+        if (datas[i].bet == "n") small += datas[i].money;
       }
       ns =
-        n0 +
-        n1 +
-        n2 +
-        n3 +
-        n4 +
-        n5 +
-        n6 +
-        n7 +
-        n8 +
-        n9 +
-        green +
-        violet +
-        red +
-        l +
-        n;
-      $(".orderRed").text(formatMoney(red, ","));
-      $(".orderViolet").text(formatMoney(violet, ","));
-      $(".orderGreen").text(formatMoney(green, ","));
-      $(".orderNumber:eq(0)").text(formatMoney(n0, ","));
-      $(".orderNumber:eq(1)").text(formatMoney(n1, ","));
-      $(".orderNumber:eq(2)").text(formatMoney(n2, ","));
-      $(".orderNumber:eq(3)").text(formatMoney(n3, ","));
-      $(".orderNumber:eq(4)").text(formatMoney(n4, ","));
-      $(".orderNumber:eq(5)").text(formatMoney(n5, ","));
-      $(".orderNumber:eq(6)").text(formatMoney(n6, ","));
-      $(".orderNumber:eq(7)").text(formatMoney(n7, ","));
-      $(".orderNumber:eq(8)").text(formatMoney(n8, ","));
-      $(".orderNumber:eq(9)").text(formatMoney(n9, ","));
-      $(".orderNumber:eq(10)").text(formatMoney(l, ","));
-      $(".orderNumber:eq(11)").text(formatMoney(n, ","));
-      $(".orderNumbers").text(formatMoney(ns, ","));
+        big + 
+        small;
 
-      $(".orderRed").attr("totalmoney", red);
-      $(".orderViolet").attr("totalmoney", violet);
-      $(".orderGreen").attr("totalmoney", green);
-      $(".orderNumber:eq(0)").attr("totalmoney", n0);
-      $(".orderNumber:eq(1)").attr("totalmoney", n1);
-      $(".orderNumber:eq(2)").attr("totalmoney", n2);
-      $(".orderNumber:eq(3)").attr("totalmoney", n3);
-      $(".orderNumber:eq(4)").attr("totalmoney", n4);
-      $(".orderNumber:eq(5)").attr("totalmoney", n5);
-      $(".orderNumber:eq(6)").attr("totalmoney", n6);
-      $(".orderNumber:eq(7)").attr("totalmoney", n7);
-      $(".orderNumber:eq(8)").attr("totalmoney", n8);
-      $(".orderNumber:eq(9)").attr("totalmoney", n9);
-      $(".orderNumber:eq(10)").attr("totalmoney", l);
-      $(".orderNumber:eq(11)").attr("totalmoney", n);
+      $(".bigamt").attr("totalmoney", big);
+      $(".smallamt").attr("totalmoney", small);
       $(".orderNumbers").attr("totalmoney", ns);
 
+      $(".bigamt").text(big); // ✅
+      $(".smallamt").text(small); // ✅
+      
       response.datas.map((data) => {
         showJoinMember(data);
       });
@@ -388,6 +334,7 @@ socket.on("data-server", function (msg) {
   });
 });
 function showListOrder3(list_orders, x) {
+  console.log(list_orders);
   let htmls = "";
   let result = list_orders.map((list_orders) => {
     return (htmls += `
@@ -398,23 +345,16 @@ function showListOrder3(list_orders, x) {
                         <div data-v-a9660e98="" class="van-col van-col--5">
                             <div data-v-a9660e98="" class="c-tc goItem">
                                 <!---->
-                                <span data-v-a9660e98="" class="${list_orders.amount % 2 == 0 ? "red" : "green"}"> ${list_orders.amount} </span>
+                                <span data-v-a9660e98="" > ${list_orders.startPrice} </span>
                             </div>
                         </div>
                         <div data-v-a9660e98="" class="van-col van-col--5">
                             <div data-v-a9660e98="" class="c-tc goItem">
-                                <span data-v-a9660e98=""> ${list_orders.amount < 5 ? "Small" : "Big"} </span>
+                                <span data-v-a9660e98="" class="${list_orders.bet=== 'n' ? "red" : "green"}"> ${list_orders.bet =='n'  ? "Down" : "Up"} </span>
                                 <!---->
                             </div>
                         </div>
-                        <div data-v-a9660e98="" class="van-col van-col--6">
-                            <div data-v-a9660e98="" class="goItem c-row c-tc c-row-center">
-                                <div data-v-a9660e98="" class="c-tc c-row box c-row-center">
-                                    <span data-v-a9660e98="" class="li ${list_orders.amount % 2 == 0 ? "red" : "green"}"></span>
-                                    ${list_orders.amount == 0 || list_orders.amount == 5 ? '<span data-v-a9660e98="" class="li violet"></span>' : ""}
-                                </div>
-                            </div>
-                        </div>
+                 
                     </div>
                     `);
   });
@@ -599,6 +539,157 @@ $(".start-order").click(function (e) {
     });
   }
 });
+
+// Remove the inline onclick handlers from your HTML and use this instead
+$(document).ready(function() {
+  // Handle up button
+  $("#editup").click(function(e) {
+    e.preventDefault();
+    const value = $(this).data('value'); // Correct way to get data attribute
+    console.log(typeid,value);
+    if (value) {
+      $.ajax({
+        type: "POST",
+        url: "/api/webapi/admin/change",
+        data: {
+          type: "change-wingo1",
+          value: value,
+          typeid: typeid,
+        },
+        dataType: "json",
+        success: function(response) {
+          Swal.fire("Good job!", `${response.message}`, "success");
+          $("#ketQua").text(`Next Result: ${value === 'l' ? 'Up' : 'Down'}`);
+        },
+        error: function(xhr, status, error) {
+          Swal.fire({
+            icon: "error",
+            title: "Oops...",
+            text: "Something went wrong with the request!",
+          });
+        }
+      });
+    } else {
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Please provide a valid value!",
+      });
+    }
+  });
+
+  // Handle down button
+  $("#editdown").click(function(e) {
+    e.preventDefault();
+    const value = $(this).data('value');
+    if (value) {
+      $.ajax({
+        type: "POST",
+        url: "/api/webapi/admin/change",
+        data: {
+          type: "change-wingo1",
+          value: value,
+          typeid: typeid,
+        },
+        dataType: "json",
+        success: function(response) {
+          Swal.fire("Good job!", `${response.message}`, "success");
+          $("#ketQua").text(`Next Result: ${value === 'l' ? 'Up' : 'Down'}`);
+        },
+        error: function(xhr, status, error) {
+          Swal.fire({
+            icon: "error",
+            title: "Oops...",
+            text: "Something went wrong with the request!",
+          });
+        }
+      });
+    } else {
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Please provide a valid value!",
+      });
+    }
+  });
+
+  $("#editdraw").click(function(e) {
+    e.preventDefault();
+    const value = $(this).data('value');    
+    if (value) {
+      $.ajax({
+        type: "POST",
+        url: "/api/webapi/admin/change",
+        data: {
+          type: "change-wingo1",
+          value: value,
+          typeid: typeid,
+        },
+        dataType: "json",
+        success: function(response) {
+          let resultText;
+          switch(value) {
+            case 'l':
+              resultText = 'Up';
+              break;
+            case 'n':
+              resultText = 'Down';
+              break;
+            case 'd':
+              resultText = 'Draw';
+              break;
+            default:
+              resultText = 'Unknown';
+          }
+          Swal.fire("Good job!", `${response.message}`, "success");
+          $("#ketQua").text(`Next Result: ${resultText}`);
+        },
+        error: function(xhr, status, error) {
+          Swal.fire({
+            icon: "error",
+            title: "Oops...",
+            text: "Something went wrong with the request!",
+          });
+        }
+      });
+    } else {
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Please provide a valid value!",
+      });
+    }
+  });
+});
+
+// If you want to keep a separate function for some reason
+function handleButton(value) {
+  const typeid = 1;
+  
+  if (value) {
+    $.ajax({
+      type: "POST",
+      url: "/api/webapi/admin/change",
+      data: {
+        type: "change-wingo1",
+        value: value,
+        typeid: typeid,
+      },
+      dataType: "json",
+      success: function(response) {
+        Swal.fire("Good job!", `${response.message}`, "success");
+        $("#ketQua").text(`Next Result: ${value === 'l' ? 'Up' : 'Down'}`);
+      },
+      error: function(xhr, status, error) {
+        Swal.fire({
+          icon: "error",
+          title: "Oops...",
+          text: "Something went wrong with the request!",
+        });
+      }
+    });
+  }
+}
 
 // $('.editWinRate').click(function (e) {
 //     e.preventDefault();

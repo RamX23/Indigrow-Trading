@@ -16,136 +16,20 @@
     <link rel="stylesheet" href="/assets/css/modules-b642e9bc.css">
     <link rel="stylesheet" href="/assets/css/page-activity-4fe5c6bf.css">
     <link rel="stylesheet" href="/assets/css/index-2c2fee84.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        .stats-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            /* padding: 20px; */
-            color: white;
-        }
-        .period-selector {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        .period-btn {
-            padding: 8px 16px;
-            background: linear-gradient(135deg, rgba(10, 30, 60, 0.9) 0%, rgba(30, 60, 100, 0.9) 100%); backdrop-filter: blur(10px); box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);  #ffffff;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            color: white;
-        }
-        .period-btn.active {
-            background: linear-gradient(135deg, rgba(10, 30, 60, 0.9) 0%, rgba(30, 60, 100, 0.9) 100%); backdrop-filter: blur(10px); box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);  #3B82F6;
-            color: white;
-        }
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        .stat-card {
-            background: linear-gradient(135deg, rgba(10, 30, 60, 0.9) 0%, rgba(30, 60, 100, 0.9) 100%); backdrop-filter: blur(10px); box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);  rgb(255, 255, 255);
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            color: white;
-        }
-        .chart-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        .chart-wrapper {
-            background: linear-gradient(135deg, rgba(10, 30, 60, 0.9) 0%, rgba(30, 60, 100, 0.9) 100%); backdrop-filter: blur(10px); box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);  rgb(255, 255, 255);
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            height: 300px;
-        }
-        .stats-table {
-            border-collapse: collapse;
-            background: linear-gradient(135deg, rgba(10, 30, 60, 0.9) 0%, rgba(30, 60, 100, 0.9) 100%); backdrop-filter: blur(10px); box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);  rgb(163, 155, 155);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            border-radius: 8px;
-            color: white;
-            overflow: hidden;
-        }
-        .stats-table th, .stats-table td {
-            padding: 12px 10px;
-            text-align: left;
-            border-bottom: 1px solid #e5e7eb;
-        }
-        .stats-table th {
-            background: linear-gradient(135deg, rgba(10, 30, 60, 0.9) 0%, rgba(30, 60, 100, 0.9) 100%); backdrop-filter: blur(10px); box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);  #ffffff;
-            color: #6B7280;
-            font-weight: 500;
-            color: yellow;
-        }
-
-        .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap: 20px;
-    margin-bottom: 30px;
-}
-
-.stat-card {
-    background: linear-gradient(135deg, rgba(10, 30, 60, 0.9) 0%, rgba(30, 60, 100, 0.9) 100%); backdrop-filter: blur(10px); box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);  white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-
-.stat-icon {
-    font-size: 24px;
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, rgba(10, 30, 60, 0.9) 0%, rgba(30, 60, 100, 0.9) 100%); backdrop-filter: blur(10px); box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);  #f0f7ff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #3B82F6;
-}
-
-.stat-icon .fas {
-    font-size: 20px;
-}
-
-.stat-content {
-    flex: 1;
-}
-
-.stat-content h3 {
-    margin: 0 0 5px 0;
-    font-size: 14px;
-    color: #6B7280;
-    font-weight: 500;
-}
-
-.stat-content p {
-    margin: 0;
-    font-size: 24px;
-    font-weight: 700;
-    color: #111827;
-    color: white;
-}
-
-/* Specific icon colors */
-.stat-card:nth-child(1) .stat-icon { color: #3B82F6; background: linear-gradient(135deg, rgba(10, 30, 60, 0.9) 0%, rgba(30, 60, 100, 0.9) 100%); backdrop-filter: blur(10px); box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);  #f0f7ff; }
-.stat-card:nth-child(2) .stat-icon { color: #10B981; background: linear-gradient(135deg, rgba(10, 30, 60, 0.9) 0%, rgba(30, 60, 100, 0.9) 100%); backdrop-filter: blur(10px); box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);  #ecfdf5; }
-.stat-card:nth-child(3) .stat-icon { color: #EF4444; background: linear-gradient(135deg, rgba(10, 30, 60, 0.9) 0%, rgba(30, 60, 100, 0.9) 100%); backdrop-filter: blur(10px); box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);  #fef2f2; }
-.stat-card:nth-child(4) .stat-icon { color: #9333EA; background: linear-gradient(135deg, rgba(10, 30, 60, 0.9) 0%, rgba(30, 60, 100, 0.9) 100%); backdrop-filter: blur(10px); box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);  #f5f3ff; }
-.stat-card:nth-child(5) .stat-icon { color: #F59E0B; background: linear-gradient(135deg, rgba(10, 30, 60, 0.9) 0%, rgba(30, 60, 100, 0.9) 100%); backdrop-filter: blur(10px); box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);  #fffbeb; }
-    </style>
+    <link rel="manifest" href="/manifest.tiranga.json?version=1.1">
+    <title>Indigrow</title>
+    <link rel="stylesheet" href="/assets/css/index-f3f1dfe8.css">
+    <link rel="stylesheet" href="/assets/css/modules-b642e9bc.css">
+    <link rel="stylesheet" href="/assets/css/page-activity-4fe5c6bf.css">
+    <link rel="stylesheet" href="/assets/css/index-2c2fee84.css">
+    <link rel="stylesheet" href="/assets/css/modules-5dd73da0.css">
+    <link rel="stylesheet" href="/assets/css/page-home-482c7bbf.css" />
+ 
+ 
+ 
+ 
+    <link rel="stylesheet" href="/assets/css/page-home-522c97b9.css">
+    <link rel="stylesheet" href="/assets/css/page-login-49518e3f.css">
 </head>
 
 <body style="font-size: 12px;" class="">
@@ -4149,225 +4033,28 @@
         </symbol>
     </svg>
 
-    <div id="app" data-v-app="" style="background-color:rgb(11, 5, 61); margin-bottom: 5em;">
-        <div data-v-647954c7="" class="ar-loading-view"
-            style="display: none; --f13b4d11-currentFontFamily: 'Roboto', 'Inter', sans-serif;">
-            <div data-v-647954c7="" class="loading-wrapper"><!-- <VanLoading /> -->
-                <div data-v-647954c7="" class="loading-animat"><svg xmlns="http://www.w3.org/2000/svg"
-                        xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 200 200" width="200" height="200"
-                        preserveAspectRatio="xMidYMid meet"
-                        style="width: 100%; height: 100%; transform: translate3d(0px, 0px, 0px); content-visibility: visible;">
-                        <defs>
-                            <clipPath id="__lottie_element_2">
-                                <rect width="200" height="200" x="0" y="0"></rect>
-                            </clipPath>
-                            <image xlink:href="/logo_loading.png">
-                            </image>
-                            <image
-                                xlink:href="data:image/png;base64,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">
-                            </image>
-                        </defs>
-                        <g clip-path="url(#__lottie_element_2)">
-                            <g class="ai"
-                                transform="matrix(-0.8971134424209595,-0.44180023670196533,0.44180023670196533,-0.8971134424209595,145.5313262939453,233.89137268066406)"
-                                opacity="1" style="display: block;">
-                                <image width="200px" height="200px" preserveAspectRatio="xMidYMid slice"
-                                    xlink:href="data:image/png;base64,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">
-                                </image>
-                            </g>
-                            <g class="png"
-                                transform="matrix(1.0708680152893066,0,0,1.0708680152893066,18.078598022460938,78.5826416015625)"
-                                opacity="1" style="display: block;">
-                                <image width="163px" height="60px" preserveAspectRatio="xMidYMid slice"
-                                    xlink:href="/logo_loading.png">
-                                </image>
-                            </g>
-                        </g>
-                    </svg></div>
-                <div data-v-647954c7="" class="com__box" style="display: none;"><!-- loading -->
-                    <div class="loading" data-v-647954c7="">
-                        <div class="shape shape-1" data-v-647954c7=""></div>
-                        <div class="shape shape-2" data-v-647954c7=""></div>
-                        <div class="shape shape-3" data-v-647954c7=""></div>
-                        <div class="shape shape-4" data-v-647954c7=""></div>
-                    </div><!-- 说明：组件名 -->
-                </div><!-- <div class="animation"></div> -->
-            </div>
-            <div data-v-647954c7="" class="skeleton-wrapper" style="display: none;">
-                <div data-v-647954c7="" class="van-skeleton van-skeleton--animate"><!---->
-                    <div class="van-skeleton__content"><!---->
-                        <div class="van-skeleton-paragraph" style="width: 100%;"></div>
-                        <div class="van-skeleton-paragraph" style="width: 100%;"></div>
-                        <div class="van-skeleton-paragraph" style="width: 100%;"></div>
-                        <div class="van-skeleton-paragraph" style="width: 100%;"></div>
-                        <div class="van-skeleton-paragraph" style="width: 100%;"></div>
-                        <div class="van-skeleton-paragraph" style="width: 100%;"></div>
-                        <div class="van-skeleton-paragraph" style="width: 100%;"></div>
-                        <div class="van-skeleton-paragraph" style="width: 100%;"></div>
-                        <div class="van-skeleton-paragraph" style="width: 100%;"></div>
-                        <div class="van-skeleton-paragraph" style="width: 60%;"></div>
-                    </div>
-                </div>
-                <div data-v-647954c7="" class="van-skeleton van-skeleton--animate">
-                    <div class="van-skeleton-avatar van-skeleton-avatar--round"></div>
-                    <div class="van-skeleton__content">
-                        <h3 class="van-skeleton-title"></h3>
-                        <div class="van-skeleton-paragraph" style="width: 100%;"></div>
-                        <div class="van-skeleton-paragraph" style="width: 100%;"></div>
-                        <div class="van-skeleton-paragraph" style="width: 100%;"></div>
-                        <div class="van-skeleton-paragraph" style="width: 100%;"></div>
-                        <div class="van-skeleton-paragraph" style="width: 60%;"></div>
-                    </div>
-                </div>
-                <div data-v-647954c7="" class="van-skeleton van-skeleton--animate"><!---->
-                    <div class="van-skeleton__content">
-                        <h3 class="van-skeleton-title"></h3>
-                        <div class="van-skeleton-paragraph" style="width: 100%;"></div>
-                        <div class="van-skeleton-paragraph" style="width: 100%;"></div>
-                        <div class="van-skeleton-paragraph" style="width: 100%;"></div>
-                        <div class="van-skeleton-paragraph" style="width: 100%;"></div>
-                        <div class="van-skeleton-paragraph" style="width: 60%;"></div>
-                    </div>
-                </div>
-            </div>
-        </div><!--v-if-->
-        <div data-v-12a80a3e="" data-v-214b87c9="" class="navbar main"
-            style="--f13b4d11-currentFontFamily: 'Roboto', 'Inter', sans-serif;">
-            <div data-v-12a80a3e="" class="navbar-fixed">
-                <div data-v-12a80a3e="" class="navbar__content">
-                    <div data-v-12a80a3e="" class="navbar__content-left"><!--v-if--></div>
-                    <div data-v-12a80a3e="" class="navbar__content-center">
-                        <div data-v-12a80a3e="" class="headLogo" style="display: flex; justify-content: center; align-items: center;">
-                        <h2 style="font-weight: 1000;">IndiGrow</h2>
-                     </div>
-                        <div data-v-12a80a3e="" class="navbar__content-title"></div>
-                    </div>
-                    <div data-v-12a80a3e="" class="navbar__content-right"></div>
-                </div>
-            </div>
-        </div>
-        <div data-v-4a7709f3="" data-v-214b87c9="" class="activity-wrapper"
-            style="--f13b4d11-currentFontFamily: 'Roboto', 'Inter', sans-serif; background-color:rgb(11, 5, 61);">
-            <div data-v-4a7709f3="" class="activity-banner" style="background-color:rgb(11, 5, 61);">
-             
-                <div class="records" style="width:100%;  border:'2px solid red';  " >
-                    
-                    <div class="stats-container" style="margin-top: 1em; margin-bottom: 1em; background-color:rgb(11, 5, 61);">
-                        <span style="font-weight: 600; font-size: 2em; text-align: center; width: 100%; margin-inline: 3em;">Trading statistics</span>
 
-     
-                        
-                        <!-- Period Selector -->
-                        <div class="period-selector" style="margin-top: 1em;">
-                            <button class="period-btn active" data-period="today">Today</button>
-                            <button class="period-btn" data-period="week">This Week</button>
-                            <button class="period-btn" data-period="month">This Month</button>
-                            <button class="period-btn" data-period="year">This Year</button>
-                            <button class="period-btn" data-period="all">All Time</button>
-                        </div>
-                        
-                        <!-- Stats Summary Cards -->
-                        <div class="stats-grid">
-            
-                            <div class="stat-card">
-                                <div class="stat-icon">
-                                    <i class="fas fa-chart-bar"></i>
-                                </div>
-                                <div class="stat-content">
-                                    <h3>Overall P/L</h3>
-                                    <span id="overallProfitLoss" style="font-size: 1.5em;">₹0</span>
-                                </div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-icon">
-                                    <i class="fas fa-chart-bar"></i>
-                                </div>
-                                <div class="stat-content">
-                                    <h3>Total Bets</h3>
-                                    <p id="total-bets">0</p>
-                                </div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-icon">
-                                    <i class="fas fa-trophy"></i>
-                                </div>
-                                <div class="stat-content">
-                                    <h3>Treds Won</h3>
-                                    <p id="bets-won">0</p>
-                                </div>
-                            </div>
+    <div data-v-4aca9bd1="" data-v-40958d9a="" id="app" class="Betting__C" voicetype="1" typeid="1" style="background-color:rgb(11, 5, 61); ">
+        <div class="intervals" style="margin-top: 1em;" >
+         <%- include('./element/e_tab_time.ejs') -%>
+     </div>
+        <!-- Hidden mark div kept for compatibility -->
+
+   
+        <div data-v-a9660e98="" class="game-list" style="margin-bottom: 5em;"><%- include('element/list-order.ejs') -%></div>
+      
+        <!-- Chart container with info panel -->
+        <%- include('../../nav.ejs') -%>    
 
 
-                            <div class="stat-card">
-                                <div class="stat-icon">
-                                    <i class="fas fa-times-circle"></i>
-                                </div>
-                                <div class="stat-content">
-                                    <h3>Trades Lost</h3>
-                                    <p id="bets-lost">0</p>
-                                </div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-icon">
-                                    <i class="fas fa-wallet"></i>
-                                </div>
-                                <div class="stat-content">
-                                    <h3>Amount Spent</h3>
-                                    <p id="amount-spent">$0</p>
-                                </div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-icon">
-                                    <i class="fas fa-percentage"></i>
-                                </div>
-                                <div class="stat-content">
-                                    <h3>Win Rate</h3>
-                                    <p id="win-rate">0%</p>
-                                </div>
-                            </div>
-
-
-                        </div>
-                        <hr/>
-                        <div class="chart-container" style="display: flex; flex-direction: column; justify-content: center; align-items: center;">
-                            <span style="font-weight: 600; font-size: 2em; padding-top: 1em;">Charts Section</span>
-                            <!-- <div class="chart-wrapper">
-                                <canvas id="trendChart"></canvas>
-                            </div> -->
-                            <div class="chart-wrapper">
-                                <canvas id="ratioChart"></canvas>
-                            </div>
-                        </div>
-                        <hr/>
-                        <!-- Game-wise Statistics Table -->
-                        <div class="table" style="margin-top: 2em;">
-                     <span style="font-weight: 600; font-size: 2em; padding: 1em;">Game-wise Breakdown</span>
-                        <table class="stats-table" style="margin-top: 1em;">
-                            <thead>
-                                <tr>
-                                    <th>Game</th>
-                                    <th>Total Trade</th>
-                                    <th>Bets Won</th>
-                                    <th>Bets Lost</th>
-                                    <th>Win Rate</th>
-                                    <th>Amount Spent</th>
-                                </tr>
-                            </thead>
-                            <tbody id="stats-table">
-                                <!-- Will be populated by JavaScript -->
-                            </tbody>
-                        </table>
-                    </div>
-                    </div>
-                
- 
-<div class="footer" style="margin-top: 5em;">
-        <%- include('../nav') -%>
-    </div>
-
-    </div>
+    <!-- Add required libraries -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="/wingo/stats.js"></script>
-</body>
-
-</html>
+    <script src="https://cdn.jsdelivr.net/npm/moment"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-crosshair"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="/js/client.js"></script>
+    <script src="/wingo/main.js"></script>
+    

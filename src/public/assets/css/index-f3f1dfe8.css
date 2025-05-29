@@ -110,20 +110,20 @@ input[type="number"]::-webkit-outer-spin-button {
   gap: 0.11707rem;
   color: var(--text4, var(--text_color_L2));
 }
-.tabbar__container-item[data-v-6ab3f23e]:nth-of-type(3) {
+/* .tabbar__container-item[data-v-6ab3f23e]:nth-of-type(3) {
   position: relative;
-}
-.tabbar__container-item[data-v-6ab3f23e]:nth-of-type(3) svg {
+} */
+/* .tabbar__container-item[data-v-6ab3f23e]:nth-of-type(3) svg {
   position: relative;
   top: -0.4rem;
   width: 0.7504rem;
   height: 0.65rem;
   z-index: 3;
-}
-.tabbar__container-item[data-v-6ab3f23e]:nth-of-type(3) svg path {
+} */
+/* .tabbar__container-item[data-v-6ab3f23e]:nth-of-type(3) svg path {
   fill: #fff !important;
-}
-.tabbar__container-item:nth-of-type(3) .promotionBg[data-v-6ab3f23e] {
+} */
+/* .tabbar__container-item:nth-of-type(3) .promotionBg[data-v-6ab3f23e] {
   position: absolute;
   left: 50%;
   bottom: 0.53333rem;
@@ -134,8 +134,8 @@ input[type="number"]::-webkit-outer-spin-button {
   height: 1.46667rem;
   border-radius: 50%;
   z-index: 2;
-}
-.tabbar__container-item:nth-of-type(3) .promotionBg[data-v-6ab3f23e]:after {
+} */
+/* .tabbar__container-item:nth-of-type(3) .promotionBg[data-v-6ab3f23e]:after {
   content: "";
   position: absolute;
   left: 50%;
@@ -146,7 +146,7 @@ input[type="number"]::-webkit-outer-spin-button {
   -webkit-transform: translate(-50%, -50%);
   transform: translate(-50%, -50%);
   background: var(--main_gradient-color2);
-}
+} */
 .tabbar__container-item svg[data-v-6ab3f23e] {
   display: block;
   width: 0.5776rem;
@@ -1130,7 +1130,7 @@ textarea {
   font-family: bahnschrift;
 }
 #app {
-  background: var(--bg_color_L1);
+  background:rgba(11, 4, 47, 0.832);
 }
 .popup {
   position: fixed;

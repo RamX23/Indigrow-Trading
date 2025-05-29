@@ -38,6 +38,10 @@ const adminPageK3 = async (req, res) => {
   return res.render("manage/k3.ejs");
 };
 
+const editSubordinate=async(req,res)=>{
+  return res.render("manage/editSubordinate");
+}
+
 const ctvProfilePage = async (req, res) => {
   var phone = req.params.phone;
   return res.render("manage/profileCTV.ejs", { phone });
@@ -95,6 +99,10 @@ const settings = async (req, res) => {
   return res.render("manage/settings.ejs");
 };
 
+const editsubordinate=async(req,res)=>{
+  return res.render("manage/editSubordinate.ejs")
+}
+
 // xác nhận admin
 const middlewareAdminController = async (req, res, next) => {
   // xác nhận token
@@ -124,6 +132,48 @@ const middlewareAdminController = async (req, res, next) => {
   }
 };
 
+const totalTrade=async(req,res)=>{
+  let auth = req.cookies.auth;
+  let typeid = req.body.typeid;
+  if (!typeid) {
+    return res.status(200).json({
+      message: "Failed",
+      status: false,
+      timeStamp: timeNow,
+    });
+  }
+  let game = "";
+  if (typeid == "1") game = "wingo";
+  if (typeid == "2") game = "wingo3";
+  if (typeid == "3") game = "wingo5";
+  if (typeid == "4") game = "wingo10";
+
+  const [rows] = await connection.query(
+    "SELECT * FROM users WHERE `token` = ? ",
+    [auth],
+  );
+  if(rows.length()>0){
+    const [big]=await connection.query(
+      `select sum(money)
+      from minutes_2
+      where status=0 and bet='l' and game=?
+      `,[game],
+    );
+
+    const [small]=await connection.query(
+      `select sum(money)
+      from minutes_2
+      where status=0 and bet='n' and game=?
+      `,[game],
+    );
+    return res.status(200).json({
+      message:"Success",
+      bigBets:big,
+      smallBets:small
+    })
+  }
+}
+
 const totalJoin = async (req, res) => {
   let auth = req.cookies.auth;
   let typeid = req.body.typeid;
@@ -147,7 +197,7 @@ const totalJoin = async (req, res) => {
 
   if (rows.length > 0) {
     const [wingoall] = await connection.query(
-      `SELECT * FROM minutes_1 WHERE game = "${game}" AND status = 0 AND level = 0 ORDER BY id ASC `,
+      `SELECT * FROM minutes_2 WHERE game = "${game}" AND status = 0 ORDER BY id ASC `,
       [auth],
     );
     const [winGo1] = await connection.execute(
@@ -155,7 +205,14 @@ const totalJoin = async (req, res) => {
       [],
     );
     const [winGo10] = await connection.execute(
-      `SELECT * FROM wingo WHERE status != 0 AND game = '${game}' ORDER BY id DESC LIMIT 10 `,
+      `SELECT * 
+      FROM wingo w 
+      JOIN minutes_2 m 
+      ON m.stage = w.period 
+      WHERE w.status != 0 AND w.game = '${game}' 
+      ORDER BY w.id DESC 
+      LIMIT 10;
+       `,
       [],
     );
     const [setting] = await connection.execute(`SELECT * FROM admin_ac `, []);
@@ -180,61 +237,57 @@ const totalJoin = async (req, res) => {
 
 const listMember = async (req, res) => {
   let { pageno, limit, search } = req.body;
+
+  pageno = parseInt(pageno);
+  limit = parseInt(limit);
+
+  if (!pageno || !limit || pageno < 1 || limit < 1) {
+    return res.status(200).json({
+      code: 0,
+      msg: "No more data",
+      data: {
+        gameslist: [],
+      },
+      status: false,
+    });
+  }
+
   const offset = (pageno - 1) * limit;
 
-  if (!pageno || !limit) {
+  try {
+    let sql = "SELECT * FROM users WHERE veri = 1 AND level != 2";
+    let countSql = "SELECT COUNT(*) as total FROM users WHERE veri = 1 AND level != 2";
+    let params = [];
+    let countParams = [];
+
+    if (search) {
+      sql += " AND (phone LIKE ? OR id_user LIKE ?)";
+      countSql += " AND (phone LIKE ? OR id_user LIKE ?)";
+      params.push(`%${search}%`, `%${search}%`);
+      countParams.push(`%${search}%`, `%${search}%`);
+    }
+
+    // Inject LIMIT and OFFSET directly into the query string
+    sql += ` ORDER BY id DESC LIMIT ${limit} OFFSET ${offset}`;
+
+    const [users] = await connection.execute(sql, params);
+    const [total_users] = await connection.execute(countSql, countParams);
+
     return res.status(200).json({
-      code: 0,
-      msg: "No more data",
-      data: {
-        gameslist: [],
-      },
+      message: "Success",
+      status: true,
+      datas: users,
+      currentPage: pageno,
+      page_total: Math.ceil(total_users[0].total / limit),
+    });
+  } catch (error) {
+    console.error("Error in listMember:", error);
+    return res.status(500).json({
+      message: "Database error",
       status: false,
+      error: error.message
     });
   }
-
-  if (pageno < 0 || limit < 0) {
-    return res.status(200).json({
-      code: 0,
-      msg: "No more data",
-      data: {
-        gameslist: [],
-      },
-      status: false,
-    });
-  }
-
-  let sql = "SELECT * FROM users WHERE veri = 1 AND level != 2";
-  let countSql =
-    "SELECT COUNT(*) as total FROM users WHERE veri = 1 AND level != 2";
-  let params = [];
-
-  if (search) {
-    sql += " AND (phone LIKE ? OR id_user LIKE ?)";
-    countSql += " AND (phone LIKE ? OR phone LIKE ?)";
-    params = [`%${search}%`, `%${search}%`];
-  }
-
-  sql += " ORDER BY id DESC LIMIT ? OFFSET ?";
-  params.push(limit, offset);
-
-  // Execute the query to fetch users
-  const [users] = await connection.execute(sql, params);
-
-  const [total_users] = await connection.query(countSql, params.slice(0, -2));
-
-  // const [users] = await connection.execute(
-  //    "SELECT * FROM users WHERE veri = 1 AND level != 2 ORDER BY id DESC LIMIT ? OFFSET ?",
-  //    [limit, offset]
-  //  );
-  //  const [total_users] = await connection.query(`SELECT * FROM users WHERE veri = 1 AND level != 2`)
-  return res.status(200).json({
-    message: "Success",
-    status: true,
-    datas: users,
-    currentPage: pageno,
-    page_total: Math.ceil(total_users[0].total / limit),
-  });
 };
 
 const listCTV = async (req, res) => {
@@ -2623,9 +2676,34 @@ const getSalary = async (req, res) => {
     rows: rows,
   });
 };
+const adminOverrideSubordinates = async (req, res) => {
+  try {
+    const { userPhone, overrideData } = req.body;
+ 
+    if (!userPhone || !overrideData) {
+      return res.status(400).json({ message: "userPhone and overrideData required" });
+    }
+
+    const now = new Date();
+   console.log(overrideData);
+    // Upsert override data for this user (insert or update)
+    await connection.execute(
+      `INSERT INTO subordinate_overrides (user_phone, data, overridden_at) 
+       VALUES (?, ?, ?) 
+       ON DUPLICATE KEY UPDATE data = VALUES(data), overridden_at = VALUES(overridden_at)`,
+      [userPhone, JSON.stringify(overrideData), now]
+    );
+
+    return res.status(200).json({ message: "Override saved successfully" });
+  } catch (error) {
+    console.error("Error in adminOverrideSubordinates:", error);
+    return res.status(500).json({ message: error.message });
+  }
+};
 
 const adminController = {
   adminPage,
+  editsubordinate,
   adminPage3,
   adminPage5,
   adminPage10,
@@ -2679,6 +2757,8 @@ const adminController = {
   DailySalaryEligibility,
   listCheckSalaryEligibility,
   getSalary,
+  adminOverrideSubordinates,
+  editSubordinate
 };
 
 export default adminController;

@@ -10,6 +10,9 @@ const activityPage = async (req, res) => {
   return res.render("checkIn/activity.ejs");
 };
 
+const chartPage=async(req,res)=>{
+  return res.render("bet/wingo/chartView.ejs")
+}
 const supportPage = async (req, res) => {
   let auth = req.cookies.auth;
 
@@ -402,6 +405,7 @@ const homeController = {
   changeAvatarPage,
   invitationRulesPage,
   supportPage,
+  chartPage
 };
 
 export default homeController;

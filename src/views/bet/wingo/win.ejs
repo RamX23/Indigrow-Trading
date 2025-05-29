@@ -4062,7 +4062,7 @@
       </symbol>
    </svg>
 
-   <div id="app" data-v-app="" style="background-color:rgb(11, 5, 61);">
+   <div id="app" data-v-app="" style="background-color:rgba(11, 4, 47, 0.832);">
       <div data-v-647954c7="" class="ar-loading-view"
          style="--f13b4d11-currentFontFamily: 'Roboto', 'Inter', sans-serif; display: none;">
          <div data-v-647954c7="" class="loading-wrapper"><!-- <VanLoading /> -->
@@ -4141,31 +4141,10 @@
             </div>
          </div>
       </div><!--v-if-->
-      <div data-v-5d71c3fd="" class="WinGo__C" style="--f13b4d11-currentFontFamily: 'Roboto', 'Inter', sans-serif; background-color:rgb(11, 5, 61); ">
-         <div data-v-12a80a3e="" data-v-5d71c3fd="" class="navbar main">
-            <div data-v-12a80a3e="" class="navbar-fixed">
-               <div data-v-12a80a3e="" class="navbar__content">
-                  <div data-v-12a80a3e="" class="navbar__content-left" onclick="history.back()"><i data-v-12a80a3e=""
-                        class="van-badge__wrapper van-icon van-icon-arrow-left"><!----><!----><!----></i></div>
-                  <div data-v-12a80a3e="" class="navbar__content-center">
-                     <!-- <div data-v-12a80a3e="" class="headLogo"
-                        style="background-image: url(&quot;/h5setting_202308141709544lm1.png&quot;);">
-                     </div> -->
-                     <div data-v-12a80a3e="" class="headLogo" style="display: flex; justify-content: center; align-items: center;">
-                     <h2 style="font-weight: 1000;">IndiGrow</h2>
-                  </div>
-                     <div data-v-12a80a3e="" class="navbar__content-title"></div>
-                  </div>
-                  <div data-v-12a80a3e="" class="navbar__content-right">
-                     <div data-v-5d71c3fd="" class="WinGo__C-head-more">
-                        <div data-v-5d71c3fd="" onclick="location.href = '/support'"></div>
-                        <div data-v-5d71c3fd="" class="" id="audio_button"></div>
-                     </div>
-                  </div>
-               </div>
-            </div>
-         </div><!-- 钱包余额 -->
-         <%- include('element/info.ejs') -%> <%- include('element/e_tab_time.ejs') -%>
+   <!-- 钱包余额 -->
+         <div class="headSection" style="display: flex; justify-content: center; padding-block: 0; margin-bottom: 0;" >
+         <%- include('element/info.ejs') -%>
+         </div>
 
          <%- include('element/e_bet.ejs') -%>
          <!-- <div data-v-3e4c6499="" class="TimeLeft__C" style="padding-bottom: 0; align-items: center; background-color:rgb(188, 186, 202); border: 2px solid red;">
@@ -4195,7 +4174,7 @@
          </div> -->
          <!-- 规则弹层 begin--><!-- 规则弹层 begin--><!----><!----><!-- 投注表 -->
                   <!-- 记录导航 -->
-                  <div data-v-a9660e98="" class="game-list p-b-20" ><%- include('element/list-order.ejs') -%></div>
+          
                   <%- include('element/result_popup.ejs') -%>
 
 
@@ -4250,13 +4229,13 @@
       </div><!--online custom service-->
       <div class="customer" id="customerId" onclick="location.href='/support'"
          style="--f13b4d11-currentFontFamily: 'Roboto', 'Inter', sans-serif; --f6a705e1-currentFontFamily: bahnschrift;">
-         <img class="" data-origin="/assets/png/icon_sevice-8a1f5628.png" src="/assets/png/icon_sevice-8a1f5628.png">
+         <!-- <img class="" data-origin="/assets/png/icon_sevice-8a1f5628.png" src="/assets/png/icon_sevice-8a1f5628.png"> -->
       </div><!--v-if--><!--v-if--><!--v-if--><!----><!----><!----><!----><!----><!---->
    </div>
 
 
 
-   <div data-v-app=""><!--teleport start--><!--teleport end--></div><!---->
+   <div data-v-app="" style=" background-color:rgba(11, 4, 47, 0.832);"><!--teleport start--><!--teleport end--></div><!---->
    <div role="dialog" tabindex="0"
       class="van-popup van-popup--center van-toast van-toast--middle van-toast--break-word van-toast--fail"
       style="z-index: 2001; display: none;"><i
@@ -4272,9 +4251,13 @@
 
 <%- include('../../nav.ejs') -%>
 
+<script src="https://cdn.jsdelivr.net/npm/seedrandom@3.0.5/seedrandom.min.js"></script>
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<!-- <script src="main.js"></script> -->
    <script src="/js/client.js"></script>
+
    <script src="/wingo/main.js"></script>
-   <script src="/wingo/chart.js"></script>
+   <!-- <script src="/wingo/chart.js"></script> -->
    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
 </body>
@@ -4290,5 +4273,7 @@
 </div>
 <script id="simplify-jobs-page-script"
    src="chrome-extension://pbanhockgagggenencehbnadejlgchfc/js/pageScript.bundle.js"></script>
+  
+
 
 </html>

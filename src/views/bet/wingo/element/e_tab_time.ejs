@@ -1,119 +1,38 @@
-<div data-v-17d56002="" data-v-5d71c3fd="" class="GameList__C" style="height: fit-content; padding:0.2em; display: flex; justify-content: space-around;background-color:rgb(16, 12, 51);">
-   <div data-v-17d56002="" class=" min_t_1" onclick="selectActiveClockByGameType(1)">
-      <div data-v-17d56002=""  style="padding: 4px 12px;
-               cursor: pointer;
-               border-radius: 4px;
-               background: linear-gradient(135deg, #3061c3, #32456d);
-               color: #fff;
-               padding-inline: 0.6rem;
-               padding-block: 0.2rem;
-               font-size: 0.3rem;
-               font-weight: 500;
-               box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-               transition: all 0.2s ease;
-               text-align: center;
-               margin:0.2em"; 
-              >1Min</div>
-   </div>
-   <div data-v-17d56002="" class=" min_t_3" onclick="selectActiveClockByGameType(3)">
-      <div data-v-17d56002=""  style="padding: 4px 12px;
-               cursor: pointer;
-               border-radius: 4px;
-               background: linear-gradient(135deg, #3061c3, #32456d);
-               color: #fff;
-               font-size: 0.3rem;
-               font-weight: 500;
-               box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-               transition: all 0.2s ease;
-               text-align: center;
-               padding-inline: 0.6rem;
-               padding-block: 0.2rem;
-               margin:0.2em">3Min</div>
-   </div>
-   <div data-v-17d56002="" class=" min_t_5" onclick="selectActiveClockByGameType(5)">
-      <div data-v-17d56002=""  style="padding: 4px 12px; 
-               cursor: pointer;
-               border-radius: 4px;
-               background: linear-gradient(135deg, #3061c3, #32456d);
-               color: #fff;
-               font-size: 0.3rem;
-               font-weight: 500;
-               box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-               transition: all 0.2s ease;
-               padding-inline: 0.6rem;
-               padding-block: 0.2rem;
-               text-align: center;
-               margin:0.2em">5Min</div>
-   </div>
-   <div data-v-17d56002="" class=" min_t_10" onclick="selectActiveClockByGameType(10)">
-      <div data-v-17d56002=""  style="padding: 4px 12px;
-               cursor: pointer;
-               border-radius: 4px;
-               background: linear-gradient(135deg, #3061c3, #32456d);
-               color: #fff;
-               font-size: 0.3rem;
-               font-weight: 500;
-               box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-               transition: all 0.2s ease;
-               padding-inline: 0.6rem;
-               padding-block: 0.2rem;
-               text-align: center;
-               margin:0.2em">10Min</div>
-   </div>
-</div>
-
-
-<!-- <div class="GameList__C" style="display: flex; gap: 6px; padding: 8px;  border-radius: 8px;margin-top: 0.6em;">
-   <div onclick="selectActiveClockByGameType(1)" 
-        style="padding: 4px 12px;
-               cursor: pointer;
-               border-radius: 4px;
-               background: linear-gradient(135deg, #3a4b6d, #2c3a58);
-               color: #fff;
-               font-size: 0.3rem;
-               font-weight: 500;
-               box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-               transition: all 0.2s ease;
-               text-align: center;">
-      Win Go 1Min
-   </div>
-   <div onclick="selectActiveClockByGameType(3)" 
-        style="padding: 4px 12px;
-               cursor: pointer;
-               border-radius: 4px;
-               background: linear-gradient(135deg, #3a4b6d, #2c3a58);
-               color: #fff;
-               font-size: 0.3rem;
-               font-weight: 500;
-               box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-               transition: all 0.2s ease;
-               text-align: center;">
-      Win Go 3Min
-   </div>
-   <div onclick="selectActiveClockByGameType(5)" 
-        style="padding: 4px 12px;
-               cursor: pointer;
-               border-radius: 4px;
-               background: linear-gradient(135deg, #3a4b6d, #2c3a58);
-               color: #fff;
-               font-size: 0.3rem;
-               font-weight: 500;
-               box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-               transition: all 0.2s ease;
-               text-align: center;">
-      Win Go 5Min
-   </div>
-   <div onclick="selectActiveClockByGameType(10)" 
-        style="padding: 4px 12px;
-               cursor: pointer;
-               border-radius: 4px;
-               background: linear-gradient(135deg, #3a4b6d, #2c3a58);
-               color: #fff;
-               font-size: 0.3rem;
-               font-weight: 500;
-               box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-               transition: all 0.2s ease;
-               text-align: center;">
-      Win Go 10Min
-   </div>
-</div> -->
+<style>
+  .GameList__C {
+    display: flex;
+    /* gap: 6px; */
+    /* padding: 8px; */
+    /* border-radius: 8px; */
+    /* margin-top: 0.6em; */
+    /* background-color: rgb(16, 12, 51); */
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .GameList__C div {
+    padding-block:6px;
+    cursor: pointer;
+    /* border-radius: 4px; */
+    background:  #122855; 
+    color: #fff;
+    border: 2px solid rgba(0, 0, 0, 0.1);
+    font-size: 0.3rem;
+    font-weight: 500;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+    text-align: center;
+    min-width: 1.2rem;
+  }
+  
+  .GameList__C div:hover {
+    background: linear-gradient(135deg, #3a4b6d, #2c3a58);
+  }
+  </style>
+  
+  <div class="GameList__C">
+    <div class="min_t_1" onclick="selectActiveClockByGameType(1)">1Min</div>
+    <div class="min_t_3" onclick="selectActiveClockByGameType(3)">3Min</div>
+    <div class="min_t_5" onclick="selectActiveClockByGameType(5)">5Min</div>
+    <div class="min_t_10" onclick="selectActiveClockByGameType(10)">10Min</div>
+  </div>

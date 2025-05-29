@@ -9,17 +9,35 @@ export function getNthMinuteSinceDayStart() {
   return diff;
 }
 
+// export function generatePeriod(gameRepresentationId) {
+//   const TodayPeriod = moment().format("YYYYMMDD");
+//   const nthMinuteSinceDayStart = getNthMinuteSinceDayStart() + 1;
+//   const paddedNthMinuteSinceDayStart = _.padStart(
+//     nthMinuteSinceDayStart.toString(),
+//     4,
+//     "0",
+//   );
+
+//   let NewGamePeriod = `${TodayPeriod}${gameRepresentationId}${paddedNthMinuteSinceDayStart}`;
+
+//   return parseInt(NewGamePeriod);
+// }
+
 export function generatePeriod(gameRepresentationId) {
-  const TodayPeriod = moment().format("YYYYMMDD");
-  const nthMinuteSinceDayStart = getNthMinuteSinceDayStart() + 1;
-  const paddedNthMinuteSinceDayStart = _.padStart(
-    nthMinuteSinceDayStart.toString(),
-    4,
-    "0",
-  );
-
-  let NewGamePeriod = `${TodayPeriod}${gameRepresentationId}${paddedNthMinuteSinceDayStart}`;
-
+  const now = moment();
+  const startOfDay = now.clone().startOf('day');
+  
+  // Calculate total minutes since start of day (more reliable than getNthMinuteSinceDayStart)
+  const minutesSinceStartOfDay = Math.floor(now.diff(startOfDay, 'minutes', true)) + 1;
+  
+  // Format components
+  const datePart = now.format("YYYYMMDD");
+  const gamePart = gameRepresentationId;
+  const minutePart = String(minutesSinceStartOfDay).padStart(4, '0');
+  
+  // Combine into period
+  let NewGamePeriod = `${datePart}${gamePart}${minutePart}`;
+  
   return parseInt(NewGamePeriod);
 }
 

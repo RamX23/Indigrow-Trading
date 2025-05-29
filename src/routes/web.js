@@ -19,7 +19,7 @@ import promotionController from "../controllers/promotionController.js";
 import jdbController from "../controllers/jdbController.js";
 import vipController from "../controllers/vipController.js";
 import rateLimit from "express-rate-limit";
-
+import tradeController from "../controllers/tradeController.js";
 let router = express.Router();
 
 const initWebRouter = (app) => {
@@ -196,6 +196,7 @@ const initWebRouter = (app) => {
   );
 
   router.get("/promotion", middlewareController, homeController.promotionPage);
+  router.get('/chartView',middlewareController,homeController.chartPage)
   router.get(
     "/promotion/subordinates",
     middlewareController,
@@ -486,6 +487,48 @@ const initWebRouter = (app) => {
 
   router.get("/myProfile", middlewareController, homeController.myProfilePage);
 
+
+  //trade routes
+  // router.get('/total-bets', middlewareController,tradeController.getTotalBetsForUser);
+  // router.get('/bets-won', middlewareController,tradeController.getBetsWon);
+  // router.get('/bets-lost', middlewareController,tradeController.getBetsLost);
+  // router.get('/amount-spent', middlewareController,tradeController.getAmountSpent);
+  // router.get('/:period', middlewareController,tradeController.getStatsByTimePeriod);
+  
+  // Combined data route for frontend
+  // router.get('/breakdown', async (req, res) => {
+  //   try {
+  //     const periods = ['today', 'week', 'month', 'year', 'all'];
+  //     const results = {};
+      
+  //     for (const period of periods) {
+  //       const reqWithPeriod = { ...req, params: { period } };
+  //       const response = await tradeController.getStatsByTimePeriod(reqWithPeriod, {
+  //         status: () => ({ json: (data) => data }),
+  //         json: (data) => data
+  //       });
+        
+  //       if (response.status) {
+  //         results[period] = response.data;
+  //       }
+  //     }
+      
+  //     return res.status(200).json({
+  //       message: "Success",
+  //       status: true,
+  //       timeStamp: new Date(),
+  //       data: results
+  //     });
+  //   } catch (err) {
+  //     console.error("Error:", err);
+  //     return res.status(500).json({
+  //       message: "Internal Server Error",
+  //       status: false,
+  //       timeStamp: new Date()
+  //     });
+  //   }
+  // });
+
   // BET wingo
   router.get("/wingo", middlewareController, winGoController.winGoPage);
   router.get("/home", middlewareController, winGoController.winGoPage);
@@ -592,6 +635,24 @@ const initWebRouter = (app) => {
     middlewareController,
     winGoController.GetMyEmerdList,
   ); // register
+  router.get(
+    "/api/webapi/getPeriod/:gameType",
+    middlewareController,
+    winGoController.getPeriod
+  );
+
+
+  router.get(
+    "/api/webapi/stats",
+    middlewareController,
+    winGoController.getStatsByGame,
+  );
+
+  router.get('/api/webapi/period-stats/:period',middlewareController, winGoController.getStatsByTimePeriod);
+
+  router.get('/api/webapi/overall-profit-loss/:period',middlewareController, winGoController.getOverallProfitOrLoss);
+
+
 
   // bet TRX wingo
   router.post(
@@ -759,6 +820,12 @@ const initWebRouter = (app) => {
     middlewareController,
     paymentController.walletTransfer,
   ); // register
+
+  router.post(
+    "/api/promotion/edit",
+    adminController.middlewareAdminController,
+    promotionController.adminOverrideSubordinates,
+  )
   router.post(
     "/api/webapi/transfer",
     middlewareController,
@@ -1075,6 +1142,11 @@ const initWebRouter = (app) => {
     adminController.withdrawRecord,
   ); // get info account
   router.get(
+    "/admin/manager/editSubordinate/:phone",
+    adminController.middlewareAdminController,
+    adminController.editSubordinate,
+  )
+  router.get(
     "/admin/manager/statistical",
     adminController.middlewareAdminController,
     adminController.statistical,
@@ -1126,6 +1198,11 @@ const initWebRouter = (app) => {
     adminController.middlewareAdminController,
     adminController.handlWithdraw,
   ); // get info account
+  router.post(
+    "/api/webapi/admin/edit",
+    adminController.middlewareAdminController,
+    adminController.adminOverrideSubordinates,
+  )
   router.post(
     "/api/webapi/admin/recharge",
     adminController.middlewareAdminController,

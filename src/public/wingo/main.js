@@ -90,37 +90,37 @@ function countDownTimer({ GAME_TYPE_ID }) {
   var countDownDate = new Date("2030-07-16T23:59:59.9999999+03:00").getTime();
 
   countDownInterval1 = setInterval(function () {
-    const { minute, seconds1, seconds2 } = getTimeMSS(countDownDate);
+    const { minute, seconds1, seconds2, totalSeconds } = getTimeMSS(countDownDate);
+
+    // Update timer display
     if (GAME_TYPE_ID !== "1") {
       $(".TimeLeft__C-time div:eq(1)").text(minute);
     } else {
       $(".TimeLeft__C-time div:eq(1)").text("0");
     }
-
     $(".TimeLeft__C-time div:eq(3)").text(seconds1);
     $(".TimeLeft__C-time div:eq(4)").text(seconds2);
-  }, 0);
+  //  console.log(seconds1,":",seconds2)
+    // Disable betting buttons when 10 seconds or less remain
+    if (minute ==0 &&seconds1==0 && seconds2<=9) {
+      // alert("Button disabled");
+      $(".Betting__C-foot-b, .Betting__C-foot-s, #join_bet_btn").css({
+        "pointer-events": "none",
+        cursor: "not-allowed",
+        opacity: "0.6",
+      });
+    } else {
+      // Re-enable buttons when more than 5 seconds remain
+      // alert("button enabled")
+      $(".Betting__C-foot-b, .Betting__C-foot-s, #join_bet_btn").css({
+        "pointer-events": "auto",
+        cursor: "pointer",
+        opacity: "1",
+      });
+    }
+  }, 1000);
 
-  // sound
-  // countDownInterval2 = setInterval(() => {
-  //   const { minute, seconds1, seconds2 } = getTimeMSS(countDownDate);
-  //   const check_volume = localStorage.getItem("volume");
 
-  //   if (minute == 0 && seconds1 == 0 && seconds2 <= 5) {
-  //     if (clicked) {
-  //       if (check_volume == "on") {
-  //         playAudio1();
-  //       }
-  //     }
-  //   }
-  //   if (minute == 0 && seconds1 == 5 && seconds2 == 5) {
-  //     if (clicked) {
-  //       if (check_volume == "on") {
-  //         playAudio2();
-  //       }
-  //     }
-  //   }
-  // }, 1000);
 
   countDownInterval3 = setInterval(function () {
     const { minute, seconds1, seconds2 } = getTimeMSS(countDownDate);
@@ -142,19 +142,62 @@ $(document).ready(function () {
   countDownTimer({ GAME_TYPE_ID });
 });
 
+async function fetchAndDisplayPeriod() {
+  try {
+    const gameType = getGameType(); // Get current game type (1, 3, 5, or 10)
+    const response = await fetch(`/api/webapi/getPeriod/${gameType}`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch period');
+    }
+
+    const data = await response.json();  // ✅ Await the parsed JSON data
+    console.log("Fetched period:", data);
+
+    const period = data.period;          // ✅ Access period from the JSON object
+    updatePeriodDisplay(period);
+  } catch (error) {
+    console.error('Error fetching period:', error);
+    updatePeriodDisplay("000000"); // Show default on error
+  }
+}
+
+
+function updatePeriodDisplay(period) {
+  // Update the period display in multiple places if needed
+  $(".period").text(period);
+  $("#current_period").text(period); // Add this element if needed
+  
+  // Also store it in localStorage for socket updates
+  localStorage.setItem("currentPeriod", period);
+}
+
 const selectActiveClockByGameType = (GAME_TYPE_ID) => {
-  GAME_TYPE_ID = `${GAME_TYPE_ID}`;
-  GAME_NAME = GAME_TYPE_ID === "1" ? "wingo" : `wingo${GAME_TYPE_ID}`;
-  window.history.pushState({}, "", `/wingo/?game_type=${GAME_TYPE_ID}`);
-  initGameLogics({
-    GAME_TYPE_ID,
-    GAME_NAME,
-    My_Bets_Pages,
-    Game_History_Pages,
-  });
+  // Clear all existing intervals
   clearInterval(countDownInterval1);
   clearInterval(countDownInterval2);
   clearInterval(countDownInterval3);
+  
+  // Remove all bet button event listeners
+  $('.Betting__C-foot-b, .Betting__C-foot-s').off('click');
+  
+  // Update game type
+  GAME_TYPE_ID = `${GAME_TYPE_ID}`;
+  GAME_NAME = GAME_TYPE_ID === "1" ? "wingo" : `wingo${GAME_TYPE_ID}`;
+  
+  // Update URL
+  window.history.pushState({}, "", `/wingo/?game_type=${GAME_TYPE_ID}`);
+  
+  fetchAndDisplayPeriod();
+  // Reinitialize game logic
+  initGameLogics({
+    GAME_TYPE_ID,
+    GAME_NAME,
+    // My_Bets_Pages,
+    Game_History_Pages,
+  });
+  
+  // Start new timer
   countDownTimer({ GAME_TYPE_ID });
 };
 
@@ -231,63 +274,100 @@ function selectActiveClock(currentTime) {
   }
 }
 
-const displayResultHandler = ({ status, amount, period, result }) => {
-  let colorDisplay = "";
-  let bsDisplay = "";
+let autoCloseTimer = null;
+let countdownInterval = null;
+// const GAME_TYPE_ID = "Win"; // Set your game type ID as needed
 
-  if (parseInt(result) % 2 === 0) {
-    colorDisplay = "Red";
-  } else {
+function showPopupModal() {
+  $("#popup_modal").css("display", "flex");
+
+  let timeLeft = 3;
+  $("#popup_timer_note").text(`Auto close in ${timeLeft} seconds`);
+
+  clearInterval(countdownInterval);
+  countdownInterval = setInterval(() => {
+    timeLeft--;
+    if (timeLeft > 0) {
+      $("#popup_timer_note").text(`Auto close in ${timeLeft} seconds`);
+    } else {
+      clearInterval(countdownInterval);
+    }
+  }, 1000);
+
+  if (autoCloseTimer) clearTimeout(autoCloseTimer);
+  autoCloseTimer = setTimeout(() => {
+    $("#popup_modal").hide();
+  }, 3000);
+}
+
+function displayResultHandler({ status, amount, period, result }) {
+  if (typeof status === 'undefined' || typeof period === 'undefined') {
+    console.error("Missing required parameters in displayResultHandler");
+    return;
+  }
+
+  let colorDisplay = "", bsDisplay = "", resultDisplay = "";
+
+  if (result === "d") {
+    colorDisplay = "Blue";
+    bsDisplay = "Draw";
+    resultDisplay = "Draw";
+  } else if (result === 'l') {
     colorDisplay = "Green";
+    bsDisplay = "Up";
+    resultDisplay = "Up";
+  } else if (result === 'n') {
+    colorDisplay = "Red";
+    bsDisplay = "Down";
+    resultDisplay = "Down";
   }
 
-  if (parseInt(result) === 5) {
-    colorDisplay = "Purple Green";
+  $("#lottery_results_box")
+  .removeClass((index, className) =>
+    (className.match(/(^|\s)type\w+/g) || []).join(" ")
+  )
+  .addClass(`type${resultDisplay}`);
+
+  $("#popup_bs_display").text(bsDisplay);
+  $("#popup_game_details").text(`Period: ${GAME_TYPE_ID} minute game ${period}`);
+
+  const normalizedStatus = String(status).toLowerCase();
+  $("#popup_background").removeClass("win-bg loss-bg draw-bg");
+
+  if (normalizedStatus.includes('win')) {
+    $("#popup_win_rupees_display").text(`₹${parseFloat(amount).toFixed(2)}`);
+    $("#popup_greeting_display").text("🎉 Congratulations");
+    $("#popup_background").addClass("win-bg");
+    $("#popup_win_rupees_display, #popup_win_symbol").show();
+    $("#popup_loss_symbol").hide();
+  } else if (normalizedStatus.includes('loss')) {
+    $("#popup_greeting_display").text("😞 Sorry");
+    $("#popup_background").addClass("loss-bg");
+    $("#popup_win_rupees_display").text(`- ₹${parseFloat(amount).toFixed(2)}`);
+    $("#popup_win_symbol").hide();
+    $("#popup_loss_symbol").show();
+  } else if (normalizedStatus.includes('draw')) {
+    $("#popup_greeting_display").text("⚖️ Draw");
+    $("#popup_background").addClass("draw-bg");
+    $("#popup_win_rupees_display").text(`₹${parseFloat(amount).toFixed(2)}`);
+    $("#popup_win_rupees_display").show();
+    $("#popup_win_symbol").hide();
+    $("#popup_loss_symbol").hide();
   }
 
-  if (parseInt(result) === 0) {
-    colorDisplay = "Purple Red";
-  }
+  showPopupModal();
+}
 
-  if (parseInt(result) >= 5) {
-    bsDisplay = "Buy";
-  } else {
-    bsDisplay = "Sell";
-  }
+// Manual close
+$(document).ready(function () {
+  $(".closeBtn").click(function () {
+    $("#popup_modal").hide();
+    clearTimeout(autoCloseTimer);
+    clearInterval(countdownInterval);
+  });
+});
 
-  $("#lottery_results_box").removeClass();
-  $("#lottery_results_box").addClass(`WinningTip__C-body-l2 type${result}`);
-  $("#popup_color_display").html(colorDisplay);
-  $("#popup_num_display").html(result);
-  $("#popup_bs_display").html(bsDisplay);
-  $("#popup_game_details").html(`Period: Win ${GAME_TYPE_ID} minute ${period}`);
 
-  if (status === STATUS_MAP.WIN) {
-    $("#popup_win_rupees_display").html(`₹${amount}.00`);
-    $("#popup_greeting_display").html(`Congratulations`);
-    $("#popup_background").removeClass("isL");
-    $("#popup_greeting_display").removeClass("isL");
-    $("#popup_win_rupees_display").css("display", "block");
-    $("#popup_win_symbol").css("display", "block");
-    $("#popup_loss_symbol").css("display", "none");
-  } else if (status === STATUS_MAP.LOSS) {
-    $("#popup_greeting_display").html(`Sorry`);
-    $("#popup_background").addClass("isL");
-    $("#popup_greeting_display").addClass("isL");
-    $("#popup_win_rupees_display").css("display", "none");
-    $("#popup_win_symbol").css("display", "none");
-    $("#popup_loss_symbol").css("display", "block");
-  } else {
-    // $(".modal-popup__title").text("Result")
-    // $(".modal-popup__amount").text(`No Bets !`)
-  }
-
-  $("#popup_modal").css("display", "block");
-
-  // setTimeout(() => {
-  //   $(".WinningTip__C").hide();
-  // }, 5000);
-};
 
 function showGameHistoryData(list_orders) {
   const containerId = "#game_history_data_container";
@@ -341,7 +421,7 @@ function showGameHistoryData(list_orders) {
          <div data-v-c52f94a7="" class="van-row"  style="background-color: #0d063db9;">
             <div data-v-c52f94a7="" class="van-col van-col--12">${list_order.period}</div>
            
-             <div data-v-c52f94a7="" class="van-col van-col--12"><span data-v-c52f94a7="">${list_order.bet === 'l' ? "Buy" : "Sell"}</span></div>
+             <div data-v-c52f94a7="" class="van-col van-col--12"><span data-v-c52f94a7="">${list_order.bet === 'l' ? "Up" : list_order.bet === 'n' ? "Down" :"Draw"}</span></div>
         
          </div>`;
     })
@@ -416,166 +496,190 @@ function openGameBetDetails(index) {
 }
 
 function showMyBetsData(list_orders) {
-  let containerId = `#my_bets_data_container`;
-
-  if (list_orders.length == 0) {
+  const containerId = "#my_bets_data_container";
+  selectActiveClock(parseInt(GAME_TYPE_ID));
+  if (list_orders.length === 0) {
     return $(containerId).html(`
-   <div data-v-a9660e98="" class="van-empty" style="background-color: #0d063db9;">
-       <div class="van-empty__image">
-           <img src="/images/empty-image-default.png" />
-       </div>
-       <p class="van-empty__description">No Data</p>
-   </div>
-   `);
+      <div data-v-a9660e98="" class="van-empty" style=""background: rgba(255, 255, 255, 0.1);">
+        <div class="van-empty__image">
+          <img src="/images/empty-image-default.png" />
+        </div>
+        <p class="van-empty__description">No Data</p>
+      </div>
+    `);
   }
 
-  let html = list_orders
+  const html = list_orders
     .map((list_order, index) => {
       let join = list_order.bet;
       let selected = "";
       let color = "";
-      if (join == "l") {
+      
+      // Handle bet types and their display
+      if (join === "l") {
         color = "l-big";
-        selected = "Buy";
-      } else if (join == "n") {
+        selected = "Up";
+      } else if (join === "n") {
         color = "l-small";
-        selected = "Sell";
-      } else if (join == "t") {
+        selected = "Down";
+      } else if (join === "t") {
         color = "l-violet";
         selected = "Violet";
-      } else if (join == "d") {
-        color = "l-red";
-        selected = "Red";
-      } else if (join == "x") {
+      } else if (join === "d") {
+        color = "l-draw"; // New class for draw
+        selected = "Draw";
+      } else if (join === "x") {
         color = "l-green";
         selected = "Green";
-      } else if (join == "0") {
+      } else if (join === "0") {
         color = "l-0";
         selected = "0";
-      } else if (join == "5") {
+      } else if (join === "5") {
         color = "l-5";
         selected = "5";
-      } else if (Number(join) % 2 == 0) {
+      } else if (Number(join) % 2 === 0) {
         color = "l-red";
         selected = Number(join);
-      } else if (Number(join) % 2 != 0) {
+      } else if (Number(join) % 2 !== 0) {
         color = "l-green";
         selected = Number(join);
       }
 
-      if ((!isNumber(join) && join == "l") || join == "n") {
-        checkJoin = `
-                ${selected}
-                 `;
-      } else {
-        checkJoin = `
-                 <span data-v-a9660e98="">${isNumber(join) ? join : ""}</span>`;
-      }
-      //MyGameRecordList__C-item-l-green
-      //MyGameRecordList__C-item-l-violet
+      // Handle display of selected bet
+      const checkJoin = !isNumber(join) || ["l", "n", "t", "d", "x"].includes(join)
+        ? selected
+        : `<span data-v-a9660e98="">${join}</span>`;
 
       return `
-      <div data-v-2faec5cb="" class="MyGameRecordList__C-item" index="${index}" onclick="openGameBetDetails(${index})">
-            <div data-v-2faec5cb="" class="MyGameRecordList__C-item-l MyGameRecordList__C-item-${color}" >${checkJoin}</div>
-            <div data-v-2faec5cb="" class="MyGameRecordList__C-item-m">
-               <div data-v-2faec5cb="" class="MyGameRecordList__C-item-m-top">${list_order.stage}</div>
-               <div data-v-2faec5cb="" class="MyGameRecordList__C-item-m-bottom">${timerJoin(list_order.time)}</div>
-            </div>
+      <div style="margin: 20px auto; padding: 20px; max-width: 600px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); background-color: rgba(57, 59, 71, 0.6); color:white; font-family: Arial, sans-serif; ">
+    
+      ${selected
+        ? `
+        <div style="margin-bottom: 10px; display: flex; justify-content: start; align-items: center; gap: 1em; ">
+          <strong style="font-size: 1.2em;">Selected:</strong>
+          <span style="
+            font-size: 1.5em;
+            padding: 0.5em 1.2em;
+            background-color: ${
+              selected === "Up"
+                ? '#28a745'
+                : selected === "Down"
+                ? '#dc3545'
+                : '#6c757d'
+            };
+            border: 2px solid ${
+              selected === "Up"
+                ? '#28a745'
+                : selected === "Down"
+                ? '#dc3545'
+                : '#6c757d'
+            };
+            border-radius: 12px;
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s;
+          ">
+            ${selected}
+          </span>
+        </div>
+        `
+        : ""
+      }
+      
+    
+      <div style="margin-bottom: 10px; ">
+        <strong>Order number:</strong>
+        <span style="font-weight:700">${list_order.id_product}</span>
+      </div>
 
-              ${
-                list_order.status === 0
-                  ? ""
-                  : `<div data-v-2faec5cb="" class="MyGameRecordList__C-item-r ${list_order.status == 1 ? "success" : ""}">
-                  <div data-v-2faec5cb="" class="${list_order.status === 1 ? "success" : ""}">${list_order.status == 1 ? "Success" : list_order.status == 2 ? "Failed" : ""}</div>
-                  <span data-v-2faec5cb="">${
-                    // list_order.status == 1 && list_order.bet == 0
-                    //    ? '<span data-v-a9660e98="" class="success"> + ₹' + list_order.money * 4.5 + " </span>"
-                    //    : list_order.status == 1 && list_order.bet == 5
-                    //      ? '<span data-v-a9660e98="" class="success"> + ₹' + list_order.money * 4.5 + " </span>"
-                    //      : list_order.status == 1 && list_order.result == 0 && list_order.bet == "d"
-                    //        ? '<span data-v-a9660e98="" class="success"> + ₹' + list_order.money * 1.5 + " </span>"
-                    //        : list_order.status == 1 && list_order.bet == "d"
-                    //          ? '<span data-v-a9660e98="" class="success"> + ₹' + list_order.money * 2 + " </span>"
-                    //          : list_order.status == 1 && list_order.bet == "t"
-                    //            ? '<span data-v-a9660e98="" class="success"> + ₹' + list_order.money * 4.5 + " </span>"
-                    //            : list_order.status == 1 && list_order.result == 5 && list_order.bet == "x"
-                    //              ? '<span data-v-a9660e98="" class="success"> + ₹' + list_order.money * 1.5 + " </span>"
-                    //              : list_order.status == 1 && list_order.bet == "x"
-                    //                ? '<span data-v-a9660e98="" class="success"> + ₹' + list_order.money * 2 + " </span>"
-                    //                : list_order.status == 1 && list_order.bet == "l"
-                    //                  ? '<span data-v-a9660e98="" class="success"> + ₹' + list_order.money * 2 + " </span>"
-                    //                  : list_order.status == 1 && list_order.bet == "n"
-                    //                    ? '<span data-v-a9660e98="" class="success"> + ₹' + list_order.money * 2 + " </span>"
-                    //                    : list_order.status == 1
-                    //                      ? '<span data-v-a9660e98="" class="success"> + ₹' + list_order.money * 9 + " </span>"
-                    //                      : list_order.status == 2
-                    //                        ? '<span data-v-a9660e98="" class="fail"> - ₹' + list_order.money + ".00</span>"
-                    //                        : ""
-                    list_order.status === 1
-                      ? '<span data-v-a9660e98="" class="success"> + ₹ ' +
-                        parseFloat(list_order.get).toFixed(2) +
-                        " </span>"
-                      : '<span data-v-a9660e98="" class="fail"> - ₹ ' +
-                        parseFloat(list_order.money).toFixed(2) +
-                        "</span>"
-                  }</span>
-                  </div>`
-              }
-            </div>
-            <div data-v-2faec5cb="" class="MyGameRecordList__C-detail details_box_${index}" style="display: none;">
-               <div data-v-2faec5cb="" class="MyGameRecordList__C-detail-text">Details</div>
-               <div data-v-2faec5cb="" class="MyGameRecordList__C-detail-line">
-                  Order number
-                  <div data-v-2faec5cb="">${list_order.id_product} <img data-v-2faec5cb="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAADICAMAAACahl6sAAAAhFBMVEUAAABRUVFQUFBRUVFRUVFRUVFRUVFRUVFQUFBRUVFQUFBRUVFQUFBQUFBRUVFRUVFSUlJSUlJRUVFQUFBSUlJRUVFRUVFRUVFRUVFRUVFRUVFQUFBRUVFRUVFRUVFRUVFQUFBRUVFRUVFRUVFQUFBQUFBQUFBSUlJYWFhJSUlQUFBRUVGJ3MxyAAAAK3RSTlMAv0B6VerZrqiblYmCaGJIOiQdFg/79vDl39TKxbq0oY9zblxONC4pCQTPqkRvegAAAWZJREFUeNrtz0duw0AQAEGSzjnnnIP+/z8ffJOBgRfgiCts9Qca1UmSNGZDP0FDN37DbIJAQH4DAQGJAwEBiQMBAYlbTsjQLWcgtQVSWyC1BVJbILUFUlsgtdUQZJiyMSGzKRsTclbwBQEpgJwXfEFACiAXBV8QkALIWsEXBKRFyGXBF2QKSD/k1WdCruYhXV4gTUHWQUBAQsg1CEgO5BukMsgNCEgO5BYEJAfSg4CAhJA7EJAcyD0ISA5kAwQEJIRsgoCAhJAHEJAcyBYICEgI2QYBAQkhjyAgOZAdEBCQELILAgISQlZAQEDagDyBgORAnkFAciB7ICAgIWQfBAQkhLyAgORAVkEWC+nnWlbI30Bqh7yCgORADkBAQMIGEBCQNiCHICAgYW8gIDmQdxCQHMgHCEgO5AgEBCTsGKRySGog/+ik4AsC0iLktOALAtIi5LPgCwJS0FfBFwSkpH7COkmSMvoBUQl8xsUGEfcAAAAASUVORK5CYII=" /></div>
-               </div>
-               <div data-v-2faec5cb="" class="MyGameRecordList__C-detail-line">
-                  Period
-                  <div data-v-2faec5cb="">${list_order.stage}</div>
-               </div>
-               <div data-v-2faec5cb="" class="MyGameRecordList__C-detail-line">
-                  Purchase amount
-                  <div data-v-2faec5cb="">₹${parseFloat(list_order.fee + list_order.money).toFixed(2)}</div>
-               </div>
-               <div data-v-2faec5cb="" class="MyGameRecordList__C-detail-line">
-                  Quantity
-                  <div data-v-2faec5cb="">${parseFloat(list_order.amount).toFixed(2)}</div>
-               </div>
-               <div data-v-2faec5cb="" class="MyGameRecordList__C-detail-line">
-                  Amount after tax
-                  <div data-v-2faec5cb="" class="red">₹${parseFloat(list_order.money).toFixed(2)}</div>
-               </div>
-               <div data-v-2faec5cb="" class="MyGameRecordList__C-detail-line">
-                  Tax
-                  <div data-v-2faec5cb="">₹${parseFloat(list_order.fee).toFixed(2)}</div>
-               </div>
-               <div data-v-2faec5cb="" class="MyGameRecordList__C-detail-line" style="display: ${list_order.status == 0 ? "none" : ""}">
-                  Result
-                  <div data-v-2faec5cb="" class="numList">
-                     ${list_order.result}
-                  </div>
-               </div>
-               <div data-v-2faec5cb="" class="MyGameRecordList__C-detail-line">
-                  Select
-                  <div data-v-2faec5cb="">
-                     ${selected}
-                  </div>
-               </div>
-               <div data-v-2faec5cb="" class="MyGameRecordList__C-detail-line" style="display:${list_order.status == 0 ? "none" : ""};">
-                  Status
-                  <div data-v-2faec5cb="" class="${list_order.status == 1 ? "green" : "red"}">${list_order.status == 1 ? "Success" : "Failed"}</div>
-               </div>
-               <div data-v-2faec5cb="" class="MyGameRecordList__C-detail-line" style="display:${list_order.status == 0 ? "none" : ""};">
-                  Win/lose
-                  <div data-v-2faec5cb="" class="${list_order.status == 1 ? "green" : "red"}">${list_order.status == 1 ? `₹${list_order.get}` : `- ₹${list_order.fee + list_order.money}`}</div>
-               </div>
-               <div data-v-2faec5cb="" class="MyGameRecordList__C-detail-line">
-                  Order time
-                  <div data-v-2faec5cb="">${timerJoin(list_order.time)}</div>
-               </div>
-            </div>
-         `;
+      <div class="main-fields" style="display:flex; gap:2em; font-size:1.3em; font-weight:600;">
+    
+      <div style="margin-bottom: 10px;">
+        <strong>Period:</strong>
+        <span style="color:rgba(217, 211, 24, 1)">${list_order.stage}</span>
+      </div>
+
+      <div style="margin-bottom: 10px;">
+      <strong>Status:</strong>
+      <span style="color: ${
+        list_order.status === 1
+          ? "#28a745"
+          : list_order.status === 3
+          ? "#ffc107"
+          : "#dc3545"
+      };">
+        ${
+          list_order.status === 1
+            ? "Success"
+            : list_order.status === 3
+            ? "Draw"
+            : "Failed"
+        }
+      </span>
+    </div>
+
+    </div>
+    
+    
+      <div style="margin-bottom: 10px;">
+        <strong>Purchase amount:</strong>
+        <span>₹${parseFloat(list_order.fee + list_order.money).toFixed(2)}</span>
+      </div>
+
+      ${
+        list_order.status === 0
+          ? ""
+          : `
+   
+
+      <div style="margin-bottom: 10px;">
+        <strong>Win/Lose:</strong>
+        <span style="color: ${
+          list_order.status === 1
+            ? "#28a745"
+            : list_order.status === 3
+            ? "#ffc107"
+            : "#dc3545"
+        };">
+          ${
+            list_order.status === 1
+              ? `+ ₹${parseFloat(list_order.get).toFixed(2)}`
+              : list_order.status === 3
+              ? `₹${parseFloat(list_order.money).toFixed(2)}`
+              : `- ₹${parseFloat(list_order.fee + list_order.money).toFixed(2)}`
+          }
+        </span>
+      </div>
+          `
+      }
+    
+      <div style="margin-bottom: 10px;">
+        <strong>Quantity:</strong>
+        <span>${parseFloat(list_order.amount).toFixed(2)}</span>
+      </div>
+    
+      <div style="margin-bottom: 10px;">
+        <strong>Amount after tax:</strong>
+        <span style="color: #d9534f;">₹${parseFloat(list_order.money).toFixed(2)}</span>
+      </div>
+    
+      <div style="margin-bottom: 10px;">
+        <strong>Tax:</strong>
+        <span>₹${parseFloat(list_order.fee).toFixed(2)}</span>
+      </div>
+    
+    
+    
+      <div style="margin-bottom: 0;">
+        <strong>Order time:</strong>
+        <span>${timerJoin(list_order.time)}</span>
+      </div>
+    </div>
+    
+      `;
     })
-    .join(" "); //</div>
+    .join("");
 
   $(containerId).html(html);
 }
@@ -588,6 +692,8 @@ function initGameLogics({
 }) {
   selectActiveClock(parseInt(GAME_TYPE_ID));
 
+  fetchAndDisplayPeriod();
+
   //--------------------- Wingo game logic ---------------------
 
   var pageno = 0;
@@ -596,266 +702,423 @@ function initGameLogics({
 
   // --------------------- wingo game logic ---------------------
 
-  function totalMoney() {
-    let value = parseInt($("#van-field-1-input").val()?.trim() || 0);
-    let money = parseInt(
-      $(".Betting__Popup-body-money-main").attr("data-current-money") || 0
-    );
+//   function totalMoney() {
+//     let value = parseInt($("#van-field-1-input").val()?.trim() || 0);
+//     let money = parseInt(
+//       $(".Betting__Popup-body-money-main").attr("data-current-money") || 0
+//     );
     
-    let total = value * money;
-    $("#popup_total_bet_money").text(total + ".00");
-}
+//     let total = value * money;
+//     $("#popup_total_bet_money").text(total + ".00");
+// }
 
-  const selectPopupXData = () => {};
-  $(".van-overlay").fadeOut();
-  $(".popup-join").fadeOut();
+//   const selectPopupXData = () => {};
+//   $(".van-overlay").fadeOut();
+//   $(".popup-join").fadeOut();
 
-  function alertBox(join, cssValueNumber, addText) {
-    $(".van-overlay").fadeIn();
-    $(".popup-join").fadeIn();
-    $(".popup-join > div").removeClass();
-    $(".popup-join > div").addClass(`Betting__Popup-${cssValueNumber}`);
+//   function alertBox(join, cssValueNumber, addText) {
+//     $(".van-overlay").fadeIn();
+//     $(".popup-join").fadeIn();
+//     $(".popup-join > div").removeClass();
+//     $(".popup-join > div").addClass(`Betting__Popup-${cssValueNumber}`);
 
-    let activeXData = $(".Betting__C-multiple-r.active").attr("data-x");
-    console.log(activeXData);
-    $("#van-field-1-input").val(activeXData);
-    $("div.Betting__Popup-body-x-btn").removeClass("bgcolor");
-    $(`div.Betting__Popup-body-x-btn[data-x="${activeXData}"]`).addClass(
-      "bgcolor",
-    );
-    $("#join_bet_btn").attr("data-join", join);
-    $("#betting_value").html(addText);
-    totalMoney();
-  }
+//     let activeXData = $(".Betting__C-multiple-r.active").attr("data-x");
+//     console.log(activeXData);
+//     $("#van-field-1-input").val(activeXData);
+//     $("div.Betting__Popup-body-x-btn").removeClass("bgcolor");
+//     $(`div.Betting__Popup-body-x-btn[data-x="${activeXData}"]`).addClass(
+//       "bgcolor",
+//     );
+//     $("#join_bet_btn").attr("data-join", join);
+//     $("#betting_value").html(addText);
+//     totalMoney();
+//   }
 
-  $(".Betting__Popup-body-money-btn").off("click.money_btn");
-  $(".Betting__Popup-body-money-btn").on("click.money_btn", function (e) {
-    e.preventDefault();
+//   $(".Betting__Popup-body-money-btn").off("click.money_btn");
+//   $(".Betting__Popup-body-money-btn").on("click.money_btn", function (e) {
+//     e.preventDefault();
 
-    const thisValue = $(this).attr("data-money");
-    $(".Betting__Popup-body-money-btn").removeClass("bgcolor");
-    $(this).addClass("bgcolor");
-    $(".Betting__Popup-body-money-main").attr("data-current-money", thisValue);
+//     const thisValue = $(this).attr("data-money");
+//     $(".Betting__Popup-body-money-btn").removeClass("bgcolor");
+//     $(this).addClass("bgcolor");
+//     $(".Betting__Popup-body-money-main").attr("data-current-money", thisValue);
 
-    totalMoney();
-  });
+//     totalMoney();
+//   });
 
-  $(".Betting__Popup-body-x-btn").off("click.x_btn");
-  $(`.Betting__Popup-body-x-btn`).on("click.x_btn", function (e) {
-    e.preventDefault();
+//   $(".Betting__Popup-body-x-btn").off("click.x_btn");
+//   $(`.Betting__Popup-body-x-btn`).on("click.x_btn", function (e) {
+//     e.preventDefault();
 
-    const thisValue = $(this).attr("data-x");
-    $(".Betting__Popup-body-x-btn").removeClass("bgcolor");
-    $(this).addClass("bgcolor");
+//     const thisValue = $(this).attr("data-x");
+//     $(".Betting__Popup-body-x-btn").removeClass("bgcolor");
+//     $(this).addClass("bgcolor");
 
-    $("#van-field-1-input").val(thisValue);
-    totalMoney();
-  });
+//     $("#van-field-1-input").val(thisValue);
+//     totalMoney();
+//   });
 
-  $(".Betting__Popup-minus-btn").off("click.minus_btn");
-  $(`.Betting__Popup-minus-btn`).on("click.minus_btn", function (e) {
-    e.preventDefault();
-    const currentX = parseInt($("#van-field-1-input").val());
-    const nextX = currentX === 1 ? 1 : currentX - 1;
-    $(".Betting__Popup-body-x-btn").removeClass("bgcolor");
-    $(`.Betting__Popup-body-x-btn[data-x="${nextX}"]`).addClass("bgcolor");
+//   $(".Betting__Popup-minus-btn").off("click.minus_btn");
+//   $(`.Betting__Popup-minus-btn`).on("click.minus_btn", function (e) {
+//     e.preventDefault();
+//     const currentX = parseInt($("#van-field-1-input").val());
+//     const nextX = currentX === 1 ? 1 : currentX - 1;
+//     $(".Betting__Popup-body-x-btn").removeClass("bgcolor");
+//     $(`.Betting__Popup-body-x-btn[data-x="${nextX}"]`).addClass("bgcolor");
 
-    $("#van-field-1-input").val(nextX);
-    totalMoney();
-  });
+//     $("#van-field-1-input").val(nextX);
+//     totalMoney();
+//   });
 
-  $(".Betting__Popup-plus-btn").off("click.plus_btn");
-  $(`.Betting__Popup-plus-btn`).on("click.plus_btn", function (e) {
-    e.preventDefault();
-    const currentX = parseInt($("#van-field-1-input").val());
-    const nextX = currentX + 1;
+//   $(".Betting__Popup-plus-btn").off("click.plus_btn");
+//   $(`.Betting__Popup-plus-btn`).on("click.plus_btn", function (e) {
+//     e.preventDefault();
+//     const currentX = parseInt($("#van-field-1-input").val());
+//     const nextX = currentX + 1;
 
-    $(".Betting__Popup-body-x-btn").removeClass("bgcolor");
-    $(`.Betting__Popup-body-x-btn[data-x="${nextX}"]`).addClass("bgcolor");
+//     $(".Betting__Popup-body-x-btn").removeClass("bgcolor");
+//     $(`.Betting__Popup-body-x-btn[data-x="${nextX}"]`).addClass("bgcolor");
 
-    $("#van-field-1-input").val(nextX);
-    totalMoney();
-  });
+//     $("#van-field-1-input").val(nextX);
+//     totalMoney();
+//   });
 
-  $(`#van-field-1-input`).off("change.input");
-  $(`#van-field-1-input`).on("change.input", function (e) {
-    e.preventDefault();
-    const currentX = parseInt($("#van-field-1-input").val());
+//   $(`#van-field-1-input`).off("change.input");
+//   $(`#van-field-1-input`).on("change.input", function (e) {
+//     e.preventDefault();
+//     const currentX = parseInt($("#van-field-1-input").val());
 
-    $(".Betting__Popup-body-x-btn").removeClass("bgcolor");
-    $(`.Betting__Popup-body-x-btn[data-x="${currentX}"]`).addClass("bgcolor");
+//     $(".Betting__Popup-body-x-btn").removeClass("bgcolor");
+//     $(`.Betting__Popup-body-x-btn[data-x="${currentX}"]`).addClass("bgcolor");
 
-    totalMoney();
-  });
+//     totalMoney();
+//   });
 
 
 
-  $("#join_bet_btn").off("click.join_btn");
-  $("#join_bet_btn").on("click.join_btn", function (event) {
-    event.preventDefault();
-    let join = $(this).attr("data-join");
-    const currentX = parseInt($("#van-field-1-input").val().trim());
-    let money = $(".Betting__Popup-body-money-main").attr("data-current-money");
+//   $("#join_bet_btn").off("click.join_btn");
+//   $("#join_bet_btn").on("click.join_btn", function (event) {
+//     event.preventDefault();
+//     let join = $(this).attr("data-join");
+//     const currentX = parseInt($("#van-field-1-input").val().trim());
+//     let money = $(".Betting__Popup-body-money-main").attr("data-current-money");
 
-    if (!join || !currentX || !money) {
-      return;
-    }
-    // let currentStartPoint = null;
-    let currentStartPoint = JSON.parse(localStorage.getItem("startPoint"));
-    console.log(GAME_TYPE_ID);
-    if (GAME_TYPE_ID === '1') {
-      currentStartPoint = JSON.parse(localStorage.getItem("startPoint"));
-    } else if (GAME_TYPE_ID === '3') {
-      currentStartPoint = JSON.parse(localStorage.getItem("3minStartPoint"));
-    } else if (GAME_TYPE_ID === '5') {
-      currentStartPoint = JSON.parse(localStorage.getItem("5minStartPoint")); // ✅ fixed
-    } else if (GAME_TYPE_ID === '10') {
-      currentStartPoint = JSON.parse(localStorage.getItem("10minStartPoint")); // ✅ fixed
-    }
+//     if (!join || !currentX || !money) {
+//       return;
+//     }
+//     // let currentStartPoint = null;
+//     let currentStartPoint = JSON.parse(localStorage.getItem("startPoint"));
+//     console.log(GAME_TYPE_ID);
+//     if (GAME_TYPE_ID === '1') {
+//       currentStartPoint = JSON.parse(localStorage.getItem("startPoint"));
+//     } else if (GAME_TYPE_ID === '3') {
+//       currentStartPoint = JSON.parse(localStorage.getItem("3minStartPoint"));
+//     } else if (GAME_TYPE_ID === '5') {
+//       currentStartPoint = JSON.parse(localStorage.getItem("5minStartPoint")); // ✅ fixed
+//     } else if (GAME_TYPE_ID === '10') {
+//       currentStartPoint = JSON.parse(localStorage.getItem("10minStartPoint")); // ✅ fixed
+//     }
     
-    if (!currentStartPoint) {
-      alertMessage("Start point not available yet.");
-      return;
-    } else {
-      console.log("Start point:", currentStartPoint); 
-    }
-    console.log(GAME_TYPE_ID)
-    const startPrice = currentStartPoint.price;
-    const coinType = getCoinType();
+//     if (!currentStartPoint) {
+//       alertMessage("Start point not available yet.");
+//       return;
+//     } else {
+//       console.log("Start point:", currentStartPoint); 
+//     }
+//     console.log(GAME_TYPE_ID)
+//     const startPrice = currentStartPoint.price;
+//     const coinType = getCoinType();
     
-    console.log("Start Price:", startPrice);
-    console.log("Coin Type:", coinType);
-    $(this).addClass("block-click");
-    $.ajax({
-      type: "POST",
-      url: "/api/webapi/action/join",
-      data: {
-        typeid: GAME_TYPE_ID,
-        join: join,
-        x: currentX,
-        money: money,
-        startPrice,
-        coinType
-      },
-      dataType: "json",
-      success: function (response) {
-        alertMessage(response.message);
-        if (response.status === false) return;
-        $("#balance_amount").text(`₹ ${formatIndianNumber(response.money)} `);
-        $("#bonus_balance_amount").text(
-          `₹ ${formatIndianNumber(response.bonus_money)} `,
-        );
+//     console.log("Start Price:", startPrice);
+//     console.log("Coin Type:", coinType);
+//     $(this).addClass("block-click");
+//     $.ajax({
+//       type: "POST",
+//       url: "/api/webapi/action/join",
+//       data: {
+//         typeid: GAME_TYPE_ID,
+//         join: join,
+//         x: currentX,
+//         money: money,
+//         startPrice,
+//         coinType
+//       },
+//       dataType: "json",
+//       success: function (response) {
+//         alertMessage(response.message);
+//         if (response.status === false) return;
+//         $("#balance_amount").text(`₹ ${formatIndianNumber(response.money)} `);
+//         $("#bonus_balance_amount").text(
+//           `₹ ${formatIndianNumber(response.bonus_money)} `,
+//         );
 
-        initMyBets();
+//         initMyBets();
 
-        socket.emit("data-server_2", {
-          money: currentX * money,
-          join,
-          time: Date.now(),
-          change: response.change,
-        });
-      },
-    });
+//         socket.emit("data-server_2", {
+//           money: currentX * money,
+//           join,
+//           time: Date.now(),
+//           change: response.change,
+//         });
+//       },
+//     });
 
-    setTimeout(() => {
-      $(".van-overlay").fadeOut();
-      $(".popup-join").fadeOut();
-      $("#join_bet_btn").removeClass("block-click");
-    }, 500);
-  });
+//     setTimeout(() => {
+//       $(".van-overlay").fadeOut();
+//       $(".popup-join").fadeOut();
+//       $("#join_bet_btn").removeClass("block-click");
+//     }, 500);
+//   });
 
-  $("#cancel_bet_btn").off("click.cancel_btn");
-  $("#cancel_bet_btn").on("click.cancel_btn", function (event) {
-    event.preventDefault();
+//   $("#cancel_bet_btn").off("click.cancel_btn");
+//   $("#cancel_bet_btn").on("click.cancel_btn", function (event) {
+//     event.preventDefault();
 
-    $(".van-overlay").fadeOut();
-    $(".popup-join").fadeOut();
-    $("#join_bet_btn").removeClass("block-click");
-  });
+//     $(".van-overlay").fadeOut();
+//     $(".popup-join").fadeOut();
+//     $("#join_bet_btn").removeClass("block-click");
+//   });
 
   //main button events
 
-  $(".con-box .bet_button").off("click.con_box");
-  $(".con-box .bet_button").on("click.con_box", function (e) {
-    e.preventDefault();
-    let addTop = $(this).attr("data-join");
-    let cssValueNumber = $(this).attr("data-css-value");
-    let addText = $(this).text();
-    alertBox(addTop, cssValueNumber, addText);
-  });
+  // $(".con-box .bet_button").off("click.con_box");
+  // $(".con-box .bet_button").on("click.con_box", function (e) {
+  //   e.preventDefault();
+  //   let addTop = $(this).attr("data-join");
+  //   let cssValueNumber = $(this).attr("data-css-value");
+  //   let addText = $(this).text();
+  //   alertBox(addTop, cssValueNumber, addText);
+  // });
 
-  $(".number-box .bet_button").off("click.number_box");
-  $(".number-box .bet_button").on("click.number_box", function (e) {
-    e.preventDefault();
-    let addTop = $(this).attr("data-join");
-    let cssValueNumber = $(this).attr("data-css-value");
-    let addText = $(this).attr("data-join");
-    alertBox(addTop, cssValueNumber, addText);
-  });
+  // $(".number-box .bet_button").off("click.number_box");
+  // $(".number-box .bet_button").on("click.number_box", function (e) {
+  //   e.preventDefault();
+  //   let addTop = $(this).attr("data-join");
+  //   let cssValueNumber = $(this).attr("data-css-value");
+  //   let addText = $(this).attr("data-join");
+  //   alertBox(addTop, cssValueNumber, addText);
+  // });
 
-  $(".btn-box .bet_button").off("click.btn_box");
-  $(".btn-box .bet_button").on("click.btn_box", function (e) {
-    e.preventDefault();
-    let addTop = $(this).attr("data-join");
-    let cssValueNumber = $(this).attr("data-css-value");
-    let addText = $(this).text();
-    alertBox(addTop, cssValueNumber, addText);
-  });
+  // $(".btn-box .bet_button").off("click.btn_box");
+  // $(".btn-box .bet_button").on("click.btn_box", function (e) {
+  //   e.preventDefault();
+  //   let addTop = $(this).attr("data-join");
+  //   let cssValueNumber = $(this).attr("data-css-value");
+  //   let addText = $(this).text();
+  //   alertBox(addTop, cssValueNumber, addText);
+  // });
 
-  $(".Betting__C-multiple-r").off("click.multiple_r");
-  $(".Betting__C-multiple-r").on("click.multiple_r", function (e) {
-    e.preventDefault();
-    $(".Betting__C-multiple-r").css({
-      "background-color": "rgb(240, 240, 240)",
-      color: "rgb(0, 0, 0)",
+  // $(".Betting__C-multiple-r").off("click.multiple_r");
+  // $(".Betting__C-multiple-r").on("click.multiple_r", function (e) {
+  //   e.preventDefault();
+  //   $(".Betting__C-multiple-r").css({
+  //     "background-color": "rgb(240, 240, 240)",
+  //     color: "rgb(0, 0, 0)",
+  //   });
+
+  //   $(this).css({
+  //     "background-color": "rgb(63 147 104)",
+  //     color: "rgb(255, 255, 255)",
+  //   });
+  //   $(".Betting__C-multiple-r").removeClass("active");
+  //   $(this).addClass("active");
+  // });
+
+  // $(".randomBtn").off("click.multiple_r");
+  // $(".randomBtn").on("click.multiple_r", async function (e) {
+  //   e.preventDefault();
+  //   let random = 0;
+  //   for (let i = 0; i < 55; i++) {
+  //     random = Math.floor(Math.random() * 10);
+  //     $(".number-box .bet_button").removeClass("active");
+  //     $(`.number-box .bet_button:eq(${random})`).addClass("active");
+  //     await sleep(50);
+  //   }
+
+  //   alertBox(random, random, random);
+  // });
+
+  // const alertMessage = (text) => {
+  //   const msg = document.createElement("div");
+  //   msg.setAttribute("data-v-1dcba851", "");
+  //   msg.className = "message_alert_root";
+
+  //   const msgContent = document.createElement("div");
+  //   msgContent.setAttribute("data-v-1dcba851", "");
+  //   msgContent.className = "message_alert_text";
+  //   msgContent.style = "";
+  //   msgContent.textContent = text;
+
+  //   msg.appendChild(msgContent);
+  //   document.body.appendChild(msg);
+
+  //   setTimeout(() => {
+  //     msgContent.classList.remove("v-enter-active", "v-enter-to");
+  //     msgContent.classList.add("v-leave-active", "v-leave-to");
+
+  //     setTimeout(() => {
+  //       document.body.removeChild(msg);
+  //     }, 100);
+  //   }, 1000);
+  // };
+
+
+  $(document).ready(function() {
+    // Initialize variables
+    let currentMultiplier = 1;
+    let currentBetAmount = 1;
+    
+    // Amount input handlers
+    $('.minus-btn').on('click', function() {
+        let currentValue = parseInt($('#betAmountInput').val());
+        if (currentValue > 1) {
+            $('#betAmountInput').val(currentValue - 1);
+        }
     });
-
-    $(this).css({
-      "background-color": "rgb(63 147 104)",
-      color: "rgb(255, 255, 255)",
+    
+    $('.plus-btn').on('click', function() {
+        let currentValue = parseInt($('#betAmountInput').val());
+        $('#betAmountInput').val(currentValue + 1);
     });
-    $(".Betting__C-multiple-r").removeClass("active");
-    $(this).addClass("active");
-  });
-
-  $(".randomBtn").off("click.multiple_r");
-  $(".randomBtn").on("click.multiple_r", async function (e) {
-    e.preventDefault();
-    let random = 0;
-    for (let i = 0; i < 55; i++) {
-      random = Math.floor(Math.random() * 10);
-      $(".number-box .bet_button").removeClass("active");
-      $(`.number-box .bet_button:eq(${random})`).addClass("active");
-      await sleep(50);
+    
+    $('#betAmountInput').on('change', function() {
+        let value = parseInt($(this).val());
+        if (isNaN(value) || value < 1) {
+            $(this).val(1);
+        }
+    });
+    
+    // Quick amount buttons
+    $('.quick-amount-btn').on('click', function() {
+        let amount = $(this).data('amount');
+        $('#betAmountInput').val(amount);
+    });
+    
+    // Multiplier buttons
+    $('.multiplier-btn').on('click', function() {
+        $('.multiplier-btn').removeClass('active');
+        $(this).addClass('active');
+        currentMultiplier = parseInt($(this).data('multiplier'));
+    });
+    
+    // Bet placement handlers
+    $('.Betting__C-foot-b').on('click', function() {
+        placeBet('l'); // 'l' for up
+    });
+    
+    $('.Betting__C-foot-s').on('click', function() {
+        placeBet('n'); // 'n' for down
+    });
+    
+    // Function to place bet
+    function placeBet(join) {
+        const betAmount = parseInt($('#betAmountInput').val());
+        console.log(betAmount);
+        const totalAmount = betAmount * currentMultiplier;
+        
+        if (!join || !betAmount || !currentMultiplier) {
+            alertMessage("Please enter valid bet details");
+            return;
+        }
+        
+        let currentStartPoint = JSON.parse(localStorage.getItem("startPoint"));
+        if (GAME_TYPE_ID === '1') {
+            currentStartPoint = JSON.parse(localStorage.getItem("startPoint"));
+        } else if (GAME_TYPE_ID === '3') {
+            currentStartPoint = JSON.parse(localStorage.getItem("3minStartPoint"));
+        } else if (GAME_TYPE_ID === '5') {
+            currentStartPoint = JSON.parse(localStorage.getItem("5minStartPoint"));
+        } else if (GAME_TYPE_ID === '10') {
+            currentStartPoint = JSON.parse(localStorage.getItem("10minStartPoint"));
+        }
+        
+        if (!currentStartPoint) {
+            alertMessage("Start point not available yet.");
+            return;
+        }
+        
+        const startPrice = currentStartPoint.price;
+        const coinType = getCoinType();
+        
+        // Disable buttons during request
+        $('.Betting__C-foot-b, .Betting__C-foot-s').addClass('block-click');
+        console.log(GAME_TYPE_ID);
+        $.ajax({
+            type: "POST",
+            url: "/api/webapi/action/join",
+            data: {
+                typeid: GAME_TYPE_ID,
+                join: join,
+                x: currentMultiplier,
+                money: betAmount,
+                startPrice,
+                coinType
+            },
+            dataType: "json",
+            success: function(response) {
+                alertMessage(response.message);
+                if (response.status === false) return;
+                
+                $("#balance_amount").text(`₹ ${formatIndianNumber(response.money)} `);
+                $("#bonus_balance_amount").text(`₹ ${formatIndianNumber(response.bonus_money)} `);
+                
+                initMyBets();
+                
+                socket.emit("data-server_2", {
+                    money: totalAmount,
+                    join,
+                    time: Date.now(),
+                    change: response.change,
+                });
+            },
+            complete: function() {
+                $('.Betting__C-foot-b, .Betting__C-foot-s').removeClass('block-click');
+            }
+        });
     }
+    
+    // Helper function to show alert messages
+    function alertMessage(text) {
+        const msg = document.createElement("div");
+        msg.setAttribute("data-v-1dcba851", "");
+        msg.className = "message_alert_root";
 
-    alertBox(random, random, random);
-  });
+        const msgContent = document.createElement("div");
+        msgContent.setAttribute("data-v-1dcba851", "");
+        msgContent.className = "message_alert_text";
+        msgContent.style = "";
+        msgContent.textContent = text;
 
-  const alertMessage = (text) => {
-    const msg = document.createElement("div");
-    msg.setAttribute("data-v-1dcba851", "");
-    msg.className = "message_alert_root";
+        msg.appendChild(msgContent);
+        document.body.appendChild(msg);
 
-    const msgContent = document.createElement("div");
-    msgContent.setAttribute("data-v-1dcba851", "");
-    msgContent.className = "message_alert_text";
-    msgContent.style = "";
-    msgContent.textContent = text;
+        setTimeout(() => {
+            msgContent.classList.remove("v-enter-active", "v-enter-to");
+            msgContent.classList.add("v-leave-active", "v-leave-to");
 
-    msg.appendChild(msgContent);
-    document.body.appendChild(msg);
-
-    setTimeout(() => {
-      msgContent.classList.remove("v-enter-active", "v-enter-to");
-      msgContent.classList.add("v-leave-active", "v-leave-to");
-
-      setTimeout(() => {
-        document.body.removeChild(msg);
-      }, 100);
-    }, 1000);
-  };
-
+            setTimeout(() => {
+                document.body.removeChild(msg);
+            }, 100);
+        }, 1000);
+    }
+    
+    // Format Indian number (keep your existing implementation)
+    // function formatIndianNumber(num) {
+    //     // Your existing implementation
+    //     return num;
+    // }
+    
+    // Get coin type (keep your existing implementation)
+    // function getCoinType() {
+    //     // Your existing implementation
+    //     return $('#coinSelect').val();
+    // }
+    
+    // Initialize my bets (keep your existing implementation)
+    // function initMyBets() {
+    //     // Your existing implementation
+    // }
+});
   // ------------------------- wingo game logic --------------------end
 
   // -------------------------- game pagination -----------------------
@@ -879,7 +1142,7 @@ function initGameLogics({
         Game_History_Pages = response.page;
         let list_orders = response.data.gameslist;
         
-        $("#period").text(response.period);
+        // $("#period").text(response.period);
 
         $("#number_result__gameHistory").text(`${page}/${response.page}`);
 
@@ -919,7 +1182,7 @@ function initGameLogics({
         Game_History_Pages = response.page;
         let list_orders = response.data.gameslist;
 
-        $("#period").text(response.period);
+        // $("#period").text(response.period);
 
         $("#number_result__chart").text(`${page}/${response.page}`);
 
@@ -1305,6 +1568,7 @@ function getCurrentPricePoint() {
 
 
 let currentStartPoint = null;
+
 socket.on("getStartPoint", () => {
   const point = getCurrentPricePoint();
   if (point) {
@@ -1312,6 +1576,14 @@ socket.on("getStartPoint", () => {
     console.log("Start point set.", point);
   }
 });
+
+// $(document).ready(() => {
+//   const storedPeriod = JSON.parse(localStorage.getItem("period"));
+//   if (storedPeriod) {
+//     $(".period").html(`<span style="color:white; font-weight:800">${storedPeriod}</span>`);
+//   }
+// });
+
 
 socket.on("get3minStartPoint",()=>{
     const point=getCurrentPricePoint();
@@ -1339,6 +1611,8 @@ socket.on("get10minStartPoint",()=>{
 })
 
 
+
+
 // socket.on("setEndPoint",()=>{
 //   const point=getCurrentPricePoint();
 //   if(point){
@@ -1358,10 +1632,11 @@ socket.on("data-server", async function (msg) {
     //   console.log("End Point received",point);
     // }
     GAME_TYPE_ID = getGameType();
-
+   console.log(GAME_NAME);
     if (msg.data[0].game != GAME_NAME) {
       return;
     }
+    $(".period").html(`<span style="color:white;">${msg.data[0].period}</span>`);
 
     $(".Loading").fadeIn(0);
 
@@ -1414,14 +1689,14 @@ socket.on("data-server", async function (msg) {
           status: STATUS_MAP.WIN,
           amount: winGamesMoney,
           period: lastGame?.period,
-          result: lastGame?.amount,
+          result: lastGame?.result,
         });
       } else {
         displayResultHandler({
           status: STATUS_MAP.LOSS,
           amount: lostGamesMoney,
           period: lastGame?.period,
-          result: lastGame?.amount,
+          result: lastGame?.result,
         });
       }
     } else {
@@ -1464,565 +1739,720 @@ socket.on("data-server", async function (msg) {
 
 
 // betting-chart.js
+// Add these at the beginning of your script
 
-document.addEventListener('DOMContentLoaded', function() {
-  // Initialize canvas
-  const canvas = document.getElementById('priceChart');
-  const ctx = canvas.getContext('2d');
-  const coinSelect = document.getElementById('coinSelect');
+// const seed = "shared-crypto-seed-2023"; // Any string you want
+
+// client.js
+// const socket = io();
+
+// Coin configurations for UI
+const coinConfigs = {
+  BTC: { basePrice: 60000, color: '#f7931a', name: 'Bitcoin' },
+  ETH: { basePrice: 3000, color: '#627eea', name: 'Ethereum' },
+  BNB: { basePrice: 500, color: '#f3ba2f', name: 'Binance Coin' },
+  ADA: { basePrice: 0.5, color: '#0033ad', name: 'Cardano' }
+};
+
+let coinData = {
+  BTC: [],
+  ETH: [],
+  BNB: [],
+  ADA: []
+  // Add other coins if needed
+};
+
+
+
+// Define GAME_SESSIONS at the top of your script, before socket event handlers
+const GAME_SESSIONS = {
+  '1min': { duration: 1 * 60 * 1000 }, // 1 minute in milliseconds
+  '3min': { duration: 3 * 60 * 1000 }, // 3 minutes in milliseconds
+  '5min': { duration: 5 * 60 * 1000 }, // 5 minutes in milliseconds
+  '10min': { duration: 10 * 60 * 1000 } // 10 minutes in milliseconds
+};
+
+let currentCoin = 'BTC';
+let currentPrice = coinConfigs[currentCoin].basePrice;
+let previousPrice = currentPrice;
+// let coinData = {};
+let sessionLines = {
+  '1min': null,
+  '3min': null,
+  '5min': null,
+  '10min': null
+};
+
+// Initialize empty data structures for each coin
+Object.keys(coinConfigs).forEach(coin => {
+  coinData[coin] = [];
+});
+
+// Handle initial data from server
+socket.on('initialData', (data) => {
+  // Update coin data
+  Object.keys(data.coins).forEach(coin => {
+    coinData[coin] = data.coins[coin].map(point => ({
+      x: point.timestamp,
+      y: point.price
+    }));
+  });
   
-  // UI Elements
-  const currentPriceDisplay = document.getElementById('currentPriceDisplay');
-  const priceChangeDisplay = document.getElementById('priceChangeDisplay');
-  const currentTimeDisplay = document.getElementById('currentTimeDisplay');
+  // Update session lines
+  Object.keys(data.sessions).forEach(session => {
+    const sessionData = data.sessions[session];
+    // console.log(sessionData);
+    if (sessionData.active) {
+      sessionLines[session] = {
+        startTime: Date.now() - (GAME_SESSIONS[session].duration - sessionData.timeLeft),
+        endTime: Date.now() + sessionData.timeLeft,
+        price: sessionData.price,
+        duration: session
+      };
+    }
+  });
   
-  // Set proper canvas dimensions
-  function resizeCanvas() {
-      const container = document.querySelector('.Betting__C-numC');
-      canvas.style.width = '100%';
-      canvas.style.height = '100%';
-      canvas.width = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
+  // Set current price
+  if (coinData[currentCoin].length > 0) {
+    currentPrice = coinData[currentCoin][coinData[currentCoin].length - 1].y;
+    previousPrice = coinData[currentCoin].length > 1 
+      ? coinData[currentCoin][coinData[currentCoin].length - 2].y 
+      : currentPrice;
+    updatePriceInfo();
   }
   
-  // Initial resize
-  resizeCanvas();
-  window.addEventListener('resize', resizeCanvas);
+  // Initialize chart if not already done
+  if (!window.chart) {
+    initializeChart();
+  } else {
+    updateChart();
+  }
+});
+
+// Handle price updates from server
+socket.on('priceUpdate', (update) => {
+  // Update coin data
+  Object.keys(update.prices).forEach(coin => {
+    coinData[coin].push({
+      x: update.timestamp,
+      y: update.prices[coin]
+    });
+    // console.log(update);
+    // Remove data older than 24 hours
+    const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+    coinData[coin] = coinData[coin].filter(point => point.x >= oneDayAgo);
+  });
   
-  // Coin configurations
-  const coinConfigs = {
-      BTC: { basePrice: 60000, color: '#f7931a', name: 'Bitcoin' },
-      ETH: { basePrice: 3000, color: '#627eea', name: 'Ethereum' },
-      BNB: { basePrice: 500, color: '#f3ba2f', name: 'Binance Coin' },
-      ADA: { basePrice: 0.5, color: '#0033ad', name: 'Cardano' }
+  // Update session lines from server
+  Object.keys(update.sessions).forEach(session => {
+    const sessionData = update.sessions[session];
+    // console.log(sessionData);
+    if (sessionData.active) {
+      sessionLines[session] = {
+        startTime: update.timestamp - (GAME_SESSIONS[session].duration - sessionData.timeLeft),
+        endTime: update.timestamp + sessionData.timeLeft,
+        price: sessionData.price,
+        duration: session
+      };
+    } else {
+      sessionLines[session] = null;
+    }
+  });
+  
+  // Update current price if it's for the active coin
+  if (update.prices[currentCoin] !== undefined) {
+    previousPrice = currentPrice;
+    currentPrice = update.prices[currentCoin];
+    updatePriceInfo();
+  }
+  
+  // Update chart
+  if (window.chart) {
+    updateChart();
+  }
+});
+
+// Handle end point setting confirmation
+socket.on('endPointSet', ({ session, coin, price, startTime, duration }) => {
+  sessionLines[session] = {
+    startTime,
+    endTime: startTime + duration,
+    price,
+    duration: session
   };
   
-  let currentCoin = coinSelect.value;
-  let coinData = {};
-  let coinLastPrices = {};
-  let coinLastUpdateTime = {};
-  let currentPrice = coinConfigs[currentCoin].basePrice;
-  let previousPrice = currentPrice;
+  console.log(`${session} end point set at ${price} for ${coin}`);
   
-  // Initialize data for all coins
-  Object.keys(coinConfigs).forEach(coin => {
-      coinData[coin] = loadChartData(coin);
-      coinLastPrices[coin] = coinData[coin].length > 0 ? 
-          coinData[coin][coinData[coin].length - 1].y : 
-          coinConfigs[coin].basePrice;
-      coinLastUpdateTime[coin] = coinData[coin].length > 0 ? 
-          coinData[coin][coinData[coin].length - 1].x : 
-          Date.now();
-      
-      if (coin === currentCoin) {
-          currentPrice = coinLastPrices[coin];
-          previousPrice = coinData[coin].length > 1 ? 
-              coinData[coin][coinData[coin].length - 2].y : 
-              currentPrice;
-      }
-  });
-  
-  // Load saved data from localStorage
-  function loadChartData(coin) {
-      const savedData = localStorage.getItem(`priceChartData_${coin}`);
-      if (savedData) {
-          const parsedData = JSON.parse(savedData);
-          return parsedData.sort((a, b) => a.x - b.x);
-      }
-      return generateInitialData(coin);
-  }
-  
-  // Generate initial data for a coin
-  function generateInitialData(coin) {
-      const now = Date.now();
-      const data = [];
-      const basePrice = coinConfigs[coin].basePrice;
-      
-      // Generate 60 data points (1 per second for 1 minute)
-      for (let i = 0; i < 60; i++) {
-          const timestamp = now - (60 - i) * 1000;
-          const price = i === 0 ? basePrice : 
-              generateNewPrice(data[i-1].y, coin, timestamp);
-          data.push({ x: timestamp, y: price });
-      }
-      
-      return data;
-  }
-  
-  // Save data to localStorage
-  function saveChartData(coin, data) {
-      localStorage.setItem(`priceChartData_${coin}`, JSON.stringify(data));
-  }
+  // Disable buttons when end point is set (last minute of session)
+  const getTimeMSS = (countDownDate) => {
+    var now = new Date().getTime();
+    var distance = countDownDate - now;
+    var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+    var minute = Math.ceil(minutes % parseInt(GAME_TYPE_ID));
+    var seconds1 = Math.floor((distance % (1000 * 60)) / 10000);
+    var seconds2 = Math.floor(((distance % (1000 * 60)) / 1000) % 10);
+    var totalSeconds = Math.floor(distance / 1000);
 
-  let latestEndPoint = null;
-socket.on("setEndPoint", (data) => {
-  latestEndPoint = data;
-  console.log("Received endpoint from server:", latestEndPoint);
+    return { minute, seconds1, seconds2, totalSeconds };
+  };
+
+
+
+  if (session === getCurrentGameSession()) {
+    const betButtons = document.querySelectorAll(".bet_button");
+    if (betButtons) {
+      betButtons.forEach(button => {
+        button.style.pointerEvents = "none";
+        button.style.cursor = "not-allowed";
+        button.style.opacity = "0.6";
+      });
+    }
+  }
 });
- let ThreeminEndPoint=null;
- socket.on("set3minEndPoint",(data)=>{
-  ThreeminEndPoint=data;
-  console.log("Received end point for 3 min Interval.",ThreeminEndPoint)
- })
-  
- const fiveminEndPoint=null;
- socket.on("set5minEndPoint",(data)=>{
-   FiveminEndPoint=data;
-   console.log("Received end point for 5 min",FiveminEndPoint);
- })
 
- const tenminEndPoint=null;
- socket.on("set10minEndPoint",(data)=>{
-  TenminEndPoint=data;
-  console.log("Received end point for 10 min",TenminEndPoint);
- })
-  // Price generation for line chart
-  // function generateNewPrice(lastPrice, coin, timestamp) {
-  //     const getTimeMSS = (countDownDate) => {
-  //         var now = new Date().getTime();
-  //         var distance = countDownDate - now;
-  //         var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-  //         var minute = Math.ceil(minutes % 60); // Using 60 as default if GAME_TYPE_ID not available
-  //         var seconds1 = Math.floor((distance % (1000 * 60)) / 10000);
-  //         var seconds2 = Math.floor(((distance % (1000 * 60)) / 1000) % 10);
+
+
+
+
+// Function to set end point from client
+// function setEndPoint(session, price) {
+//   const coin = document.getElementById('coinSelect').value;
+//   socket.emit('setEndPoint', { session, coin, price });
+// }
+
+let hasUserScrolled = false; // Tracks if the user has scrolled the chart
+// Initialize chart with session line plugin
+function initializeChart() {
+  const canvas = document.getElementsByClassName('priceChart')[0];
+  const ctx = canvas.getContext('2d');
+  
+  // Session line plugin
+
+
+  function getSessionStartPrice(coin, sessionStartTime) {
+    try {
+        if (!coinData || !coinData[coin] || !Array.isArray(coinData[coin])) {
+            console.warn('Invalid coin data structure');
+            return null;
+        }
+        
+        const dataPoints = coinData[coin];
+        if (dataPoints.length === 0) return null;
+        
+        // Find the data point closest to the session start time
+        let closestPoint = null;
+        let minDiff = Infinity;
+        
+        for (const point of dataPoints) {
+            // Skip invalid points
+            if (!point || point.x === undefined || point.y === undefined) continue;
+            
+            const diff = Math.abs(point.x - sessionStartTime);
+            if (diff < minDiff) {
+                minDiff = diff;
+                closestPoint = point;
+            }
+        }
+        
+        return closestPoint ? closestPoint.y : null;
+    } catch (error) {
+        console.error('Error in getSessionStartPrice:', error);
+        return null;
+    }
+}
+
+const sessionLinePlugin = {
+  id: 'sessionLine',
+  afterDatasetsDraw(chart) {
+    try {
+      const ctx = chart.ctx;
+      const xAxis = chart.scales.x;
+      const yAxis = chart.scales.y;
+      const chartArea = chart.chartArea;
       
-  //         return { minute, seconds1, seconds2 };
-  //     };
-    
-  //     var countDownDate = new Date("2030-07-16T23:59:59.9999999+03:00").getTime();
-  //     const now = timestamp || Date.now();
-  //     const { minute, seconds1, seconds2 } = getTimeMSS(countDownDate);
-    
-  //     // Check if we should use the endpoint
-  //     if (minute === 0 && seconds1 === 0 && seconds2 === 5) {
-  //         // if (typeof latestEndPoint !== 'undefined' && latestEndPoint !== null) {
-  //         //   console.log(parseFloat(latestEndPoint))
-  //         //     return parseFloat(latestEndPoint);
-  //         // }
-  //          if (latestEndPoint !== null) {
-  //       return parseFloat(latestEndPoint);
-  //     } else {
-  //       console.log("Random change used:", randomChange);
-  //       return lastPrice + randomChange;
-  //     }
-  //   } else {
-  //     return lastPrice + randomChange;
-  //   }
-    
-  //     // Normal price movement
-  //     const volatility = coinConfigs[coin].basePrice * 0.0005; // 0.05% of base price
-  //     let randomChange = (Math.random() * 2 - 1) * volatility;
+      // Get current coin from select element
+      const coinSelect = document.getElementById('coinSelect');
+      const currentCoin = coinSelect ? coinSelect.value : 'BTC';
       
-  //     // Add slight momentum based on previous trend
-  //     if (coinData[coin] && coinData[coin].length > 1) {
-  //         const prevTrend = coinData[coin][coinData[coin].length - 1].y - 
-  //                         coinData[coin][coinData[coin].length - 2].y;
-  //         randomChange += prevTrend * 0.3; // 30% momentum
-  //     }
+      // Safety check
+      if (!coinData || !coinData[currentCoin]) {
+        console.warn('Coin data not available for', currentCoin);
+        return;
+      }
       
-  //     // Ensure price doesn't go negative
-  //     const newPrice = Math.max(0.01, lastPrice + randomChange);
+      // Get the current game type duration in milliseconds
+      const gameType = getGameType();
+      let sessionDuration;
+      switch(gameType) {
+        case '1': sessionDuration = 60 * 1000; break;
+        case '3': sessionDuration = 180 * 1000; break;
+        case '5': sessionDuration = 300 * 1000; break;
+        case '10': sessionDuration = 600 * 1000; break;
+        default: sessionDuration = 60 * 1000;
+      }
       
-  //     // Limit price movement to ±2% per step
-  //     const maxChange = lastPrice * 0.02;
-  //     return Math.max(lastPrice - maxChange, Math.min(lastPrice + maxChange, newPrice));
-  // }
-  function generateNewPrice(lastPrice, coin, timestamp) {
-    const getTimeMSS = (countDownDate) => {
+      // Get the current time and calculate session start time
       const now = Date.now();
-      const distance = countDownDate - now;
-      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-      const minute = Math.ceil(minutes % parseInt(GAME_TYPE_ID));
-      const seconds1 = Math.floor((distance % (1000 * 60)) / 10000);
-      const seconds2 = Math.floor(((distance % (1000 * 60)) / 1000) % 10);
-      return { minute, seconds1, seconds2 };
+      const sessionStartTime = now - (now % sessionDuration);
+      
+      // Only draw if the session start is in the visible range
+      if (sessionStartTime < xAxis.min || sessionStartTime > xAxis.max) {
+        return;
+      }
+      
+      // Get the start price for this session with safety checks
+      const startPrice = getSessionStartPrice(currentCoin, sessionStartTime);
+      if (startPrice === null || startPrice === undefined) {
+        console.warn('Could not determine session start price');
+        return;
+      }
+      
+      // Draw the session start point
+      ctx.save();
+      
+      const x = xAxis.getPixelForValue(sessionStartTime);
+      const y = yAxis.getPixelForValue(startPrice);
+      
+      // Draw a yellow circle at the session start point
+      ctx.beginPath();
+      ctx.arc(x, y, 3, 0, Math.PI * 2);
+      ctx.fillStyle = 'yellow';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      
+      // Add label near the point
+      ctx.fillStyle = 'yellow';
+      ctx.font = 'bold 12px Arial';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText('Session Start', x + 10, y - 5);
+      
+      ctx.restore();
+    } catch (error) {
+      console.error('Error in sessionLinePlugin:', error);
+    }
+  }
+};
+
+  function countDownTimer({ GAME_TYPE_ID }) {
+    const getTimeMSS = (countDownDate) => {
+      var now = new Date().getTime();
+      var distance = countDownDate - now;
+      var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+      var minute = Math.ceil(minutes % parseInt(GAME_TYPE_ID));
+      var seconds1 = Math.floor((distance % (1000 * 60)) / 10000);
+      var seconds2 = Math.floor(((distance % (1000 * 60)) / 1000) % 10);
+      var totalSeconds = Math.floor(distance / 1000);
+  
+      return { minute, seconds1, seconds2, totalSeconds };
     };
   
-    const countDownDate = new Date("2030-07-16T23:59:59.999+03:00").getTime();
-    const now = timestamp || Date.now();
+    var countDownDate = new Date("2030-07-16T23:59:59.9999999+03:00").getTime();
   
-    if (!coinLastUpdateTime) coinLastUpdateTime = {};
-    coinLastUpdateTime[coin] = now;
-  
-    const { minute, seconds1, seconds2 } = getTimeMSS(countDownDate);
-    const game=getGameType();
-    // console.log(game);
-    // Case 1: Exact trigger time
-    if (minute === 0 && seconds1 === 0 && seconds2 === 0) {
-      if(game=='1'){
-        if (latestEndPoint !== null) {
-          return parseFloat(latestEndPoint);
-        } else {
-          const fallbackChange = (Math.random() * 2) - 1;
-          console.log("Fallback random change used:", fallbackChange);
-          return lastPrice + fallbackChange;
-        }
-      }
-      else if(game=='3'){
-        if(ThreeminEndPoint !== null){
-          console.log("3 min EndPoint received from server")
-          return parseFloat(ThreeminEndPoint);
-        }
-        else{
-          const fallbackChange = (Math.random() * 2) - 1;
-          console.log("Fallback random change used:", fallbackChange);
-          return lastPrice + fallbackChange;
-        }
-      }
-      else if(game=='5'){
-        if(FiveminEndPoint !== null){
-          console.log("5 min endPoint received from server")
-          return parseFloat(FiveminEndPoint);
-        }
-        else{
-          const fallbackChange = (Math.random() * 2) - 1;
-          console.log("Fallback random change used:", fallbackChange);
-          return lastPrice + fallbackChange;
-        }
-      }
+    countDownInterval1 = setInterval(function () {
+      const { minute, seconds1, seconds2, totalSeconds } = getTimeMSS(countDownDate);
       
-      else if(game=='10'){
-        if(tenminEndPoint!=null){
-          console.log("Ten Min endPoint received from server");
-          return parseFloat(tenminEndPoint);
-        }
-        else{
-          const fallbackChange = (Math.random() * 2) - 1;
-          console.log("Fallback random change used:", fallbackChange);
-          return lastPrice + fallbackChange;
-        }
-      }
-
-    }
-  
-    // Case 2: Normal volatility-based price generation
-    const volatility = coinConfigs[coin].basePrice * 0.0005; // 0.05%
-    let randomChange = (Math.random() * 2 - 1) * volatility;
-  
-    // Add slight momentum
-    if (coinData[coin] && coinData[coin].length > 1) {
-      const prevTrend =
-        coinData[coin][coinData[coin].length - 1].y -
-        coinData[coin][coinData[coin].length - 2].y;
-      randomChange += prevTrend * 0.3;
-    }
-  
-    const newPriceRaw = lastPrice + randomChange;
-  
-    // Prevent price from going below 0.01
-    const newPrice = Math.max(0.01, newPriceRaw);
-  
-    // Limit movement to ±2% of lastPrice
-    const maxChange = lastPrice * 0.02;
-    return Math.max(lastPrice - maxChange, Math.min(lastPrice + maxChange, newPrice));
-  }
-  
-
-
-
-  // Update price info display
-  function updatePriceInfo() {
-      const priceChange = ((currentPrice - previousPrice)).toFixed(2);
-      currentPriceDisplay.textContent = currentPrice.toFixed(2);
-      priceChangeDisplay.textContent = `${priceChange}`;
-      console.log(priceChange,currentPrice,previousPrice)
-      // Set color based on price change
-      if (priceChange > 0) {
-          priceChangeDisplay.style.color = '#10b981';
-      } else if (priceChange < 0) {
-          priceChangeDisplay.style.color = '#ef4444';
+      // Update timer display
+      if (GAME_TYPE_ID !== "1") {
+        $(".TimeLeft__C-time div:eq(1)").text(minute);
       } else {
-          priceChangeDisplay.style.color = '#6b7280';
+        $(".TimeLeft__C-time div:eq(1)").text("0");
       }
-      
-      // Update current time
-      const now = new Date();
-      currentTimeDisplay.textContent = now.toLocaleTimeString();
+      $(".TimeLeft__C-time div:eq(3)").text(seconds1);
+      $(".TimeLeft__C-time div:eq(4)").text(seconds2);
+  
+      // Disable betting buttons in last 10 seconds
+      if (totalSeconds <= 10) {
+        $(".bet_button, #join_bet_btn").css({
+          "pointer-events": "none",
+          "cursor": "not-allowed",
+          "opacity": "0.6"
+        });
+      } else {
+        // Re-enable buttons when not in last 10 seconds
+        $(".bet_button, #join_bet_btn").css({
+          "pointer-events": "auto",
+          "cursor": "pointer",
+          "opacity": "1"
+        });
+      }
+    }, 1000); // Update every second for smoother button control
+  
+    countDownInterval3 = setInterval(function () {
+      const { minute, seconds1, seconds2 } = getTimeMSS(countDownDate);
+  
+      if (minute == 0 && seconds1 == 0 && seconds2 <= 5) {
+        $(".van-overlay").fadeOut();
+        $(".popup-join").fadeOut();
+        $(".Betting__C-mark").css("display", "none");
+      } else {
+        $(".Betting__C-mark").css("display", "none");
+      }
+    }, 1000); // Adjusted to 1 second for consistency
   }
   
-  // Initialize chart with plugins
-  Chart.register(ChartZoom);
-  // Chart.register(ChartCrosshair);
-  
-  const chart = new Chart(ctx, {
-    type: 'line',
-    data: {
-        datasets: [{
-            label: `${coinConfigs[currentCoin].name} Price`,
-            data: coinData[currentCoin],
-            borderColor: coinConfigs[currentCoin].color,
-            backgroundColor: 'rgba(59, 130, 246, 0.1)',
-            borderWidth: 2,
-            tension: 0.1,
-            fill: true,
-            pointRadius: 0,
-            pointHoverRadius: 5,
-            pointHoverBackgroundColor: coinConfigs[currentCoin].color,
-            pointHoverBorderColor: '#fff',
-            pointHoverBorderWidth: 2
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: { duration: 0 },
-        hover: { animationDuration: 0 },
-        responsiveAnimationDuration: 0,
-        scales: {
-            x: {
-                type: 'time',
-                time: {
-                    unit: 'second',
-                    displayFormats: { second: 'mm:ss' },
-                    tooltipFormat: 'HH:mm:ss'
-                },
-                min: () => Date.now() - 10 * 1000,
-                max: () => Date.now() + 60 * 100,
-                ticks: { 
-                    source: 'auto', 
-                    autoSkip: false, 
-                    maxTicksLimit: 10,
-                    color: '#6b7280'
-                },
-                grid: { 
-                    display: true, // Changed to true to show x-axis grid
-                    color: 'rgba(0, 0, 0, 0.05)',
-                    drawBorder: true,
-                    drawOnChartArea: true,
-                    drawTicks: true,
-                    tickColor: 'rgba(0, 0, 0, 0.8)',
-                    borderColor: 'rgba(0, 0, 0, 0.8)',
-                    borderDash: [5, 5], // Dashed grid lines
-                    borderDashOffset: 0,
-                    lineWidth: 1
-                }
-            },
-            y: {
-                beginAtZero: false,
-                ticks: { 
-                    callback: function(value) { 
-                        return value.toFixed(0); 
-                    },
-                    color: '#6b7280',
-                    padding: 5
-                },
-                grid: { 
-                    color: 'rgba(249, 249, 248, 0.2)',
-                    drawBorder: true,
-                    drawOnChartArea: true,
-                    drawTicks: true,
-                    tickColor: 'rgba(0, 0, 0, 0.9)',
-                    borderColor: 'rgba(0, 0, 0, 0.9)',
-                    borderDash: [5, 5], // Dashed grid lines
-                    borderDashOffset: 0,
-                    lineWidth: 1
-                }
-            }
-        },
-        plugins: {
-            legend: { display: false },
-            tooltip: {
-                mode: 'index',
-                intersect: false,
-                backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                titleColor: '#fff',
-                bodyColor: '#fff',
-                borderColor: 'rgba(255, 255, 255, 0.1)',
-                borderWidth: 1,
-                padding: 12,
-                callbacks: {
-                    label: function(context) {
-                        return `${coinConfigs[currentCoin].name}: ${context.parsed.y.toFixed(2)}`;
-                    },
-                    title: function(context) {
-                        return new Date(context[0].parsed.x).toLocaleTimeString();
-                    }
-                }
-            },
-            zoom: {
-                pan: { 
-                    enabled: true, 
-                    mode: 'x',
-                    modifierKey: 'shift'
-                },
-                zoom: { 
-                    wheel: { 
-                        enabled: true,
-                        modifierKey: 'ctrl'
-                    }, 
-                    pinch: { 
-                        enabled: true 
-                    }, 
-                    mode: 'x',
-                    onZoomComplete: ({ chart }) => {
-                        chart.update('none');
-                    }
-                },
-                limits: {
-                    x: { min: 'original', max: 'original' }
-                }
-            }
-        },
-        interaction: {
-            mode: 'nearest',
-            axis: 'x',
-            intersect: false
-        },
-        // Additional grid styling for the chart area
-        layout: {
-            padding: {
-                top: 10,
-                right: 10,
-                bottom: 10,
-                left: 10
-            }
-        },
-        elements: {
-            line: {
-                borderCapStyle: 'round',
-                borderJoinStyle: 'round'
-            }
-        }
+  const trackingLinePlugin = {
+    id: 'trackingLine',
+    afterDatasetsDraw(chart) {
+        const ctx = chart.ctx;
+        const dataset = chart.data.datasets[0];
+        const meta = chart.getDatasetMeta(0);
+        const yAxis = chart.scales.y;
+        
+        if (!dataset.data.length) return;
+
+        const lastIndex = dataset.data.length - 1;
+        const lastPoint = meta.data[lastIndex];
+        if (!lastPoint) return;
+
+        const currentPrice = dataset.data[lastIndex].y;
+        const priceText = currentPrice.toFixed(2);
+        const x = lastPoint.x;
+        const y = lastPoint.y;
+        const chartArea = chart.chartArea;
+
+        ctx.save();
+
+        // Draw tracking lines (added back)
+        ctx.strokeStyle = coinConfigs[currentCoin].color;
+        ctx.lineWidth = 1;
+        ctx.setLineDash([3, 3]);
+        ctx.globalAlpha = 0.3;
+        
+        // Vertical line
+        ctx.beginPath();
+        ctx.moveTo(x, chartArea.top);
+        ctx.lineTo(x, chartArea.bottom);
+        ctx.stroke();
+        
+        // Horizontal line
+        ctx.beginPath();
+        ctx.moveTo(chartArea.left, y);
+        ctx.lineTo(chartArea.right, y);
+        ctx.stroke();
+
+        // Draw capsule-shaped indicator (unchanged)
+        const textWidth = ctx.measureText(priceText).width;
+        const capsuleWidth = textWidth + 16;
+        const capsuleHeight = 24;
+        const radius = capsuleHeight / 2;
+        const capsuleX = chart.chartArea.right + 50;
+        const capsuleY = y;
+        
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = coinConfigs[currentCoin].color;
+        ctx.beginPath();
+        ctx.arc(capsuleX - capsuleWidth/2 + radius, capsuleY, radius, Math.PI/2, Math.PI*3/2);
+        ctx.arc(capsuleX + capsuleWidth/2 - radius, capsuleY, radius, Math.PI*3/2, Math.PI/2);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 12px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(priceText, capsuleX, capsuleY);
+
+        // Connector line (modified to connect to horizontal line)
+        ctx.strokeStyle = coinConfigs[currentCoin].color;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(chartArea.right, y);
+        ctx.lineTo(capsuleX - capsuleWidth/2, y);
+        ctx.stroke();
+
+        ctx.restore();
     }
-});
-  
-  // Reset zoom button
-  function addResetZoomButton() {
-    
-      const resetZoomButton = document.createElement('button');
-      // resetZoomButton.textContent = 'Reset  Zoom';
-      resetZoomButton.innerHTML = '<i class="fas fa-search-minus"></i>';
-      resetZoomButton.style.position = 'absolute';
-      resetZoomButton.style.bottom = '10px';
-      resetZoomButton.style.right = '10px';
-      resetZoomButton.style.zIndex = '100';
-      resetZoomButton.style.padding = '5px 10px';
-      resetZoomButton.style.background = '#000080';
-      resetZoomButton.style.color = 'white';
-      resetZoomButton.style.border = 'none';
-      resetZoomButton.style.borderRadius = '4px';
-      resetZoomButton.style.cursor = 'pointer';
-      
-      resetZoomButton.addEventListener('click', () => {
-          if (chart) {
-              chart.resetZoom();
-          }
-      });
-      
-      document.querySelector('.Betting__C-numC').appendChild(resetZoomButton);
+};
+
+
+function getDynamicYRange() {
+  const visibleData = coinData[currentCoin].filter(point => {
+    const xAxis = window.chart?.scales.x;
+    if (!xAxis) return false;
+    return point.x >= xAxis.min && point.x <= xAxis.max;
+  });
+
+  if (visibleData.length === 0) {
+    return {
+      min: currentPrice - currentPrice * 1.8, // Default 1% range
+      max: currentPrice + currentPrice * 1.5
+    };
   }
+
+  const prices = visibleData.map(point => point.y);
+  const minPrice = Math.min(...prices);
+  const maxPrice = Math.max(...prices);
+  const range = maxPrice - minPrice;
+  const padding = range * 0.9 || (maxPrice * 0.05); // adjust y-axis range
+
+  return {
+    min: minPrice - padding,
+    max: maxPrice + padding
+  };
+}
+
   
-  // Update chart with new data for all coins
-  function updateChart(timestamp) {
-      try {
-          const now = timestamp || Date.now();
-          
-          // Update all coins' data in background
-          Object.keys(coinConfigs).forEach(coin => {
-              const lastPrice = coinData[coin].length > 0 ? 
-                  coinData[coin][coinData[coin].length - 1].y : 
-                  coinConfigs[coin].basePrice;
-              
-              const newPrice = generateNewPrice(lastPrice, coin, now);
-              
-              // Store previous price for change calculation
-              if (coin === currentCoin) {
-                  previousPrice = lastPrice;
-              }
-              
-              coinData[coin].push({ x: now, y: newPrice });
-              
-              // Remove data older than 24 hours
-              const oneDayAgo = now - 24 * 60 * 60 * 1000;
-              coinData[coin] = coinData[coin].filter(point => point.x >= oneDayAgo);
-              
-              // Save to localStorage
-              saveChartData(coin, coinData[coin]);
-              
-              if (coin === currentCoin) {
-                  currentPrice = newPrice;
-                  updatePriceInfo();
-              }
-          });
-          
-          // Update chart with current coin's data
-          chart.data.datasets[0].data = coinData[currentCoin];
-          chart.data.datasets[0].label = `${coinConfigs[currentCoin].name} Price`;
-          chart.data.datasets[0].borderColor = coinConfigs[currentCoin].color;
-          chart.data.datasets[0].pointHoverBackgroundColor = coinConfigs[currentCoin].color;
-          
-          // Update x-axis range if not zoomed
-          if (!chart.isZoomedOrPanned()) {
-              chart.options.scales.x.min = now - 20 * 1000;
-              chart.options.scales.x.max = now + 20 * 1000;  //to adjust x-axis range for chart
-          }
-          
-          chart.update('none');
-          
-      } catch (error) {
-          console.error('Error updating chart:', error);
+window.chart = new Chart(ctx, {
+  type: 'line',
+  data: {
+    datasets: [{
+      label: `${coinConfigs[currentCoin].name} Price`,
+      data: coinData[currentCoin],
+      borderColor: coinConfigs[currentCoin].color,
+      backgroundColor: 'rgba(59, 130, 246, 0.1)',
+      borderWidth: 0.5,
+      tension: 0,
+      fill: true,
+      pointRadius: 0,
+      pointHoverRadius: 2
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    layout: {
+      padding: {
+        left: 0,
+        right: 6 // For price capsule
       }
-  }
-  
-  // Start updates every 500ms
-  let updateInterval = setInterval(updateChart, 1000);
-  
-  // Handle coin change
-  coinSelect.addEventListener('change', function() {
-      currentCoin = this.value;
-      // Update chart with new coin's data
-      chart.data.datasets[0].data = coinData[currentCoin];
-      chart.data.datasets[0].label = `${coinConfigs[currentCoin].name} Price`;
-      chart.data.datasets[0].borderColor = coinConfigs[currentCoin].color;
-      chart.data.datasets[0].pointHoverBackgroundColor = coinConfigs[currentCoin].color;
-      
-      currentPrice = coinData[currentCoin].length > 0 ? 
-          coinData[currentCoin][coinData[currentCoin].length - 1].y : 
-          coinConfigs[currentCoin].basePrice;
-      
-      previousPrice = coinData[currentCoin].length > 1 ? 
-          coinData[currentCoin][coinData[currentCoin].length - 2].y : 
-          currentPrice;
-      
-      updatePriceInfo();
-      
-      // Reset zoom when changing coins
-      chart.resetZoom();
-      chart.update();
-
-
-  });
-  
-  // Handle visibility change
-  document.addEventListener('visibilitychange', function() {
-      if (!document.hidden) {
-          const now = Date.now();
-          chart.data.datasets[0].data = coinData[currentCoin];
-          chart.data.datasets[0].label = `${coinConfigs[currentCoin].name} Price`;
-          
-          if (!chart.isZoomedOrPanned()) {
-              chart.options.scales.x.min = now - 60 * 1000;
-              chart.options.scales.x.max = now;
+    },
+    animation: false,
+    scales: {
+      x: {
+        type: 'time',
+        time: {
+          unit: 'minute', // Display daily intervals
+          displayFormats: {
+            day: 'D MMM' // Format as "13 Nov", "14 Nov", etc.
           }
-          
-          chart.update();
-          updatePriceInfo();
+        },
+        ticks: {
+          color: 'rgba(255, 255, 255, 0.5)', // Match the white with slight opacity
+          font: {
+            size: 12
+          }
+        },
+        grid: {
+          display: true, // Show grid lines
+          color: 'rgba(255, 255, 255, 0.1)', // Subtle white grid lines
+          drawBorder: false
+        },
+        min: () => Date.now() -   3 * 60 * 1000,
+        max: () => Date.now()
+      },
+      y: {
+        beginAtZero: false,
+        position: 'right',
+        grid: {
+          display: true, // Show grid lines
+          color: 'rgba(255, 255, 255, 0.1)', // Subtle white grid lines
+          drawBorder: false
+        },
+        
+        ticks: {
+          color: 'rgba(255, 255, 255, 0.5)', // Match the white with slight opacity
+          callback: function(value) {
+            return value.toFixed(2);
+          },
+          padding: 12,
+          maxTicksLimit: 8 // Cleaner look
+        },
+        min: () => getDynamicYRange().min,
+        max: () => getDynamicYRange().max
       }
-
-  });
-  
-  // Add reset zoom button after chart initialization
-  setTimeout(addResetZoomButton, 500);
-  
-  // Cleanup
-  window.addEventListener('beforeunload', () => {
-      clearInterval(updateInterval);
-      Object.keys(coinConfigs).forEach(coin => saveChartData(coin, coinData[coin]));
-  });
-  window.getCurrentPrice = function() { return currentPrice; };
-  // Initial price info update
-  updatePriceInfo();
+    },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        mode: 'index',
+        intersect: false
+      },
+      zoom: {
+        pan: {
+          enabled: true,
+          mode: 'x',
+          modifierKey: null,
+          scaleMode: 'x',
+          threshold: 10
+        },
+        zoom: {
+          wheel: {
+            enabled: true,
+            speed: 0.1
+          },
+          mode: 'x',
+          overScaleMode: 'x'
+        }
+      }
+    },
+    interaction: {
+      mode: 'nearest',
+      axis: 'x',
+      intersect: false
+    }
+  },
+  plugins: [sessionLinePlugin, trackingLinePlugin]
 });
+}
+
+const canvas = document.getElementsByClassName('priceChart')[0];
+
+// Handle click events for scrolling
+canvas.addEventListener('click', (event) => {
+  const rect = canvas.getBoundingClientRect();
+  const clickX = event.clientX - rect.left; // X position relative to canvas
+  const canvasWidth = rect.width;
+
+  // Determine if the click is on the left or right half of the chart
+  const threshold = canvasWidth / 2;
+  if (clickX < threshold) {
+    handleChartScroll('left'); // Scroll left if clicked on the left side
+  } else {
+    handleChartScroll('right'); // Scroll right if clicked on the right side
+  }
+});
+
+// Handle touch events for swiping
+let touchStartX = 0;
+let touchEndX = 0;
+
+canvas.addEventListener('touchstart', (event) => {
+  touchStartX = event.touches[0].clientX; // Record the starting X position of the touch
+});
+
+canvas.addEventListener('touchmove', (event) => {
+  touchEndX = event.touches[0].clientX; // Update the ending X position as the user moves their finger
+});
+
+canvas.addEventListener('touchend', () => {
+  const swipeDistance = touchEndX - touchStartX;
+  const swipeThreshold = 50; // Minimum distance (in pixels) to consider it a swipe
+
+  if (Math.abs(swipeDistance) > swipeThreshold) {
+    if (swipeDistance > 0) {
+      handleChartScroll('left'); // Swipe right (scroll left)
+    } else {
+      handleChartScroll('right'); // Swipe left (scroll right)
+    }
+  }
+});
+
+function handleChartScroll(direction) {
+  if (!window.chart) return;
+
+  const xScale = window.chart.scales.x;
+  const currentRange = xScale.max - xScale.min;
+
+  const scrollAmount = currentRange * 0.2; // Scroll 20% of current view
+  // Move both min and max by the same amount to maintain centered view
+  window.chart.options.scales.x.min = direction === 'left'
+      ? xScale.min - scrollAmount
+      : xScale.min + scrollAmount;
+
+  window.chart.options.scales.x.max = direction === 'left'
+      ? xScale.max - scrollAmount
+      : xScale.max + scrollAmount;
+
+  hasUserScrolled = true; // Set flag to true when user scrolls
+
+  // Show the reset scroll and zoom buttons
+  // document.getElementById('resetScroll').style.display = 'inline-block';
+  // document.getElementById('zoomIn').style.display = 'inline-block';
+  // document.getElementById('zoomOut').style.display = 'inline-block';
+
+  window.chart.update('none'); // Use 'none' to disable animations
+}
+
+// Add scroll buttons to DOM (add these to your HTML)
+// document.getElementById('scrollLeft').addEventListener('click', () => handleChartScroll('left'));
+// document.getElementById('scrollRight').addEventListener('click', () => handleChartScroll('right'));
+
+// Update chart function
+function updateChart(autoScroll = true) {
+  if (!window.chart) return;
+
+  // Store the current x-axis range before updating the dataset
+  const xScale = window.chart.scales.x;
+  const currentMin = xScale.min;
+  const currentMax = xScale.max;
+
+  // Update the dataset with new data
+  window.chart.data.datasets[0].data = coinData[currentCoin];
+  window.chart.data.datasets[0].borderColor = coinConfigs[currentCoin].color;
+
+  // Only center the view if the user hasn't scrolled
+  if (autoScroll && !hasUserScrolled) {
+    const lastPoint = coinData[currentCoin][coinData[currentCoin].length - 1];
+    if (lastPoint) {
+      // Calculate view duration (2 minutes total, matching your current range)
+      const viewDuration = 2 * 60 * 1000; // 2 minutes in milliseconds
+
+      // Center the view around the latest data point's timestamp
+      const latestTime = lastPoint.x; // Use the timestamp of the latest point
+      window.chart.options.scales.x.min = latestTime - (viewDuration / 2); // 1 minute before
+      window.chart.options.scales.x.max = latestTime + (viewDuration / 2); // 1 minute after
+    }
+  } else {
+    // Preserve the current x-axis range if the user has scrolled
+    window.chart.options.scales.x.min = currentMin;
+    window.chart.options.scales.x.max = currentMax;
+  }
+
+  // Update the chart without animations to avoid jitter
+  window.chart.update('none');
+}
+
+
+// Update price info display
+function updatePriceInfo() {
+  const priceChange = (currentPrice - previousPrice).toFixed(2);
+
+  const currentPriceEl = document.getElementById('currentPriceDisplay');
+  const priceChangeEl = document.getElementById('priceChangeDisplay');
+  const currentTimeEl = document.getElementById('currentTimeDisplay');
+
+  if (currentPriceEl) {
+    currentPriceEl.textContent = currentPrice.toFixed(2);
+  }
+
+  if (priceChangeEl) {
+    priceChangeEl.textContent = `${priceChange}`;
+    priceChangeEl.style.color = priceChange > 0 ? '#10b981' :
+                                priceChange < 0 ? '#ef4444' : '#6b7280';
+  }
+
+  if (currentTimeEl) {
+    currentTimeEl.textContent = new Date().toLocaleTimeString();
+  }
+}
+
+
+// Handle coin selection change
+document.getElementById('coinSelect')?.addEventListener('change', function() {
+  currentCoin = this.value;
+  if (window.chart) {
+    updateChart();
+  }
+});
+
+// Function to get current game session based on game type
+function getCurrentGameSession() {
+  const gameType = getGameType(); // Your existing function
+  switch(gameType) {
+    case '1': return '1min';
+    case '3': return '3min';
+    case '5': return '5min';
+    case '10': return '10min';
+    default: return '1min';
+  }
+}
+
+// Expose functions to window
+window.getCurrentPrice = () => currentPrice;
+// window.setEndPoint = setEndPoint; 
 
 // Betting Popup Handling
 $(document).ready(function() {

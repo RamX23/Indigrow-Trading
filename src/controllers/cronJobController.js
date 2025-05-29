@@ -22,11 +22,11 @@ const cronJobGame1p = (io) => {
     // await winGoController.addWinGo(1);
     console.log("🔔 Running at 60th second of every minute");
     const Point = await winGoController.addWinGo(1);
-    io.emit("setEndPoint", Point.endPoint);
+    io.emit("setEndPoint", Point.endPoin);
     console.log("Sent endpoint:", Point.endPoint);
 
     console.log("🔔 Running at 60th second of every minute");
-    await winGoController.handlingWinGo1P(1,Point.bigTotal,Point.smallTotal);
+    await winGoController.handlingWinGo1P(1,Point.startPoint,Point.endPoint,Point.bigTotal,Point.smallTotal);
     const [winGo1] = await connection.execute(
       'SELECT * FROM `wingo` WHERE `game` = "wingo" ORDER BY `id` DESC LIMIT 2 ',
       [],
@@ -121,7 +121,7 @@ cron.schedule("1 * * * * *", async () => {
     console.log("Sent 3min endpoint:", Point.endPoint);
 
     console.log("🔔 Running at 60th second of every minute");
-    await winGoController.handlingWinGo1P(3,Point.bigTotal,Point.smallTotal);
+    await winGoController.handlingWinGo1P(3,Point.startPoint,Point.endPoint,Point.bigTotal,Point.smallTotal);
     const [winGo1] = await connection.execute(
       'SELECT * FROM `wingo` WHERE `game` = "wingo3" ORDER BY `id` DESC LIMIT 2 ',
       [],
@@ -172,7 +172,7 @@ cron.schedule("1 * * * * *", async () => {
     const Point=await winGoController.addWinGo(5);
     io.emit("set5minEndPoint", Point.endPoint);
     console.log("Sent 5min endpoint:", Point.endPoint);
-    await winGoController.handlingWinGo1P(5,Point.bigTotal,Point.smallTotal);
+    await winGoController.handlingWinGo1P(5,Point.startPoint,Point.endPoint,Point.bigTotal,Point.smallTotal);
     const [winGo1] = await connection.execute(
       'SELECT * FROM `wingo` WHERE `game` = "wingo5" ORDER BY `id` DESC LIMIT 2 ',
       [],
@@ -220,7 +220,7 @@ cron.schedule("1 * * * * *", async () => {
     const Point=await winGoController.addWinGo(10);
     io.emit("set10minEndPoint", Point.endPoint);
     console.log("Sent 10min endpoint:", Point.endPoint);
-    await winGoController.handlingWinGo1P(10,Point.bigTotal,Point.smallTotal);
+    await winGoController.handlingWinGo1P(10,Point.startPoint,Point.endPoint,Point.bigTotal,Point.smallTotal);
     const [winGo1] = await connection.execute(
       'SELECT * FROM `wingo` WHERE `game` = "wingo10" ORDER BY `id` DESC LIMIT 2 ',
       [],

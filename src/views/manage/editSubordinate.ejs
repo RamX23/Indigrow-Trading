@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Edit Subordinate Stats</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+</head>
+<body class="bg-light">
+  <div class="container mt-5">
+    <h2 class="mb-4">Edit Subordinate Stats</h2>
+
+    <form id="editSubordinateForm" onsubmit="submitOverrideForm(event)" class="card p-4 shadow-sm bg-white">
+      <input type="hidden" id="userPhone" />
+
+      <div class="row g-3">
+
+        <div class="col-md-4">
+          <label for="directSubordinatesCount" class="form-label">Direct Subordinates Count</label>
+          <input type="number" min="0" id="directSubordinatesCount" class="form-control" required />
+        </div>
+
+        <div class="col-md-4">
+          <label for="directSubordinatesRechargeAmount" class="form-label">Direct Subordinates Recharge Amount</label>
+          <input type="number" step="0.01" min="0" id="directSubordinatesRechargeAmount" class="form-control" required />
+        </div>
+
+        <div class="col-md-4">
+          <label for="directSubordinatesRechargeQuantity" class="form-label">Direct Subordinates Recharge Quantity</label>
+          <input type="number" min="0" id="directSubordinatesRechargeQuantity" class="form-control" required />
+        </div>
+
+        <div class="col-md-4">
+          <label for="directSubordinatesWithDepositCount" class="form-label">Direct Subordinates With Deposit Count</label>
+          <input type="number" min="0" id="directSubordinatesWithDepositCount" class="form-control" required />
+        </div>
+
+        <div class="col-md-4">
+          <label for="noOfRegisterAllSubordinates" class="form-label">No. Of Registered All Subordinates</label>
+          <input type="number" min="0" id="noOfRegisterAllSubordinates" class="form-control" required />
+        </div>
+
+        <div class="col-md-4">
+          <label for="noOfRegisteredSubordinates" class="form-label">No. Of Registered Subordinates</label>
+          <input type="number" min="0" id="noOfRegisteredSubordinates" class="form-control" required />
+        </div>
+
+        <div class="col-md-4">
+          <label for="teamSubordinatesCount" class="form-label">Team Subordinates Count</label>
+          <input type="number" min="0" id="teamSubordinatesCount" class="form-control" required />
+        </div>
+
+        <div class="col-md-4">
+          <label for="teamSubordinatesRechargeAmount" class="form-label">Team Subordinates Recharge Amount</label>
+          <input type="number" step="0.01" min="0" id="teamSubordinatesRechargeAmount" class="form-control" required />
+        </div>
+
+        <div class="col-md-4">
+          <label for="teamSubordinatesRechargeQuantity" class="form-label">Team Subordinates Recharge Quantity</label>
+          <input type="number" min="0" id="teamSubordinatesRechargeQuantity" class="form-control" required />
+        </div>
+
+        <div class="col-md-4">
+          <label for="teamSubordinatesWithDepositCount" class="form-label">Team Subordinates With Deposit Count</label>
+          <input type="number" min="0" id="teamSubordinatesWithDepositCount" class="form-control" required />
+        </div>
+
+        <div class="col-md-4">
+          <label for="totalCommissions" class="form-label">Total Commissions</label>
+          <input type="number" step="0.01" min="0" id="totalCommissions" class="form-control" required />
+        </div>
+
+        <div class="col-md-4">
+          <label for="totalCommissionsThisWeek" class="form-label">Total Commissions This Week</label>
+          <input type="number" step="0.01" min="0" id="totalCommissionsThisWeek" class="form-control" required />
+        </div>
+
+        <div class="col-md-4">
+          <label for="totalCommissionsYesterday" class="form-label">Total Commissions Yesterday</label>
+          <input type="number" step="0.01" min="0" id="totalCommissionsYesterday" class="form-control" required />
+        </div>
+      </div>
+
+      <div class="mt-4">
+        <button type="submit" class="btn btn-primary">Update Stats</button>
+        <a id="cancelButton" class="btn btn-secondary ms-2">Cancel</a>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    // Helper to get URL param value
+    // function getQueryParam(param) {
+    //   const urlParams = new URLSearchParams(window.location.search);
+    //   return urlParams.get(param);
+    // }
+  
+    // Load stats and set form values
+
+    document.getElementById("cancelButton").addEventListener("click", function (e) {
+  e.preventDefault();
+  const path = window.location.pathname;
+  const phone = path.split('/').pop();
+  window.location.href = `/admin/member/info/${phone}`;
+});
+
+    async function loadSubordinateStats(userPhone) {
+      try {
+        // // Adjust the API URL if it needs userPhone param, else remove the query string
+        const url = userPhone ? `/api/subordinates/summary?userPhone=${encodeURIComponent(userPhone)}` : '/api/subordinates/summary';
+  
+        const response = await fetch(url);
+        const result = await response.json();
+  
+        if (!response.ok) {
+          alert("Failed to fetch stats: " + (result.message || "Unknown error"));
+          return;
+        }
+  
+        const data = result.data;
+  
+        // Populate inputs with data or fallback 0
+        document.getElementById("directSubordinatesCount").value = data.directSubordinatesCount ?? 0;
+        document.getElementById("directSubordinatesRechargeAmount").value = data.directSubordinatesRechargeAmount ?? 0;
+        document.getElementById("directSubordinatesRechargeQuantity").value = data.directSubordinatesRechargeQuantity ?? 0;
+        document.getElementById("directSubordinatesWithDepositCount").value = data.directSubordinatesWithDepositCount ?? 0;
+        document.getElementById("noOfRegisterAllSubordinates").value = data.noOfRegisterAllSubordinates ?? 0;
+        document.getElementById("noOfRegisteredSubordinates").value = data.noOfRegisteredSubordinates ?? 0;
+        document.getElementById("teamSubordinatesCount").value = data.teamSubordinatesCount ?? 0;
+        document.getElementById("teamSubordinatesRechargeAmount").value = data.teamSubordinatesRechargeAmount ?? 0;
+        document.getElementById("teamSubordinatesRechargeQuantity").value = data.teamSubordinatesRechargeQuantity ?? 0;
+        document.getElementById("teamSubordinatesWithDepositCount").value = data.teamSubordinatesWithDepositCount ?? 0;
+        document.getElementById("totalCommissions").value = data.totalCommissions ?? 0;
+        document.getElementById("totalCommissionsThisWeek").value = data.totalCommissionsThisWeek ?? 0;
+        document.getElementById("totalCommissionsYesterday").value = data.totalCommissionsYesterday ?? 0;
+  
+      } catch (error) {
+        console.error("Failed to load stats:", error);
+        alert("Could not load subordinate stats.");
+      }
+    }
+  
+    // Form submit handler
+   async function submitOverrideForm(e) {
+  e.preventDefault();
+
+// Get current path like "/admin/manager/editSubordinate/1234567890"
+const path = window.location.pathname; 
+
+// Split by '/' and get last segment
+const phone = path.split('/').pop();
+const userPhone=phone;
+console.log("Phone from URL path:", phone);
+
+// Now you can use this 'phone' variable
+
+  if (!userPhone) {
+    alert("User phone is required!");
+    return; // stop submission if userPhone is missing
+  }
+
+  const overrideData = {
+    directSubordinatesCount: Number(document.getElementById("directSubordinatesCount").value),
+    directSubordinatesRechargeAmount: Number(document.getElementById("directSubordinatesRechargeAmount").value),
+    directSubordinatesRechargeQuantity: Number(document.getElementById("directSubordinatesRechargeQuantity").value),
+    directSubordinatesWithDepositCount: Number(document.getElementById("directSubordinatesWithDepositCount").value),
+    noOfRegisterAllSubordinates: Number(document.getElementById("noOfRegisterAllSubordinates").value),
+    noOfRegisteredSubordinates: Number(document.getElementById("noOfRegisteredSubordinates").value),
+    teamSubordinatesCount: Number(document.getElementById("teamSubordinatesCount").value),
+    teamSubordinatesRechargeAmount: Number(document.getElementById("teamSubordinatesRechargeAmount").value),
+    teamSubordinatesRechargeQuantity: Number(document.getElementById("teamSubordinatesRechargeQuantity").value),
+    teamSubordinatesWithDepositCount: Number(document.getElementById("teamSubordinatesWithDepositCount").value),
+    totalCommissions: Number(document.getElementById("totalCommissions").value),
+    totalCommissionsThisWeek: Number(document.getElementById("totalCommissionsThisWeek").value),
+    totalCommissionsYesterday: Number(document.getElementById("totalCommissionsYesterday").value),
+  };
+
+  // Also check overrideData is not empty (optional but good practice)
+  if (!overrideData) {
+    alert("Override data is required!");
+    return;
+  }
+
+  try {
+    const response = await fetch('/api/webapi/admin/edit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userPhone, overrideData }),
+    });
+
+    const result = await response.json();
+
+    if (response.ok) {
+      alert("Subordinate stats updated successfully.");
+      window.location.href = `/admin/member/info/${userPhone}`;
+    } else {
+      alert("Error: " + (result.message || "Update failed"));
+    }
+  } catch (error) {
+    console.error("Update failed:", error);
+    alert("Failed to update subordinate stats.");
+   }
+}
+
+    // On page load
+window.onload=loadSubordinateStats
+  </script>
+  
+</body>
+</html>

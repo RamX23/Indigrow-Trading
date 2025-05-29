@@ -638,7 +638,7 @@ const listOrderOld = async (req, res) => {
   if (typeid == 10) game = "wingo10";
 
   const [wingo] = await connection.query(
-    "SELECT w.id as id,w.period as period,w.amount as amount,w.game as game,w.status as status,w.release_status as release_status,w.time as time,w.isProcessed as isProcessed,m.bet as bet FROM wingo as w join minutes_2 as m on w.period=m.stage WHERE  w.game = ? ORDER BY id DESC LIMIT ?, ?",
+    "SELECT w.id as id,w.period as period,w.amount as amount,w.game as game,w.status as status,w.release_status as release_status,w.time as time,w.isProcessed as isProcessed,m.bet as bet,m.result FROM wingo as w join minutes_2 as m on w.period=m.stage WHERE  w.game = ? ORDER BY id DESC LIMIT ?, ?",
     [game, Number(pageno), Number(pageto)],
   );
 
@@ -755,7 +755,7 @@ const GetMyEmerdList = async (req, res) => {
     let { id, phone, code, invite, level, game, ...others } = data;
     return others;
   });
-
+  console.log(datas);
   return res.status(200).json({
     code: 0,
     msg: "Receive success",
@@ -1022,12 +1022,6 @@ const addWinGo = async (game) => {
       [join]
     );
 
-    // Safety check for missing start price
-    // console.log(startPriceRow);
-    // if (!startPriceRow || startPriceRow.length === 0 || startPriceRow[0].start_point === undefined) {
-    //   throw new Error("Start price not found in minutes_2");
-    // }
-
     let startPoint = null;
     let endPoint = null;
     let bigTotal = 0;
@@ -1051,49 +1045,59 @@ const addWinGo = async (game) => {
          WHERE game = ? AND status = 0`,
         [join]
       );
-      let amount=0;
+      
       bigTotal = parseFloat(betResults[0].big_total) || 0;
       smallTotal = parseFloat(betResults[0].small_total) || 0;
 
-      // Determine endPoint based on betting distribution
+      // Default calculation based on betting distribution
       if (bigTotal <= smallTotal) {
-        console.log("Big Total is winning so price will be higher than start")
+        console.log("Big Total is winning so price will be higher than start");
         endPoint = parseFloat((startPoint + Math.random() * 0.1).toFixed(2));
-        amount=bigTotal
       } else {
-        console.log("Small total is winning so price will be lower than start")
+        console.log("Small total is winning so price will be lower than start");
         endPoint = parseFloat((startPoint - Math.random() * 0.1).toFixed(2));
-        amount=smallTotal;
       }
 
       // Apply admin override
-      let nextResult = "-1";
-      if (game === 1) nextResult = setting[0].wingo1;
-      if (game === 3) nextResult = setting[0].wingo3;
-      if (game === 5) nextResult = setting[0].wingo5;
-      if (game === 10) nextResult = setting[0].wingo10;
+      let adminOverrideValue = "-1";
+      if (game === 1) adminOverrideValue = setting[0].wingo1;
+      if (game === 3) adminOverrideValue = setting[0].wingo3;
+      if (game === 5) adminOverrideValue = setting[0].wingo5;
+      if (game === 10) adminOverrideValue = setting[0].wingo10;
 
-      let newArr = "-1";
-      if (nextResult !== "-1") {
-        const arr = nextResult.split("|");
-        endPoint = parseFloat(arr[arr.length - 1]);  // Override end point
-        newArr = arr.length > 1 ? arr.slice(0, arr.length - 1).join("|") : "-1";
+      if (adminOverrideValue === 'l') {
+        // Force endpoint to be higher than start
+        endPoint = parseFloat((startPoint + Math.random() * 0.1).toFixed(2));
+        console.log("Admin override: Forcing result to be higher (l)");
+      } else if (adminOverrideValue === 'n') {
+        // Force endpoint to be lower than start
+        endPoint = parseFloat((startPoint - Math.random() * 0.1).toFixed(2));
+        console.log("Admin override: Forcing result to be lower (n)");
+      } else if (adminOverrideValue === 'd') {
+        // Force draw - make start and end points equal
+        endPoint = startPoint;
+        console.log("Admin override: Forcing result to be draw (d)");
+      } else {
+        console.log("No valid admin override, using default calculation");
       }
 
       // Update game result
       await connection.query(
         "UPDATE wingo SET amount = ?, status = 1, release_status = 1 WHERE period = ? AND game = ?",
-        [endPoint, previousPeriod, join]
+        [endPoint.toFixed(3), previousPeriod, join]
       );
 
-      // Update admin queue
+      // Clear the admin override after applying it
       let adminWingoKey = "";
       if (game === 1) adminWingoKey = "wingo1";
       if (game === 3) adminWingoKey = "wingo3";
       if (game === 5) adminWingoKey = "wingo5";
       if (game === 10) adminWingoKey = "wingo10";
 
-      await connection.query(`UPDATE admin_ac SET ${adminWingoKey} = ?`, [newArr]);
+      await connection.query(
+        `UPDATE admin_ac SET ${adminWingoKey} = ?`,
+        ["-1"] // Reset to default value
+      );
     }
 
     // Insert new game for the next period
@@ -1102,17 +1106,12 @@ const addWinGo = async (game) => {
     const NewGamePeriod = generatePeriod(gameRepresentationId);
 
     console.log("⏳ About to insert new game:", NewGamePeriod, join, timeNow);
-    try {
-      await connection.query(
-        `INSERT INTO wingo SET period = ?, amount = 0, game = ?, status = 0, time = ?`,
-        [NewGamePeriod, join, timeNow]
-      );
-      console.log("✅ New wingo game inserted");
-    } catch (insertErr) {
-      console.error("❌ INSERT error:", insertErr.message);
-    }
+    await connection.query(
+      `INSERT INTO wingo SET period = ?, amount = 0, game = ?, status = 0, time = ?`,
+      [NewGamePeriod, join, timeNow]
+    );
+    // console.log("✅ New wingo game inserted",);
     
-    console.log("✅ Insert query executed");
     console.log("Debug Info:", {
       startPoint,
       endPoint,
@@ -1135,82 +1134,122 @@ const addWinGo = async (game) => {
 
 
 
-
-
-const handlingWinGo1P = async (typeid, bigtotal, smalltotal) => {
+async function handlingWinGo1P(typeid, startPoint, endPoint, bigtotal, smalltotal) {
   try {
-    let game = "";
-    if (typeid == 1) game = "wingo";
-    if (typeid == 3) game = "wingo3";
-    if (typeid == 5) game = "wingo5";
-    if (typeid == 10) game = "wingo10";
+    // Map typeid to game name
+    let game;
+    switch (typeid) {
+      case 1: game = "wingo"; break;
+      case 3: game = "wingo3"; break;
+      case 5: game = "wingo5"; break;
+      case 10: game = "wingo10"; break;
+      default: 
+        console.error(`Invalid typeid: ${typeid}`);
+        return; // Exit if typeid is invalid
+    }
 
+    // Fetch the latest active game round
     const [winGoNow] = await connection.query(
       "SELECT * FROM wingo WHERE status = 1 AND release_status = 1 AND game = ? ORDER BY id DESC LIMIT 1",
-      [game],
+      [game]
     );
 
     if (winGoNow.length === 0) {
+      console.log(`No active game round found for ${game}`);
       return;
     }
 
     // Determine the winning result
-    const result = bigtotal > smalltotal ? 'n' : 'l'; // 'n'=sell wins, 'l'=buy wins
-    const winningSide = bigtotal > smalltotal ? 'SELL' : 'BUY';
-    const winAmount = bigtotal > smalltotal ? bigtotal : smalltotal;
-    const loseAmount = bigtotal > smalltotal ? smalltotal : bigtotal;
+    let result;
+    let winningSide;
+    let winAmount;
+    let loseAmount;
 
-    console.log(`Result: ${winningSide} wins (${result})`);
+    if (startPoint > endPoint) {
+      result = 'n'; // Down wins
+      winningSide = 'Down';
+      winAmount = smalltotal;
+      loseAmount = bigtotal;
+    } else if (startPoint < endPoint) {
+      result = 'l'; // Up wins
+      winningSide = 'Up';
+      winAmount = bigtotal;
+      loseAmount = smalltotal;
+    } else {
+      result = 'd'; // Draw
+      winningSide = 'Draw';
+      winAmount = 0; // No winnings in a draw
+      loseAmount = 0; // No losses in a draw
+    }
+
+    console.log(`Result: ${winningSide} (${result})`);
     console.log(`Big Total: ${bigtotal}, Small Total: ${smalltotal}`);
     console.log(`Winning Amount: ${winAmount}, Losing Amount: ${loseAmount}`);
 
     // Update all open bets with the result
     await connection.query(
       "UPDATE minutes_2 SET result = ? WHERE status = 0 AND game = ?",
-      [result, game],
+      [result, game]
     );
 
-    // Mark losing bets (status = 2) and keep winning bets (status remains 0 for processing)
-    await batchUpdateBetStatus(result, game);
-
-    // Process only winning bets (status still 0)
-    const [winningBets] = await connection.query(
-      "SELECT * FROM minutes_2 WHERE status = 0 AND game = ? AND bet = ?",
-      [game, result],
-    );
-
-    for (let i = 0; i < winningBets.length; i++) {
-      const bet = winningBets[i];
-      const payout = calculateWinAmount(bet.bet, result, bet.money);
-
-      const [users] = await connection.query(
-        "SELECT `money` FROM `users` WHERE `phone` = ?",
-        [bet.phone],
-      );
-
-      const newBalance = parseFloat(users[0].money) + parseFloat(payout);
-
+    if (result === 'd') {
+      // Handle draw: Mark all bets as draw (status = 3, for example) or refund
       await connection.query(
-        "UPDATE `minutes_2` SET `get` = ?, `status` = 1 WHERE `id` = ?",
-        [parseFloat(payout), bet.id],
+        "UPDATE minutes_2 SET status = 3 WHERE status = 0 AND game = ?",
+        [game]
+      );
+      console.log(`All bets marked as draw (status = 3) for ${game}`);
+    } else {
+      // Mark losing bets (status = 2) and keep winning bets (status = 0)
+      await batchUpdateBetStatus(result, game);
+
+      // Process only winning bets (status still 0)
+      const [winningBets] = await connection.query(
+        "SELECT * FROM minutes_2 WHERE status = 0 AND game = ? AND bet = ?",
+        [game, result]
       );
 
-      await connection.query(
-        "UPDATE `users` SET `money` = ? WHERE `phone` = ?",
-        [newBalance, bet.phone],
-      );
+      for (const bet of winningBets) {
+        const payout = calculateWinAmount(bet.bet, bet.result, bet.money);
+
+        const [users] = await connection.query(
+          "SELECT money FROM users WHERE phone = ?",
+          [bet.phone]
+        );
+
+        if (users.length === 0) {
+          console.error(`User not found for phone: ${bet.phone}`);
+          continue;
+        }
+
+        const newBalance = parseFloat(users[0].money) + parseFloat(payout);
+
+        await connection.query(
+          "UPDATE minutes_2 SET `get` = ?, status = 1 WHERE id = ?",
+          [parseFloat(payout), bet.id]
+        );
+
+        await connection.query(
+          "UPDATE users SET money = ? WHERE phone = ?",
+          [newBalance, bet.phone]
+        );
+      }
     }
 
     // Finalize the game round
     await connection.query(
       "UPDATE wingo SET release_status = 2 WHERE period = ? AND game = ?",
-      [winGoNow[0].period, game],
+      [winGoNow[0].period, game]
     );
+
+    console.log(`Game round finalized for ${game}, period: ${winGoNow[0].period}`);
 
   } catch (error) {
     console.error("Error in handlingWinGo1P:", error);
+    throw error; // Rethrow to allow caller to handle
   }
-};
+}
+
 
 const batchUpdateBetStatus = async (result, game) => {
   // The losing bet is the opposite of the result
@@ -1232,6 +1271,44 @@ const batchUpdateBetStatus = async (result, game) => {
   }
 };
 
+// Period Controller
+
+export const getPeriod = async (req, res) => {
+  try {
+    const { gameType } = req.params;
+    const validTypes = ['1', '3', '5', '10'];
+    
+    if (!validTypes.includes(gameType)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid game type. Valid types: 1, 3, 5, 10'
+      });
+    }
+
+    const gameName = gameType === '1' ? 'wingo' : `wingo${gameType}`;
+    const [period] = await connection.execute(
+      `SELECT period FROM wingo WHERE status=0 AND game=? ORDER BY id DESC LIMIT 1`,
+      [gameName]
+    );
+
+    res.json({
+      success: true,
+      period: period[0]?.period,
+      gameType,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error fetching period:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch period',
+      // defaultPeriod: '000000'
+    });
+  }
+};
+
+// Other controllers would follow similar patterns...
+
 const calculateWinAmount = (bet, result, total) => {
   // Simple payout calculation - adjust multiplier as needed
   const payoutMultiplier = 1.98; // Standard payout for binary options
@@ -1244,6 +1321,223 @@ const calculateWinAmount = (bet, result, total) => {
   return bet === result ? total * payoutMultiplier : 0;
 };
 
+const getTimeRanges = () => {
+  const now = new Date();
+  const todayStart = new Date(now.setHours(0, 0, 0, 0));
+  const weekStart = new Date(now.setDate(now.getDate() - now.getDay()));
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const yearStart = new Date(now.getFullYear(), 0, 1);
+  
+  return { now, todayStart, weekStart, monthStart, yearStart };
+};
+
+const getUserByToken = async (token) => {
+  const [rows] = await connection.query(
+    "SELECT * FROM users WHERE `token` = ?",
+    [token]
+  );
+  return rows.length > 0 ? rows[0] : null;
+};
+
+const getStatsByGame = async (req, res) => {
+  const { now } = getTimeRanges();
+  
+  try {
+    const user = await getUserByToken(req.cookies.auth);
+    if (!user) {
+      return res.status(200).json({
+        message: "User not found",
+        status: false,
+        timeStamp: now,
+      });
+    }
+
+    const [totalBets] = await connection.query(
+      `SELECT game, COUNT(*) AS total 
+       FROM minutes_2 WHERE code = ? GROUP BY game`,
+      [user.code]
+    );
+
+    const [betsWon] = await connection.query(
+      `SELECT game, COUNT(*) AS won 
+       FROM minutes_2 WHERE code = ? AND result = bet GROUP BY game`,
+      [user.code]
+    );
+
+    const [amountWon]=await connection.query(
+      `select sum(money) As winAmount
+      from minutes_2 where code=?`,
+      [user.code]
+    );
+
+    const [amounts] = await connection.query(
+      `SELECT game, SUM(money) AS amount 
+       FROM minutes_2 WHERE code = ? GROUP BY game`,
+      [user.code]
+    );
+
+    const stats = totalBets.map(gameStat => {
+      const wonStat = betsWon.find(g => g.game === gameStat.game) || { won: 0 };
+      const amountStat = amounts.find(g => g.game === gameStat.game) || { amount: 0 };
+      
+      return {
+        game: gameStat.game,
+        totalBets: gameStat.total,
+        winAmount:amountWon.amount || 0,
+        betsWon: wonStat.won,
+        betsLost: gameStat.total - wonStat.won,
+        amountSpent: amountStat.amount,
+        winRate: (wonStat.won / gameStat.total) * 100 || 0
+      };
+    });
+
+    return res.status(200).json({
+      message: "Success",
+      status: true,
+      timeStamp: now,
+      data: stats,
+    });
+  } catch (err) {
+    console.error("Error:", err);
+    return res.status(500).json({
+      message: "Internal Server Error",
+      status: false,
+      timeStamp: now,
+    });
+  }
+};
+
+const getStatsByTimePeriod = async (req, res) => {
+  const { now, todayStart, weekStart, monthStart, yearStart } = getTimeRanges();
+  const { period } = req.params;
+
+  try {
+    const user = await getUserByToken(req.cookies.auth);
+    if (!user) {
+      return res.status(200).json({
+        message: "User not found",
+        status: false,
+        timeStamp: now,
+      });
+    }
+
+    let timeCondition = "";
+    switch (period) {
+      case "today":
+        timeCondition = `AND today >= '${todayStart.toISOString()}'`;
+        break;
+      case "week":
+        timeCondition = `AND today >= '${weekStart.toISOString()}'`;
+        break;
+      case "month":
+        timeCondition = `AND today >= '${monthStart.toISOString()}'`;
+        break;
+      case "year":
+        timeCondition = `AND today >= '${yearStart.toISOString()}'`;
+        break;
+      default:
+        timeCondition = "";
+    }
+
+    const [[total]] = await connection.query(
+      `SELECT COUNT(*) AS total 
+       FROM minutes_2 
+       WHERE code = ? ${timeCondition}`,
+      [user.code]
+    );
+
+    const [[won]] = await connection.query(
+      `SELECT COUNT(*) AS won 
+       FROM minutes_2 
+       WHERE code = ? AND result = bet ${timeCondition}`,
+      [user.code]
+    );
+
+    const [[amountWon]] = await connection.query(
+      `SELECT SUM(money) AS win_amount 
+       FROM minutes_2 
+       WHERE code = ? AND result = bet ${timeCondition}`,
+      [user.code]
+    );
+
+    const [[amountSpent]] = await connection.query(
+      `SELECT SUM(money) AS amount 
+       FROM minutes_2 
+       WHERE code = ? ${timeCondition}`,
+      [user.code]
+    );
+
+    const stats = {
+      totalBets: total.total || 0,
+      betsWon: won.won || 0,
+      betsLost: (total.total || 0) - (won.won || 0),
+      amountSpent: amountSpent.amount || 0,
+      amountWon: amountWon.win_amount || 0,
+      winRate: ((won.won || 0) / (total.total || 1)) * 100
+    };
+
+    return res.status(200).json({
+      message: "Success",
+      status: true,
+      timeStamp: now,
+      data: stats,
+    });
+  } catch (err) {
+    console.error("Error:", err);
+    return res.status(500).json({
+      message: "Internal Server Error",
+      status: false,
+      timeStamp: now,
+    });
+  }
+};
+
+const getOverallProfitOrLoss = async (req, res) => {
+  try {
+    const user = await getUserByToken(req.cookies.auth);
+  if (!user) {
+      return res.status(200).json({ status: false, message: "User not found" });
+    }
+
+    const { period } = req.params; // expects 'today', 'week', 'month'
+
+    let dateCondition = '';
+    if (period === 'today') {
+      dateCondition = 'AND DATE(today) = CURDATE()';
+    } else if (period === 'week') {
+      dateCondition = 'AND YEARWEEK(today, 1) = YEARWEEK(CURDATE(), 1)';
+    } else if (period === 'month') {
+      dateCondition = 'AND MONTH(today) = MONTH(CURDATE()) AND YEAR(today) = YEAR(CURDATE())';
+    } else {
+      return res.status(400).json({ status: false, message: "Invalid period" });
+    }
+
+    const [[{ amount }]] = await connection.query(
+      `SELECT SUM(CASE WHEN result = bet THEN money ELSE -money END) AS amount 
+       FROM minutes_2 
+       WHERE code = ? ${dateCondition}`,
+      [user.code]
+    );
+
+    const profitOrLoss = amount || 0;
+    const statusText = profitOrLoss > 0 ? 'Profit' : profitOrLoss < 0 ? 'Loss' : 'Neutral';
+
+    res.status(200).json({
+      status: true,
+      data: {
+        profitOrLoss,
+        status: statusText
+      }
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ status: false, message: "Internal server error" });
+  }
+};
+
+
+
+
 const winGoController = {
   winGoPage,
   betWinGo,
@@ -1255,6 +1549,10 @@ const winGoController = {
   winGoPage3,
   winGoPage5,
   winGoPage10,
+  getPeriod,
+  getStatsByGame,
+  getStatsByTimePeriod,
+  getOverallProfitOrLoss
 };
 
 export default winGoController;

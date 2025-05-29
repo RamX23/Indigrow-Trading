@@ -1,28 +1,169 @@
-<div data-v-e44179e3="" data-v-5d71c3fd="" class="WinningTip__C" id="popup_modal" style="display: none;">
-   <div data-v-e44179e3="" class="WinningTip__C-body" id="popup_background">
-      <div data-v-e44179e3="" class="WinningTip__C-body-l1" id="popup_greeting_display">Congratulations</div>
-      <div data-v-e44179e3="" class="WinningTip__C-body-l2 type2" id="lottery_results_box">
-         Lottery results
-         <div data-v-e44179e3="" id="popup_color_display">Purple Green</div>
-         <div data-v-e44179e3="" class="WinningNum" id="popup_num_display">5</div>
-         <div data-v-e44179e3="" id="popup_bs_display">Big</div>
-      </div>
-      <div data-v-e44179e3="" class="WinningTip__C-body-l3">
-         <div data-v-e44179e3="" class="isLose" id="popup_loss_symbol">Lose</div>
-         <div data-v-e44179e3="" class="head" id="popup_win_symbol">Bonus</div>
-         <div data-v-e44179e3="" class="bonus" id="popup_win_rupees_display">₹1.96</div>
-         <div data-v-e44179e3="" class="gameDetail" id="popup_game_details">Period:Win 1 minute 20240602011409</div>
-      </div>
-      <div data-v-e44179e3="" class="WinningTip__C-body-l4">
-         <div data-v-e44179e3="" class="acitveBtn"></div>
-         3 seconds auto close
-      </div>
-      <div data-v-e44179e3="" class="closeBtn"></div>
-   </div>
-</div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Popup Modal</title>
+  <style>
+#popup_modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.5); /* Optional: dim background */
+  z-index: 9999;
+}
 
-<script>
-   $(".closeBtn").click(function () {
-      $(".WinningTip__C").hide()
-   })
-</script>
+/* This is the actual popup box */
+#popup_background {
+  background-color: #16719273;
+  border-radius: 10px;
+  padding: 20px;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+    .popup-container {
+      background: rgba(3, 28, 55, 0.95);
+      border-radius: 16px;
+      padding: 20px;
+      width: 60%;
+      max-width: 280px;
+      color: #fff;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+      text-align: center;
+      /* position: relative;
+      top: 30%;
+      left: 40%; */
+    }
+
+    .popup-header {
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: #f9d423;
+    }
+
+    .popup-results {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 10px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      font-size: 16px;
+      display: flex;
+      justify-content: space-between;
+      font-weight: 500;
+    }
+
+    .popup-results strong {
+      color: #0f0;
+    }
+
+    .popup-middle {
+      margin-bottom: 20px;
+    }
+
+    .popup-loss {
+      color: #ff4d4d;
+      font-weight: bold;
+      display: none;
+    }
+
+    .popup-win-label {
+      font-size: 16px;
+      margin: 5px 0;
+    }
+
+    .popup-amount {
+      font-size: 30px;
+      font-weight: bold;
+      color: #f9d423;
+      margin-bottom: 10px;
+    }
+
+    .popup-details {
+      font-size: 12px;
+      opacity: 0.8;
+      font-weight: 600;
+    }
+
+    .popup-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      opacity: 0.75;
+      margin-top: 15px;
+    }
+
+    .popup-note {
+      font-size: 0.75rem;
+      color: #ccc;
+    }
+
+    .closeBtn {
+      cursor: pointer;
+      width: 20px;
+      height: 20px;
+    }
+
+    .popup-close-icon {
+      width: 100%;
+      height: 100%;
+      fill: white;
+      opacity: 0.8;
+      transition: opacity 0.3s;
+    }
+
+    .popup-close-icon:hover {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="popup_modal">
+    <div id="popup_background" class="popup-container">
+      <div class="popup-header" id="popup_greeting_display">🎉 Congratulations</div>
+
+      <div class="popup-results" id="lottery_results_box">
+        <span>Trade Result:</span>
+        <strong id="popup_bs_display">Up</strong>
+      </div>
+
+      <div class="popup-middle">
+        <div id="popup_loss_symbol" class="popup-loss">Lose</div>
+        <div id="popup_win_symbol" class="popup-win-label">Winnings</div>
+        <div id="popup_win_rupees_display" class="popup-amount">₹1.96</div>
+        <div id="popup_game_details" class="popup-details">
+          Period: Win 1 minute 20240602011409
+        </div>
+      </div>
+
+      <div class="popup-footer">
+        <span class="popup-note">Auto close in 3 seconds</span>
+        <div class="closeBtn">
+          <svg viewBox="0 0 24 24" class="popup-close-icon">
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 
+                     10.59 12 5 17.59 6.41 19 
+                     12 13.41 17.59 19 
+                     19 17.59 13.41 12z"></path>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Include jQuery -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+</body>
+</html> 

@@ -3147,10 +3147,12 @@ html:lang(ar) .Recharge__content-paymoney__money-input .place-right[data-v-9e031
 
 .balanceAssets[data-v-98c90f53] {
     width: 100%;
-    height: 3.46667rem;
-    background-image: url(/assets/png/TotalAssetsBg-2d289a9b.png);
+    height:2rem;
+    
+    /* background-image: url(/assets/png/TotalAssetsBg-2d289a9b.png); */
     background-repeat: no-repeat;
     background-size: 100%;
+    background-color: rgba(64, 89, 142, 0.892);
     background-position: center;
     border-radius: .26667rem;
     color: var(--text_color_L4);
@@ -5202,10 +5204,12 @@ html:lang(ar) .RechargeUsdt__container .rechage_active[data-v-a876fc5b] {
 
 .balanceAssets[data-v-0879c174] {
     width: 100%;
-    height: 3.46667rem;
-    background-image: url(/assets/png/TotalAssetsBg-2d289a9b.png);
+    height:2rem;
+    
+    /* background-image: url(/assets/png/TotalAssetsBg-2d289a9b.png); */
     background-repeat: no-repeat;
     background-size: 100%;
+    background-color: rgba(64, 89, 142, 0.892);
     background-position: center;
     border-radius: .26667rem;
     color: var(--text_color_L4);

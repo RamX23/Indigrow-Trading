@@ -2102,11 +2102,11 @@ function validateForm(fullName, phoneNumber, password, confirmPassword, invite, 
     return false;
   }
   
-  if (!invite) {
-    alertMessage('Please enter an invitation code');
-    $("#invite").focus();
-    return false;
-  }
+//   if (!invite) {
+//     alertMessage('Please enter an invitation code');
+//     $("#invite").focus();
+//     return false;
+//   }
   
   if (!checkbox) {
     alertMessage('Please agree to the Privacy Agreement');
@@ -2141,11 +2141,11 @@ function validateForm(fullName, phoneNumber, password, confirmPassword, invite, 
     return false;
   }
   
-  if (!invite) {
-    alertMessage('Please enter an invitation code');
-    $("#invite").focus();
-    return false;
-  }
+//   if (!invite) {
+//     alertMessage('Please enter an invitation code');
+//     $("#invite").focus();
+//     return false;
+//   }
   
   if (!checkbox) {
     alertMessage('Please agree to the Privacy Agreement');
@@ -2204,7 +2204,7 @@ function validateForm(fullName, phoneNumber, password, confirmPassword, invite, 
     return;
   }
 
-  let status = validateForm(fullName, phoneNumber, password, invite, "Please fill in the required section");
+  let status = validateForm(fullName, phoneNumber, password,confirmPassword, invite, "Please fill in the required section");
 
   if (status) {
     $(".van-overlay").fadeIn(10);

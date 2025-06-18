@@ -648,9 +648,8 @@ const listOrderOld = async (req, res) => {
   //   [game],
   // );
   const [wingoAll] = await connection.query(
-    `SELECT w.id AS id, w.period AS period, m.result AS result
+    `SELECT w.id AS id, w.period AS period, w.amount AS result
      FROM wingo w
-     JOIN minutes_2 m ON w.period = m.stage
      WHERE w.status = 1 AND w.release_status = 2 AND w.game = ?
      ORDER BY w.id DESC
      LIMIT ?, ?`,
@@ -1041,13 +1040,18 @@ const addWinGo = async (game) => {
 
     if (adminOverrideValue === 'l') {
       shouldGoUp = true;
+      result='l';
       console.log("Price will go up due to admin override")
     }
     else if (adminOverrideValue === 'n') {
       shouldGoUp = false;
+      result='n';
       console.log("Price will go Down due to admin override")
     }
-    else if (adminOverrideValue === 'd') shouldGoUp = null; // draw
+    else if (adminOverrideValue === 'd') {
+      result='d';
+      shouldGoUp = null;
+      console.log("Price will be draw due to admin override")} // draw
 
 
 
@@ -1093,8 +1097,8 @@ for (const coin in startPrices) {
 
     // Update game result with all coin prices
     await connection.query(
-      "UPDATE wingo SET amount = 0, status = 1, release_status = 1 WHERE period = ? AND game = ?",
-      [previousPeriod, join]
+      "UPDATE wingo SET amount=? , status = 1, release_status = 1 WHERE period = ? AND game = ?",
+      [result,previousPeriod, join]
     );
 
     // Clear the admin override after applying it

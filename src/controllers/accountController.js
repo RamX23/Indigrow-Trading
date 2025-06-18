@@ -141,7 +141,7 @@ const register = async (req, res) => {
       fullName: Joi.string().required(),
       phoneNumber: Joi.string().length(10).required(),
       pwd: Joi.string().min(6).required(),
-      invitecode: Joi.string().required(),
+      invitecode: Joi.string(),
       dialCode: Joi.string().required(),
     });
 

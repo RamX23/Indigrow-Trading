@@ -359,45 +359,53 @@
 
     // Function to export data to Excel
  // Function to export data to Excel (only headers)
-function exportToExcel() {
-  // Create an empty array with just the headers
-  let excelData = [];
-  
-  if (ActiveTab === WITHDRAWAL_METHODS_MAP.BANK_CARD) {
-    // Add just the headers for BANK_CARD
-    excelData.push({
-      "Phone Number": "",
-      "Bank Name": "",
-      "Recipient Name": "",
-      "Bank Account Number": "",
-      "IFSC": "",
-      "Amount": ""
+ function exportToExcel() {
+    if (ActiveTab !== WITHDRAWAL_METHODS_MAP.BANK_CARD) {
+      Swal.fire(
+        'Info',
+        'Excel export is only available for BANK CARD withdrawals',
+        'info'
+      );
+      return;
+    }
+
+    // Filter data for BANK_CARD only
+    const filteredData = withdrawalsData.filter(item => item.type === WITHDRAWAL_METHODS_MAP.BANK_CARD);
+    
+    if (filteredData.length === 0) {
+      Swal.fire(
+        'Info',
+        'No BANK CARD withdrawal data available to export',
+        'info'
+      );
+      return;
+    }
+
+    // Process data to show only required columns with 82.5% of amount
+    const excelData = filteredData.map(item => {
+      const originalAmount = parseFloat(item.amount);
+      const adjustedAmount = (originalAmount * 0.825).toFixed(2);
+      
+      return {
+        "Account Name": item.recipientName,
+        "Bank Name": item.bankName,
+        "Account Number": item.bankAccountNumber,
+        "Amount (82.5%)": adjustedAmount,
+        "IFSC Code": item.IFSC
+      };
     });
-  } else {
-    // Add just the headers for USDT_ADDRESS
-    excelData.push({
-      "Phone Number": "",
-      "USDT Address": "",
-      "Amount": ""
-    });
+
+    // Create worksheet
+    const ws = XLSX.utils.json_to_sheet(excelData);
+    
+    // Create workbook
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Bank Withdrawals");
+    
+    // Generate Excel file and trigger download
+    XLSX.writeFile(wb, "Bank_Withdrawals_82.5%.xlsx");
   }
 
-  // Create worksheet
-  const ws = XLSX.utils.json_to_sheet(excelData);
-  
-  // Remove the empty data row while keeping headers
-  XLSX.utils.sheet_add_json(ws, [], {skipHeader: true});
-  
-  // Create workbook
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Withdrawals Template");
-  
-  // Generate Excel file and trigger download
-  const fileName = ActiveTab === WITHDRAWAL_METHODS_MAP.BANK_CARD 
-    ? "Bank_Withdrawals_Template.xlsx" 
-    : "USDT_Withdrawals_Template.xlsx";
-  XLSX.writeFile(wb, fileName);
-}
     function showWithDrawals(params) {
       if (params.length == 0) {
         $('tbody').html(`

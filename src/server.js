@@ -172,8 +172,88 @@ async function initialize() {
           processEndpointData(session);
         }
       });
-    }, 1000); // Check every second
+    }, 1000); // Check every second// Add this with your other constants
+    const COUNTDOWN_INTERVAL = 1000; // 1 second
+    
+    // Add this function to handle countdown logic
+    function getCountdownTime(gameType) {
+      const now = new Date();
+      const seconds = now.getSeconds();
+      const minutes = now.getMinutes();
+      
+      // Calculate time remaining in the current period
+      let remainingSeconds = 0;
+      let remainingMinutes = 0;
+      
+      switch(gameType) {
+        case '1min':
+          remainingSeconds = 59 - seconds;
+          remainingMinutes = 0;
+          break;
+        case '3min':
+          remainingSeconds = 59 - seconds;
+          remainingMinutes = (2 - (minutes % 3));
+          break;
+        case '5min':
+          remainingSeconds = 59 - seconds;
+          remainingMinutes = (4 - (minutes % 5));
+          break;
+        case '10min':
+          remainingSeconds = 59 - seconds;
+          remainingMinutes = (9 - (minutes % 10));
+          break;
+        default:
+          remainingSeconds = 59 - seconds;
+          remainingMinutes = 0;
+      }
 
+      if (remainingSeconds === 60) {
+        remainingSeconds = 0;
+        remainingMinutes = Math.max(0, remainingMinutes - 1);
+      }
+
+      // Split minutes into two digits
+      const minute1 = Math.floor(remainingMinutes / 10);
+      const minute2 = remainingMinutes % 10;
+      
+      return {
+        minute1,
+        minute2,
+        second1: Math.floor(remainingSeconds / 10),
+        second2: remainingSeconds % 10,
+        active: true // Assume active unless otherwise specified
+      };
+    }
+    
+    // Add this to your priceUpdateInterval or create a separate interval
+    setInterval(() => {
+      const now = Date.now();
+      const sessions = {
+        '1min': getCountdownTime('1min'),
+        '3min': getCountdownTime('3min'),
+        '5min': getCountdownTime('5min'),
+        '10min': getCountdownTime('10min')
+      };
+      
+      const defaultGameType = '1min';
+      const currentSession = sessions[defaultGameType];
+
+      io.emit('timeUpdate', {
+        minute1: currentSession.minute1,
+        minute2: currentSession.minute2,
+        second1: currentSession.second1,
+        second2: currentSession.second2,
+        timestamp: now,
+        sessions
+      });
+    }, COUNTDOWN_INTERVAL);
+
+    
+    function easeOutQuad(t) {
+      return t * (2 - t);
+    }
+
+    
     const priceUpdateInterval = setInterval(() => {
       try {
         const now = Date.now();
@@ -193,47 +273,73 @@ async function initialize() {
           let targetPrice = null;
           let timeLeftToTarget = 0;
     
-          // Check ENDPOINT_DATA for each session to find valid endPrices
+          // Check ENDPOINT_DATA for each session
           for (const session of Object.keys(GAME_SESSIONS)) {
             const endpointData = ENDPOINT_DATA[session];
             if (endpointData?.endPrices?.[coin] && endpointData.timestamp) {
               const timeSinceTargetSet = now - endpointData.timestamp;
               
-              // If within the convergence window (last 10 seconds)
               if (timeSinceTargetSet <= 10000) {
                 targetPrice = parseFloat(endpointData.endPrices[coin]);
                 timeLeftToTarget = 10000 - timeSinceTargetSet;
                 
-                if (timeLeftToTarget <= 1000) {
-                  // Exact target at the end
+                if (timeSinceTargetSet >= 9000) {
                   newPrice = targetPrice;
-                  console.log("price setted up to target price",newPrice);
                 } else {
-                  // Independent oscillation pattern
-                  const oscillationCount = 5; // Number of full peaks+dips
-                  const rawOscillation = Math.sin((now/1000) * oscillationCount * 0.5 * Math.PI);
+                  const direction = targetPrice > lastDataPoint.price ? 1 : -1;
+                  const priceDifference = Math.abs(targetPrice - lastDataPoint.price);
+                  const progress = timeSinceTargetSet / 9000;
+    
+                  // Enhanced volatility parameters
+                  const baseVolatility = priceDifference * 0.1; // Increased base volatility
+                  const timeBasedVolatility = (1 - progress) * baseVolatility * 3;
                   
-                  // Calculate maximum oscillation magnitude
-                  const priceRange = Math.abs(targetPrice - lastDataPoint.price);
-                  const maxOscillation = Math.min(
-                    priceRange * 0.4, // Up to 40% of price difference
-                    lastDataPoint.price * 0.02 // Or 2% of current price
-                  );
+                  // Multi-frequency oscillations with more pronounced movements
+                  const highFreq = Math.sin(now * 0.03) * (timeBasedVolatility * 0.4);
+                  const midFreq = Math.sin(now * 0.008) * (timeBasedVolatility * 0.7);
+                  const lowFreq = Math.sin(now * 0.0015) * (timeBasedVolatility * 0.5);
                   
-                  // Apply oscillation
-                  const oscillation = rawOscillation * maxOscillation;
+                  // More aggressive random jitter
+                  const jitter = (Math.random() - 0.5) * timeBasedVolatility * 0.8;
                   
-                  // Calculate base adjustment (ensures we reach target)
-                  const remainingDifference = targetPrice - lastDataPoint.price;
-                  const baseAdjustment = remainingDifference * 0.1; // Adjust 10% of remaining gap
-                  
-                  // Combine components
-                  newPrice = lastDataPoint.price + baseAdjustment + oscillation;
-                  
-                  // Ensure we don't overshoot too much near the end
-                  if (timeLeftToTarget < 2000) {
-                    const endWeight = timeLeftToTarget / 2000;
-                    newPrice = newPrice * endWeight + targetPrice * (1 - endWeight);
+                  // Combine all oscillation components
+                  const combinedOscillation = highFreq + midFreq + lowFreq + jitter;
+    
+                  // Dynamic trend progression with stronger oscillations
+                  const trendStrength = 0.15 + (Math.abs(combinedOscillation)/priceDifference * 0.2);
+                  const baseMovement = lastDataPoint.price + (direction * priceDifference * trendStrength);
+    
+                  // Apply the oscillations with momentum effect
+                  newPrice = baseMovement + combinedOscillation * (1.2 - progress * 0.5);
+    
+                  // Special 7th second handling - ensure we cross start price
+                  if (timeSinceTargetSet >= 7000 && timeSinceTargetSet < 8000) {
+                    const seventhSecondTarget = lastDataPoint.price + 
+                      (priceDifference * direction * (1.2 + (Math.random() * 0.3 - 0.15)));
+                    
+                    if (timeSinceTargetSet < 7000) {
+                      // Build up to the 7th second crossing
+                      const progressTo7thSec = timeSinceTargetSet / 7000;
+                      const overshootFactor = 1.3; // Ensures we'll cross the start price
+                      newPrice = lastDataPoint.price + 
+                        ((seventhSecondTarget * overshootFactor) - lastDataPoint.price) * 
+                        Math.pow(progressTo7thSec, 0.7);
+                    } else {
+                      // After 7th second, pull back toward target
+                      const progressAfter7thSec = (timeSinceTargetSet - 7000) / 2000;
+                      newPrice = seventhSecondTarget + 
+                        (targetPrice - seventhSecondTarget) * easeOutQuad(progressAfter7thSec);
+                    }
+                  }
+    
+                  // Smart bounding that allows for larger swings
+                  const maxDeviation = priceDifference * (0.7 + progress * 0.3);
+                  if ((direction > 0 && (newPrice > targetPrice + maxDeviation || newPrice < lastDataPoint.price - maxDeviation * 0.8)) || 
+                      (direction < 0 && (newPrice < targetPrice - maxDeviation || newPrice > lastDataPoint.price + maxDeviation * 0.8))) {
+                    // When out of bounds, pull back but preserve some oscillation
+                    newPrice = lastDataPoint.price + 
+                      (targetPrice - lastDataPoint.price) * (0.1 + Math.abs(combinedOscillation)/priceDifference * 0.1) +
+                      combinedOscillation * 0.3;
                   }
                 }
                 break;
@@ -259,7 +365,7 @@ async function initialize() {
           }
         });
     
-        // Emit updates
+        // Emit updates (unchanged)
         const sessions = Object.fromEntries(
           Object.entries(GAME_SESSIONS).map(([session, data]) => [
             session,
@@ -286,7 +392,7 @@ async function initialize() {
         console.error("Error in price update:", err);
       }
     }, 1000);
-
+    
     
     io.on("connection", (socket) => {
       console.log(`Client connected: ${socket.id}`);

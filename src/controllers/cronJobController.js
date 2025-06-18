@@ -22,7 +22,7 @@ const cronJobGame1p = (io, ENDPOINT_DATA) => {
   //     timestamp: Date.now(),
   //   };
   // })
-  cron.schedule("51 * * * * *",async()=>{
+  cron.schedule("50 * * * * *",async()=>{
     console.log("running at 51st sec of minute");
     Point = await winGoController.addWinGo(1);
 
@@ -37,7 +37,7 @@ const cronJobGame1p = (io, ENDPOINT_DATA) => {
 
 
 
-  cron.schedule("1 * * * * *", async () => {
+  cron.schedule("0 * * * * *", async () => {
     console.log("🔔 Running at 60th second of every minute");
 
 
@@ -78,22 +78,24 @@ const cronJobGame1p = (io, ENDPOINT_DATA) => {
 
   // For 3-minute interval (runs at 2:59, 5:59, 8:59, etc.)
 
-  cron.schedule("51 */3 * * * *",async()=>{
-    console.log("running at 51st sec of minute");
+  cron.schedule("50 2,5,8,11,14,17,20,23,26,29,32,35,38,41,44,47,50,53,56,59 * * * *", async () => {
+    console.log("Running at 50th second of every 3rd minute (e.g., 02:50, 05:50, 08:50)");
+    
     Point3 = await winGoController.addWinGo(3);
 
-    // Store data in ENDPOINT_DATA instead of emitting
+    // Store data in ENDPOINT_DATA
     ENDPOINT_DATA["3min"] = {
-      endPrices: Point3.endPrices,
-      startPrices: Point3.startPrices,
-      timestamp: Date.now(),
+        endPrices: Point3.endPrices,
+        startPrices: Point3.startPrices,
+        timestamp: Date.now(),
     };
+    
     console.log("Stored endpoint data for 3min interval:", ENDPOINT_DATA["3min"]);
-  })
+});
 
 
 
-cron.schedule("1 */3 * * * *", async () => {
+cron.schedule("0 */3 * * * *", async () => {
   console.log("🔔 Running at 2min 59sec of every 3min interval");
     // const Point = await winGoController.addWinGo(3);
 
@@ -139,8 +141,8 @@ cron.schedule("1 */3 * * * *", async () => {
 
 
   
-  cron.schedule("51 5 * * * *",async()=>{
-    console.log("running at 51st sec of minute");
+  cron.schedule("50 4,9,14,19,24,29,34,39,44,49,54,59 * * * *",async()=>{
+    console.log("running at 51st sec of 5 minute");
     Point5 = await winGoController.addWinGo(5);
 
     // Store data in ENDPOINT_DATA instead of emitting
@@ -152,7 +154,7 @@ cron.schedule("1 */3 * * * *", async () => {
     console.log("Stored endpoint data for 5min interval:", ENDPOINT_DATA["5min"]);
   })
   
-  cron.schedule("1 */5 * * * *", async () => {
+  cron.schedule("0 */5 * * * *", async () => {
     // console.log("🔔 Running at 4min 59sec of every 5min interval");
     // const Point = await winGoController.addWinGo(5);
 
@@ -208,8 +210,8 @@ cron.schedule("1 */3 * * * *", async () => {
   });
 
   
-  cron.schedule("51 10 * * * *",async()=>{
-    console.log("running at 51st sec of minute");
+  cron.schedule("50 9,19,29,39,49,59 * * * *",async()=>{
+    console.log("running at 51st sec of 10 minute");
     Point10 = await winGoController.addWinGo(10);
 
     // Store data in ENDPOINT_DATA instead of emitting
@@ -222,7 +224,7 @@ cron.schedule("1 */3 * * * *", async () => {
   })
 
  // For 10-minute interval (runs at 9:59, 19:59, 29:59, etc.)
-cron.schedule("1 */10 * * * *", async () => {
+cron.schedule("0 */10 * * * *", async () => {
   console.log("🔔 Running at 10min 1sec of every 10min interval");
     // const Point = await winGoController.addWinGo(10);
 

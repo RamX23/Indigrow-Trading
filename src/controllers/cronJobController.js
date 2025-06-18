@@ -2,249 +2,279 @@ import connection from "../config/connectDB.js";
 import winGoController from "./winGoController.js";
 import k5Controller from "./k5Controller.js";
 import k3Controller from "./k3Controller.js";
-import trxWingoController, {
-  TRX_WINGO_GAME_TYPE_MAP,
-} from "./trxWingoController.js";
 import cron from "node-cron";
 import vipController from "./vipController.js";
 import gameController from "./gameController.js";
 
-const cronJobGame1p = (io) => {
-  cron.schedule("*/1 * * * *", async () => {
-    // await trxWingoController.addTrxWingo(1);
-    // await trxWingoController.handlingTrxWingo1P(1);
-    // const [trxWingo] = await connection.execute(
-    //   `SELECT * FROM trx_wingo_game WHERE game = '${TRX_WINGO_GAME_TYPE_MAP.MIN_1}' ORDER BY id DESC LIMIT 2`,
-    //   [],
-    // );
-    // io.emit("data-server-trx-wingo", { data: trxWingo });
-    
-    // await winGoController.addWinGo(1);
-    console.log("🔔 Running at 60th second of every minute");
-    const Point = await winGoController.addWinGo(1);
-    io.emit("setEndPoint", Point.endPoin);
-    console.log("Sent endpoint:", Point.endPoint);
+const coins = ["BTC", "ADA", "BNB", "ETH"];
 
-    console.log("🔔 Running at 60th second of every minute");
-    await winGoController.handlingWinGo1P(1,Point.startPoint,Point.endPoint,Point.bigTotal,Point.smallTotal);
-    const [winGo1] = await connection.execute(
-      'SELECT * FROM `wingo` WHERE `game` = "wingo" ORDER BY `id` DESC LIMIT 2 ',
-      [],
-    );
-    const data = winGo1;
-    io.emit("data-server", { data: data });
-    console.log("execution completed!");
-    // await k5Controller.add5D(1);
-    // await k5Controller.handling5D(1);
-    // const [k5D] = await connection.execute(
-    //   "SELECT * FROM 5d WHERE `game` = 1 ORDER BY `id` DESC LIMIT 2 ",
-    //   [],
-    // );
-    // const data2 = k5D;
-    // io.emit("data-server-5d", { data: data2, game: "1" });
+let Point=null;
+let Point3=null;
+let Point5=null;
+let Point10=null;
+const cronJobGame1p = (io, ENDPOINT_DATA) => {
+  // cron.schedule("59 * * * *",async()=>{
+  //   console.log("🔔 Running at 59th second of every minute");
+  //   Point = await winGoController.addWinGo(1);
+  //   ENDPOINT_DATA["1min"] = {
+  //     endPrices: Point.endPrices,
+  //     startPrices: Point.startPrices,
+  //     timestamp: Date.now(),
+  //   };
+  // })
+  cron.schedule("51 * * * * *",async()=>{
+    console.log("running at 51st sec of minute");
+    Point = await winGoController.addWinGo(1);
 
-    // await k3Controller.addK3(1);
-    // await k3Controller.handlingK3(1);
-    // const [k3] = await connection.execute(
-    //   "SELECT * FROM k3 WHERE `game` = 1 ORDER BY `id` DESC LIMIT 2 ",
-    //   [],
-    // );
-    // const data3 = k3;
-    // io.emit("data-server-k3", { data: data3, game: "1" });
+    // Store data in ENDPOINT_DATA instead of emitting
+    ENDPOINT_DATA["1min"] = {
+      endPrices: Point.endPrices,
+      startPrices: Point.startPrices,
+      timestamp: Date.now(),
+    };
+    console.log("Stored endpoint data for 1min interval:", ENDPOINT_DATA["1min"]);
+  })
+
+
+
+  cron.schedule("1 * * * * *", async () => {
+    console.log("🔔 Running at 60th second of every minute");
+
+
+    for (const coin of coins) {
+      const startPoint = Point.startPrices[coin];
+      const endPoint = Point.endPrices[coin];
+      const bigtotal = Point.bigTotal;
+      const smalltotal = Point.smallTotal;
+      const result = Point.result;
+      let typeid;
+      switch (coin) {
+        case "BTC":
+          typeid = 1;
+          break;
+        case "ADA":
+          typeid = 1;
+          break;
+        case "BNB":
+          typeid = 1;
+          break;
+        case "ETH":
+          typeid = 1;
+          break;
+        default:
+          console.error(`Invalid coin type: ${coin}`);
+          return;
+      }
+
+      await winGoController.handlingWinGo1P(typeid, bigtotal, smalltotal, result);
+    }
+
+    const [winGo1] = await connection.execute('SELECT * FROM `wingo` WHERE `game` = "wingo" ORDER BY `id` DESC LIMIT 2', []);
+    io.emit("data-server", { data: winGo1 });
+    console.log("1min execution completed!");
   });
 
 
 
-// cron.schedule("55 * * * * *", async () => {
-//   console.log("🔔 Running at 55th second of every minute");
-//   const Point=await winGoController.addWinGo(1);
-//   console.log(Point);
-//   io.emit("setEndPoint",Point.endPoint);
-// });
+  // For 3-minute interval (runs at 2:59, 5:59, 8:59, etc.)
 
-// cron.schedule("55 * * * * *", async () => {
-//   console.log("🔔 Running at 55th second of every minute");
+  cron.schedule("51 */3 * * * *",async()=>{
+    console.log("running at 51st sec of minute");
+    Point3 = await winGoController.addWinGo(3);
 
-//   // Check if addWinGo has been processed already
-//   const [processed] = await connection.query("SELECT isProcessed FROM wingo WHERE game = 'wingo' ORDER BY id DESC LIMIT 1");
-//   if (processed[0].isProcessed) {
-//     console.log("Job already processed. Skipping.");
-//     return;
-//   }
+    // Store data in ENDPOINT_DATA instead of emitting
+    ENDPOINT_DATA["3min"] = {
+      endPrices: Point3.endPrices,
+      startPrices: Point3.startPrices,
+      timestamp: Date.now(),
+    };
+    console.log("Stored endpoint data for 3min interval:", ENDPOINT_DATA["3min"]);
+  })
 
-//   // Run the addWinGo function
-//   const Point = await winGoController.addWinGo(1);
-//   io.emit("setEndPoint", Point.endPoint);
-//   console.log("Sent endpoint:", Point.endPoint);
 
-//   // Mark the job as processed
-//   await connection.query("UPDATE wingo SET isProcessed = true WHERE game = 'wingo' ORDER BY id DESC LIMIT 1");
-// });
 
-cron.schedule("1 * * * * *", async () => {
-  console.log("🔔 Running at 1st second of every minute");
+cron.schedule("1 */3 * * * *", async () => {
+  console.log("🔔 Running at 2min 59sec of every 3min interval");
+    // const Point = await winGoController.addWinGo(3);
 
-  // Check if addWinGo was processed before running handlingWinGo1P
-  // const [processed] = await connection.query("SELECT isProcessed FROM wingo WHERE game = 'wingo' ORDER BY id DESC LIMIT 1");
-  // if (!processed[0].isProcessed) {
-  //   console.log("Job not processed yet. Skipping.");
-  //   return;
-  // }
+    // ENDPOINT_DATA["3min"] = {
+    //   endPrices: Point.endPrices,
+    //   startPrices: Point.startPrices,
+    //   timestamp: Date.now(),
+    // };
+    // console.log("Stored endpoint data for 3min interval:", ENDPOINT_DATA["3min"]);
 
-  // Run the handlingWinGo1P functiony
-  // await winGoController.handlingWinGo1P(1);
-  io.emit("getStartPoint");
-  console.log("placed start point in local storage.");
+    for (const coin of coins) {
+      const startPoint = Point3.startPrices[coin];
+      const endPoint = Point3.endPrices[coin];
+      const bigtotal = Point3.bigTotal;
+      const smalltotal = Point3.smallTotal;
+      const result = Point3.result;
+      let typeid;
+      switch (coin) {
+        case "BTC":
+          typeid = 3;
+          break;
+        case "ADA":
+          typeid = 3;
+          break;
+        case "BNB":
+          typeid = 3;
+          break;
+        case "ETH":
+          typeid = 3;
+          break;
+        default:
+          console.error(`Invalid coin type: ${coin}`);
+          return;
+      }
+
+      await winGoController.handlingWinGo1P(typeid, bigtotal, smalltotal, result);
+    }
+
+    const [winGo1] = await connection.execute('SELECT * FROM `wingo` WHERE `game` = "wingo3" ORDER BY `id` DESC LIMIT 2', []);
+    io.emit("data-server", { data: winGo1 });
+    console.log("3min execution completed!");
+  });
+
+
   
-  // Reset the isProcessed flag after handlingWinGo1P is complete
-  // await connection.query("UPDATE wingo SET isProcessed = false WHERE game = 'wingo' ORDER BY id DESC LIMIT 1");
-});
+  cron.schedule("51 5 * * * *",async()=>{
+    console.log("running at 51st sec of minute");
+    Point5 = await winGoController.addWinGo(5);
 
-  cron.schedule("*/3 * * * *", async () => {
-    // await trxWingoController.addTrxWingo(3);  
-    // await trxWingoController.handlingTrxWingo1P(3);
-    // const [trxWingo] = await connection.execute(
-    //   `SELECT * FROM trx_wingo_game WHERE game = '${TRX_WINGO_GAME_TYPE_MAP.MIN_3}' ORDER BY id DESC LIMIT 2`,
-    //   [],
-    // );
-    // io.emit("data-server-trx-wingo", { data: trxWingo });
-    console.log("🔔 Running at 3rd second of every minute");
+    // Store data in ENDPOINT_DATA instead of emitting
+    ENDPOINT_DATA["5min"] = {
+      endPrices: Point5.endPrices,
+      startPrices: Point5.startPrices,
+      timestamp: Date.now(),
+    };
+    console.log("Stored endpoint data for 5min interval:", ENDPOINT_DATA["5min"]);
+  })
+  
+  cron.schedule("1 */5 * * * *", async () => {
+    // console.log("🔔 Running at 4min 59sec of every 5min interval");
+    // const Point = await winGoController.addWinGo(5);
 
-    setTimeout(() => {
-      console.log('Task runs at 3 min 1 sec interval');
-      io.emit("get3minStartPoint");
-      console.log("placed start point in local storage.");
-    }, 1000)
+    // ENDPOINT_DATA["5min"] = {
+    //   endPrices: Point.endPrices,
+    //   startPrices: Point.startPrices,
+    //   timestamp: Date.now(),
+    // };
+    // console.log("Stored endpoint data for 5min interval:", ENDPOINT_DATA["5min"]);
 
-    const Point=await winGoController.addWinGo(3);
-    io.emit("set3minEndPoint", Point.endPoint);
-    console.log("Sent 3min endpoint:", Point.endPoint);
+    for (const coin of coins) {
+      const startPoint = Point5.startPrices[coin];
+      const endPoint = Point5.endPrices[coin];
+      const bigtotal = Point5.bigTotal;
+      const smalltotal = Point5.smallTotal;
+      const result = Point5.result;
+      let typeid;
+      switch (coin) {
+        case "BTC":
+          typeid = 5;
+          break;
+        case "ADA":
+          typeid = 5;
+          break;
+        case "BNB":
+          typeid = 5;
+          break;
+        case "ETH":
+          typeid = 5;
+          break;
+        default:
+          console.error(`Invalid coin type: ${coin}`);
+          return;
+      }
 
-    console.log("🔔 Running at 60th second of every minute");
-    await winGoController.handlingWinGo1P(3,Point.startPoint,Point.endPoint,Point.bigTotal,Point.smallTotal);
-    const [winGo1] = await connection.execute(
-      'SELECT * FROM `wingo` WHERE `game` = "wingo3" ORDER BY `id` DESC LIMIT 2 ',
-      [],
-    );
-    const data = winGo1;
-    io.emit("data-server", { data: data });
+      await winGoController.handlingWinGo1P(typeid, bigtotal, smalltotal, result);
+    }
 
-
-
-    // await k5Controller.add5D(3);
-    // await k5Controller.handling5D(3);
-    // const [k5D] = await connection.execute(
-    //   "SELECT * FROM 5d WHERE `game` = 3 ORDER BY `id` DESC LIMIT 2 ",
-    //   [],
-    // );
-    // const data2 = k5D;
-    // io.emit("data-server-5d", { data: data2, game: "3" });
-
-    // await k3Controller.addK3(3);
-    // await k3Controller.handlingK3(3);
-    // const [k3] = await connection.execute(
-    //   "SELECT * FROM k3 WHERE `game` = 3 ORDER BY `id` DESC LIMIT 2 ",
-    //   [],
-    // );
-    // const data3 = k3;
-    // io.emit("data-server-k3", { data: data3, game: "3" });
-  });
-
-  cron.schedule("*/5 * * * *", async () => {
-    // await trxWingoController.addTrxWingo(5);
-    // await trxWingoController.handlingTrxWingo1P(5);
-    // const [trxWingo] = await connection.execute(
-    //   `SELECT * FROM trx_wingo_game WHERE game = '${TRX_WINGO_GAME_TYPE_MAP.MIN_5}' ORDER BY id DESC LIMIT 2`,
-    //   [],
-    // );
-    // io.emit("data-server-trx-wingo", { data: trxWingo });
-
-
-    console.log("🔔 Running at 5th second of every minute");
-
-    setTimeout(() => {
-      console.log('Task runs at 5 min 1 sec interval');
-      io.emit("get5minStartPoint");
-      console.log("placed start point in local storage.");
-    }, 1000)
-
-
-    const Point=await winGoController.addWinGo(5);
-    io.emit("set5minEndPoint", Point.endPoint);
-    console.log("Sent 5min endpoint:", Point.endPoint);
-    await winGoController.handlingWinGo1P(5,Point.startPoint,Point.endPoint,Point.bigTotal,Point.smallTotal);
-    const [winGo1] = await connection.execute(
-      'SELECT * FROM `wingo` WHERE `game` = "wingo5" ORDER BY `id` DESC LIMIT 2 ',
-      [],
-    );
-    const data = winGo1;
-    io.emit("data-server", { data: data });
+    const [winGo1] = await connection.execute('SELECT * FROM `wingo` WHERE `game` = "wingo5" ORDER BY `id` DESC LIMIT 2', []);
+    io.emit("data-server", { data: winGo1 });
 
     await k5Controller.add5D(5);
     await k5Controller.handling5D(5);
-    const [k5D] = await connection.execute(
-      "SELECT * FROM 5d WHERE `game` = 5 ORDER BY `id` DESC LIMIT 2 ",
-      [],
-    );
-    const data2 = k5D;
-    io.emit("data-server-5d", { data: data2, game: "5" });
+    const [k5D] = await connection.execute("SELECT * FROM 5d WHERE `game` = 5 ORDER BY `id` DESC LIMIT 2", []);
+    io.emit("data-server-5d", { data: k5D, game: "5" });
 
     await k3Controller.addK3(5);
     await k3Controller.handlingK3(5);
-    const [k3] = await connection.execute(
-      "SELECT * FROM k3 WHERE `game` = 5 ORDER BY `id` DESC LIMIT 2 ",
-      [],
-    );
-    const data3 = k3;
-    io.emit("data-server-k3", { data: data3, game: "5" });
+    const [k3] = await connection.execute("SELECT * FROM k3 WHERE `game` = 5 ORDER BY `id` DESC LIMIT 2", []);
+    io.emit("data-server-k3", { data: k3, game: "5" });
+
+    console.log("5min execution completed!");
   });
 
-  cron.schedule("*/10 * * * *", async () => {
-    // await trxWingoController.addTrxWingo(10);
-    // await trxWingoController.handlingTrxWingo1P(10);
-    // const [trxWingo] = await connection.execute(
-    //   `SELECT * FROM trx_wingo_game WHERE game = '${TRX_WINGO_GAME_TYPE_MAP.MIN_10}' ORDER BY id DESC LIMIT 2`,
-    //   [],
-    // );
-    // io.emit("data-server-trx-wingo", { data: trxWingo });
+  
+  cron.schedule("51 10 * * * *",async()=>{
+    console.log("running at 51st sec of minute");
+    Point10 = await winGoController.addWinGo(10);
 
+    // Store data in ENDPOINT_DATA instead of emitting
+    ENDPOINT_DATA["10min"] = {
+      endPrices: Point10.endPrices,
+      startPrices: Point10.startPrices,
+      timestamp: Date.now(),
+    };
+    console.log("Stored endpoint data for 10min interval:", ENDPOINT_DATA["10min"]);
+  })
 
-    console.log("🔔 Running at 10th second of every minute");
+ // For 10-minute interval (runs at 9:59, 19:59, 29:59, etc.)
+cron.schedule("1 */10 * * * *", async () => {
+  console.log("🔔 Running at 10min 1sec of every 10min interval");
+    // const Point = await winGoController.addWinGo(10);
 
-    setTimeout(() => {
-      console.log('Task runs at 10 min 1 sec interval');
-      io.emit("get10minStartPoint");
-      console.log("placed start point in local storage.");
-    }, 1000)
+    // ENDPOINT_DATA["10min"] = {
+    //   endPrices: Point.endPrices,
+    //   startPrices: Point.startPrices,
+    //   timestamp: Date.now(),
+    // };
+    // console.log("Stored endpoint data for 10min interval:", ENDPOINT_DATA["10min"]);
 
-    const Point=await winGoController.addWinGo(10);
-    io.emit("set10minEndPoint", Point.endPoint);
-    console.log("Sent 10min endpoint:", Point.endPoint);
-    await winGoController.handlingWinGo1P(10,Point.startPoint,Point.endPoint,Point.bigTotal,Point.smallTotal);
-    const [winGo1] = await connection.execute(
-      'SELECT * FROM `wingo` WHERE `game` = "wingo10" ORDER BY `id` DESC LIMIT 2 ',
-      [],
-    );
-    const data = winGo1;
-    io.emit("data-server", { data: data });
+    for (const coin of coins) {
+      const startPoint = Point10.startPrices[coin];
+      const endPoint = Point10.endPrices[coin];
+      const bigtotal = Point10.bigTotal;
+      const smalltotal = Point10.smallTotal;
+      const result = Point10.result;
+      let typeid;
+      switch (coin) {
+        case "BTC":
+          typeid = 10;
+          break;
+        case "ADA":
+          typeid = 10;
+          break;
+        case "BNB":
+          typeid = 10;
+          break;
+        case "ETH":
+          typeid = 10;
+          break;
+        default:
+          console.error(`Invalid coin type: ${coin}`);
+          return;
+      }
+
+      await winGoController.handlingWinGo1P(typeid, bigtotal, smalltotal, result);
+    }
+
+    const [winGo1] = await connection.execute('SELECT * FROM `wingo` WHERE `game` = "wingo10" ORDER BY `id` DESC LIMIT 2', []);
+    io.emit("data-server", { data: winGo1 });
 
     await k5Controller.add5D(10);
     await k5Controller.handling5D(10);
-    const [k5D] = await connection.execute(
-      "SELECT * FROM 5d WHERE `game` = 10 ORDER BY `id` DESC LIMIT 2 ",
-      [],
-    );
-    const data2 = k5D;
-    io.emit("data-server-5d", { data: data2, game: "10" });
+    const [k5D] = await connection.execute("SELECT * FROM 5d WHERE `game` = 10 ORDER BY `id` DESC LIMIT 2", []);
+    io.emit("data-server-5d", { data: k5D, game: "10" });
 
     await k3Controller.addK3(10);
     await k3Controller.handlingK3(10);
-    const [k3] = await connection.execute(
-      "SELECT * FROM k3 WHERE `game` = 10 ORDER BY `id` DESC LIMIT 2 ",
-      [],
-    );
-    const data3 = k3;
-    io.emit("data-server-k3", { data: data3, game: "10" });
+    const [k3] = await connection.execute("SELECT * FROM k3 WHERE `game` = 10 ORDER BY `id` DESC LIMIT 2", []);
+    io.emit("data-server-k3", { data: k3, game: "10" });
+
+    console.log("10min execution completed!");
   });
 
   cron.schedule("0 1 * * *", async () => {
@@ -261,11 +291,7 @@ cron.schedule("1 * * * * *", async () => {
     vipController.releaseVIPLevel();
   });
 
-  cron.schedule(
-    "0 0 * * *",
-    async () => await winGoController.distributeCommission(),
-  );
-  // cron.schedule('* * * * *', async () => await winGoController.distributeCommission());
+  cron.schedule("0 0 * * *", async () => await winGoController.distributeCommission());
 };
 
 const cronJobController = {

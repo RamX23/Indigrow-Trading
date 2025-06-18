@@ -41,12 +41,17 @@
           <!-- /.container-fluid -->
         </section>
 
-        <div class="form-group" style="text-align: center">
+        <div class="form-group" style="text-align: center; display: flex; justify-content: space-between; padding-inline: 1em;">
           <input
             type="text"
             id="search"
             placeholder="Enter the member you are looking for"
           />
+
+          <a href="/admin/manager/createUser">
+            <button>Create user</button>
+          </a>
+      
         </div>
 
         <!-- Main content -->
@@ -137,8 +142,12 @@
             <b class="${data.level == 1 ? "text-danger" : ""}">${data.level == 1 ? "ADMIN" : "USER"}</b>
           </td>
           <td>
-            <b>${data.money}</b>
-          </td>
+          <span class="amount-value" data-phone="${data.phone}" data-id="${data.id}">
+          <b>${data.money}</b>
+          <i class="fas fa-pencil-alt edit-icon" style="cursor: pointer;" id="${data.id}"></i>
+          </span>
+           </td>
+
           <td class="project-state">
             ${data.status == 1 ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-warning">Banned</span>'}
           </td>
@@ -195,6 +204,50 @@
             });
           }
         });
+
+        document.querySelectorAll('.edit-icon').forEach(icon => {
+  icon.addEventListener('click', function (event) {
+    const span = event.target.closest('.amount-value');
+    const id = span.dataset.id;
+    const currentAmount = span.querySelector('b').innerText.trim();
+
+    // Replace content with input and Save button
+    span.innerHTML = `
+  <input type="number" min="0" class="form-control form-control-sm amount-input" value="${currentAmount}" style="width: 80px; display: inline-block; margin-right: 5px;" />
+  <button class="btn btn-sm btn-success save-amount" data-id="${id}">Save</button>
+`;
+
+
+    // Handle Save
+    span.querySelector('.save-amount').addEventListener('click', function () {
+      const newAmount = span.querySelector('.amount-input').value;
+      const id = this.dataset.id;
+
+    
+  if (newAmount === "" || Number(newAmount) < 0) {
+   alert("Please enter a valid amount (0 or more).");
+   return;
+  }
+
+      $.ajax({
+        url: `/admin/manager/editAmount/${id}`,
+        type: 'PUT',
+        contentType: 'application/json',
+        data: JSON.stringify({ amount: newAmount }),
+        success: function (response) {
+          alert('Amount updated successfully!');
+          loadPage(pageno, searchMember); // reload updated data
+        },
+        error: function (err) {
+          alert('Failed to update amount.');
+          console.error(err);
+        }
+      });
+    });
+  });
+});
+
+
 
         $(".btn-info1").click(function (e) {
           e.preventDefault();

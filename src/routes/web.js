@@ -648,6 +648,11 @@ const initWebRouter = (app) => {
     winGoController.getStatsByGame,
   );
 
+  router.get(
+    "/api/webapi/getCurrentTime",
+    middlewareController,
+    winGoController.getCurrentTimeDigits,
+  )
   router.get('/api/webapi/period-stats/:period',middlewareController, winGoController.getStatsByTimePeriod);
 
   router.get('/api/webapi/overall-profit-loss/:period',middlewareController, winGoController.getOverallProfitOrLoss);
@@ -1110,6 +1115,7 @@ const initWebRouter = (app) => {
     adminController.middlewareAdminController,
     adminController.rechargePage,
   ); // get info account
+  
   router.get(
     "/admin/manager/withdraw",
     adminController.middlewareAdminController,
@@ -1145,6 +1151,17 @@ const initWebRouter = (app) => {
     "/admin/manager/editSubordinate/:phone",
     adminController.middlewareAdminController,
     adminController.editSubordinate,
+  )
+
+  router.put(
+    "/admin/manager/editAmount/:id",
+    adminController.middlewareAdminController,
+    adminController.editAmount
+  )
+  router.get(
+    "/admin/manager/createUser",
+    adminController.middlewareAdminController,
+    adminController.createUser,
   )
   router.get(
     "/admin/manager/statistical",
@@ -1203,6 +1220,13 @@ const initWebRouter = (app) => {
     adminController.middlewareAdminController,
     adminController.adminOverrideSubordinates,
   )
+
+  router.post(
+    "/api/webapi/admin/createUser",
+    adminController.middlewareAdminController,
+    adminController.register,
+  )
+
   router.post(
     "/api/webapi/admin/recharge",
     adminController.middlewareAdminController,

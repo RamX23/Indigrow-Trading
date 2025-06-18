@@ -536,14 +536,14 @@
 <body>
   <div data-v-6ab3f23e="" class="tabbar__container" style="--f13b4d11-currentFontFamily: 'Roboto', 'Inter', sans-serif;background-color: rgb(10, 24, 70);height:1.3rem;">
     <div onclick="location.href = '/home'" data-v-6ab3f23e="" class="tabbar__container-item home_tab_btn">
-      <svg data-v-6ab3f23e="" class="svg-icon icon-line-chart" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+      <svg data-v-6ab3f23e="" class="svg-icon icon-line-chart" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
         <path d="M3 3v18h18v-2H5V3H3zm16.293 4.707L16 5.414l-4.293 4.293-3-3L4 11.414 5.414 12.83 8.707 9.536l3 3L17.707 7.707z"/>
       </svg>
-      <span data-v-6ab3f23e="">Trade</span>
+      <span data-v-6ab3f23e="" ">Trade</span>
     </div>
 
     
-    <div onclick="location.href = '/chartView'" data-v-6ab3f23e="" class="tabbar__container-item" ">
+    <div onclick="location.href = '/chartView'" data-v-6ab3f23e="" class="tabbar__container-item history_tab_btn">
       
       <svg data-v-6ab3f23e="" class="svg-icon icon-history" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor" style="position: relative; top: 20%; margin-left: 8px;">
         <path d="M12 1a11 11 0 1 0 11 11A11.013 11.013 0 0 0 12 1Zm0 20a9 9 0 1 1 9-9 9.01 9.01 0 0 1-9 9Zm.5-13a1 1 0 0 0-1 1v4.586l3.707 3.707a1 1 0 0 0 1.414-1.414L12.5 12.586V9a1 1 0 0 0-1-1Z"/>
@@ -580,36 +580,43 @@
   <script>
     const TAB_LINK_MAP = {
       HOME: "/home",
-      Activity: "/activity",
-      wallet: "/wallet",
-      Account: "/mian",
-      // Promotion: "/promotion"
+      HISTORY: "/chartView",
+      ACTIVITY: "/activity/",
+      ACCOUNT: "/mian"
     };
 
     const initTabLinkHandler = () => {
+      // Remove active class from all tabs
       document.querySelectorAll(".tabbar__container-item").forEach(item => item.classList.remove("active"));
-      switch (window.location.pathname) {
-        case TAB_LINK_MAP.HOME:
-          document.querySelector(".home_tab_btn").classList.add("active");
-          break;
-        case TAB_LINK_MAP.Activity:
-          document.querySelector(".activity_tab_btn").classList.add("active");
-          break;
-        case TAB_LINK_MAP.Promotion:
-          document.querySelector(".tabbar__container-item:nth-of-type(3)").classList.add("active");
-          break;
-        case TAB_LINK_MAP.wallet:
-          document.querySelector(".wallet_tab_btn").classList.add("active");
-          break;
-        case TAB_LINK_MAP.Account:
-          document.querySelector(".account_tab_btn").classList.add("active");
-          break;
-        default:
-          break;
+
+      // Debug: Log current pathname
+      const pathname = window.location.pathname;
+      // console.log("Current pathname:", pathname);
+
+      // Apply active class based on pathname
+      const selectors = {
+        [TAB_LINK_MAP.HOME]: ".home_tab_btn",
+        [TAB_LINK_MAP.HISTORY]: ".history_tab_btn",
+        [TAB_LINK_MAP.ACTIVITY]: ".activity_tab_btn",
+        [TAB_LINK_MAP.ACCOUNT]: ".account_tab_btn"
+      };
+
+      const selector = selectors[pathname];
+      if (selector) {
+        const element = document.querySelector(selector);
+        if (element) {
+          element.classList.add("active");
+          // console.log("Active tab set:", selector);
+        } else {
+          console.log("Element not found for selector:", selector);
+        }
+      } else {
+        console.log("No matching path in TAB_LINK_MAP:", pathname);
       }
     };
 
-    initTabLinkHandler();
+    // Run when DOM is fully loaded
+    document.addEventListener("DOMContentLoaded", initTabLinkHandler);
   </script>
 </body>
 </html>

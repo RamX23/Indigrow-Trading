@@ -5,51 +5,54 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Popup Modal</title>
   <style>
-#popup_modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  background-color: rgba(0, 0, 0, 0.5); /* Optional: dim background */
-  z-index: 9999;
-}
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-/* This is the actual popup box */
-#popup_background {
-  background-color: #16719273;
-  border-radius: 10px;
-  padding: 20px;
-  max-width: 400px;
-  width: 90%;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
+    #popup_modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 9999;
+      padding: 20px;
+    }
+
+    #popup_background {
+      background-color: #16719273;
+      border-radius: 10px;
+      padding: 20px;
+      width: 100%;
+      max-width: 350px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: all 0.3s ease;
+      border: 2px solid blue;
+    }
 
     .popup-container {
       background: rgba(3, 28, 55, 0.95);
       border-radius: 16px;
-      padding: 20px;
-      width: 60%;
-      max-width: 280px;
+      border: 2px solid red;
+      width: 100%;
       color: #fff;
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
       text-align: center;
-      /* position: relative;
-      top: 30%;
-      left: 40%; */
     }
 
     .popup-header {
-      font-size: 24px;
+      font-size: clamp(18px, 5vw, 24px);
       font-weight: 600;
       margin-bottom: 16px;
-      color: #f9d423;
     }
 
     .popup-results {
@@ -57,7 +60,7 @@
       padding: 10px;
       border-radius: 10px;
       margin-bottom: 20px;
-      font-size: 16px;
+      font-size: clamp(14px, 4vw, 16px);
       display: flex;
       justify-content: space-between;
       font-weight: 500;
@@ -78,19 +81,18 @@
     }
 
     .popup-win-label {
-      font-size: 16px;
+      font-size: clamp(14px, 4vw, 16px);
       margin: 5px 0;
     }
 
     .popup-amount {
-      font-size: 30px;
+      font-size: clamp(24px, 8vw, 30px);
       font-weight: bold;
-      color: #f9d423;
       margin-bottom: 10px;
     }
 
     .popup-details {
-      font-size: 12px;
+      font-size: clamp(10px, 3vw, 12px);
       opacity: 0.8;
       font-weight: 600;
     }
@@ -99,7 +101,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 12px;
+      font-size: clamp(10px, 3vw, 12px);
       opacity: 0.75;
       margin-top: 15px;
     }
@@ -113,6 +115,7 @@
       cursor: pointer;
       width: 20px;
       height: 20px;
+      flex-shrink: 0;
     }
 
     .popup-close-icon {
@@ -126,14 +129,169 @@
     .popup-close-icon:hover {
       opacity: 1;
     }
+    
+    .result-symbol {
+      font-size: clamp(30px, 10vw, 40px);
+      margin-bottom: 10px;
+      display: inline-block;
+    }
+    
+    /* Win styles */
+    .win-bg {
+      background: rgba(6, 78, 59, 0.95);
+    }
+    .win-bg .popup-header {
+      color: #f9d423;
+    }
+    .win-bg .popup-amount {
+      color: #f9d423;
+    }
+    .win-bg .typeUp {
+      background: rgba(10, 200, 50, 0.3);
+    }
+    .win-bg .typeDown {
+      background: rgba(200, 10, 50, 0.3);
+    }
+    .win-bg .typeDraw {
+      background: rgba(10, 50, 200, 0.3);
+    }
+    
+    /* Loss styles */
+    .loss-bg {
+      background: rgba(78, 6, 6, 0.95);
+    }
+    .loss-bg .popup-header {
+      color: #ff4d4d;
+    }
+    .loss-bg .popup-amount {
+      color: #ff4d4d;
+    }
+    
+    /* Draw styles */
+    .draw-bg {
+      background: rgba(6, 6, 78, 0.95);
+    }
+    .draw-bg .popup-header {
+      color: #4d7dff;
+    }
+    .draw-bg .popup-amount {
+      color: #4d7dff;
+    }
+    
+    .timer-circle {
+      position: relative;
+      width: 40px;
+      height: 40px;
+      flex-shrink: 0;
+    }
+
+    .timer-circle svg {
+      transform: rotate(-90deg);
+    }
+
+    .timer-circle circle {
+      fill: none;
+      stroke-width: 4;
+      stroke-linecap: round;
+    }
+
+    .timer-circle .bg {
+      stroke: #eee;
+    }
+
+    .timer-circle .progress {
+      stroke: #00c853; /* green stroke color */
+      stroke-dasharray: 113.1; /* 2 * π * r = 2 * 3.14 * 18 */
+      stroke-dashoffset: 0;
+      transition: stroke-dashoffset 0.3s linear;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 400px) {
+      #popup_background {
+        padding: 15px;
+      }
+      
+      .popup-results {
+        padding: 8px;
+        margin-bottom: 15px;
+      }
+      
+      .popup-middle {
+        margin-bottom: 15px;
+      }
+      
+      .popup-footer {
+        margin-top: 10px;
+      }
+    }
+
+    @media (max-width: 300px) {
+      #popup_background {
+        padding: 10px;
+      }
+      
+      .popUp-header {
+        flex-direction: column;
+      }
+      
+      .popup-results {
+        flex-direction: column;
+        gap: 5px;
+        text-align: center;
+      }
+    }
+
+    /* Animations */
+    @keyframes bounce {
+      0%, 100% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-10px);
+      }
+    }
+    
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+    
+    @keyframes pulse {
+      0%, 100% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.1);
+      }
+    }
+    
+    .bounce {
+      animation: bounce 1.5s infinite;
+    }
+    
+    .spin {
+      animation: spin 2s linear infinite;
+    }
+    
+    .pulse {
+      animation: pulse 1.5s ease-in-out infinite;
+    }
   </style>
 </head>
 <body>
 
   <div id="popup_modal">
     <div id="popup_background" class="popup-container">
-      <div class="popup-header" id="popup_greeting_display">🎉 Congratulations</div>
-
+      <div class="popUp-header" style="display: flex; justify-content: center; align-items: center;">
+        <div class="result-symbol" id="result_symbol"></div>
+        <div class="popup-header" id="popup_greeting_display">Congratulations</div>
+      </div>
+      
       <div class="popup-results" id="lottery_results_box">
         <span>Trade Result:</span>
         <strong id="popup_bs_display">Up</strong>
@@ -144,12 +302,18 @@
         <div id="popup_win_symbol" class="popup-win-label">Winnings</div>
         <div id="popup_win_rupees_display" class="popup-amount">₹1.96</div>
         <div id="popup_game_details" class="popup-details">
-          Period: Win 1 minute 20240602011409
+          Trade: Win 1 minute 20240602011409
         </div>
       </div>
 
       <div class="popup-footer">
-        <span class="popup-note">Auto close in 3 seconds</span>
+        <div id="popup_timer_circle" class="timer-circle">
+          <svg width="40" height="40">
+            <circle class="bg" cx="20" cy="20" r="18"></circle>
+            <circle class="progress" cx="20" cy="20" r="18"></circle>
+          </svg>
+        </div>
+        
         <div class="closeBtn">
           <svg viewBox="0 0 24 24" class="popup-close-icon">
             <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 
@@ -162,8 +326,48 @@
     </div>
   </div>
 
-  <!-- Include jQuery -->
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
+  <!-- <script>
+    // Example of how to show the modal
+    $(document).ready(function() {
+      // Show modal for demonstration
+      $('#popup_modal').fadeIn();
+      
+      // Close modal when close button is clicked
+      $('.closeBtn').click(function() {
+        $('#popup_modal').fadeOut();
+      });
+      
+      // Close modal when clicking outside the content
+      $('#popup_modal').click(function(e) {
+        if (e.target === this) {
+          $(this).fadeOut();
+        }
+      });
+      
+      // Timer animation example
+      const circle = document.querySelector('.progress');
+      const radius = circle.r.baseVal.value;
+      const circumference = 2 * Math.PI * radius;
+      
+      circle.style.strokeDasharray = circumference;
+      
+      function setProgress(percent) {
+        const offset = circumference - (percent / 100) * circumference;
+        circle.style.strokeDashoffset = offset;
+      }
+      
+      // Example timer countdown
+      let timeLeft = 100;
+      const timer = setInterval(() => {
+        timeLeft -= 1;
+        setProgress(timeLeft);
+        if (timeLeft <= 0) {
+          clearInterval(timer);
+          $('#popup_modal').fadeOut();
+        }
+      }, 50);
+    });
+  </script> -->
 </body>
-</html> 
+</html>

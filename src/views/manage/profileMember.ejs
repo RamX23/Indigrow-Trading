@@ -348,6 +348,8 @@
                 }
             });
         });
+
+  
     </script>
     <!--Withdraw-->
 
@@ -521,6 +523,21 @@
                 }
             });
         });
+
+//      $.ajax({
+//   type: "GET",
+//   url: "/admin/getBalance",
+//   data: { phone: phone },
+//   dataType: "json",
+//   success: function (response) {
+//     console.log("Balance fetched successfully", response);
+//   },
+//   error: function (xhr, status, error) {
+//     console.error("Failed to fetch balance:", error);
+//     console.log("Server returned:", xhr.responseText);
+//   }
+// });
+
 
         $('#previousRedenvelope').click(function (e) {
             e.preventDefault();

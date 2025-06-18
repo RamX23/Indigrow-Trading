@@ -350,8 +350,10 @@ function showListOrder3(list_orders, x) {
                         </div>
                         <div data-v-a9660e98="" class="van-col van-col--5">
                             <div data-v-a9660e98="" class="c-tc goItem">
-                                <span data-v-a9660e98="" class="${list_orders.bet=== 'n' ? "red" : "green"}"> ${list_orders.bet =='n'  ? "Down" : "Up"} </span>
-                                <!---->
+                            <span data-v-a9660e98="" class="${list_orders.bet === 'n' ? 'red' : list_orders.bet === 'l' ? 'green' : 'gray'}">
+                            ${list_orders.bet === 'n' ? 'Down' : list_orders.bet === 'l' ? 'Up' : 'Draw'}
+                          </span>
+                                                          <!---->
                             </div>
                         </div>
                  

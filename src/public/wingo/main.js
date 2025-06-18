@@ -1,9 +1,9 @@
 const getGameType = () => {
-  const urlParams = new URLSearchParams(window.location.search);
+    const urlParams = new URLSearchParams(window.location.search);
 
-  $("#game_type_status").text(`${urlParams.get("game_type") || 1} MIN`);
+    $("#game_type_status").text(`${urlParams.get("game_type") || 1} MIN`);
 
-  return urlParams.get("game_type") || "1";
+    return urlParams.get("game_type") || "1";
 };
 
 let GAME_TYPE_ID = getGameType();
@@ -22,10 +22,10 @@ var audio2 = new Audio("/audio/di2.317de251.mp3");
 var clicked = false;
 
 function openAudio() {
-  audio1.muted = true;
-  audio1.play();
-  audio2.muted = true;
-  audio2.play();
+    audio1.muted = true;
+    audio1.play();
+    audio2.muted = true;
+    audio2.play();
 }
 
 // $("body").off("click.audio");
@@ -47,337 +47,451 @@ function openAudio() {
 // }
 
 const initAudio = () => {
-  const check_volume = localStorage.getItem("volume");
-  if (check_volume == "on") {
-    $("#audio_button").removeClass("disableVoice");
-  } else if (check_volume == "off") {
-    $("#audio_button").addClass("disableVoice");
-  } else {
-    localStorage.setItem("volume", "on");
-    $("#audio_button").removeClass("disableVoice");
-  }
+    const check_volume = localStorage.getItem("volume");
+    if (check_volume == "on") {
+        $("#audio_button").removeClass("disableVoice");
+    } else if (check_volume == "off") {
+        $("#audio_button").addClass("disableVoice");
+    } else {
+        localStorage.setItem("volume", "on");
+        $("#audio_button").removeClass("disableVoice");
+    }
 };
 
 initAudio();
 
-$("#audio_button").click(function (e) {
-  e.preventDefault();
-  const check_volume = localStorage.getItem("volume");
-  if (check_volume == "on") {
-    localStorage.setItem("volume", "off");
-  } else {
-    localStorage.setItem("volume", "on");
-  }
-  initAudio();
+$("#audio_button").click(function(e) {
+    e.preventDefault();
+    const check_volume = localStorage.getItem("volume");
+    if (check_volume == "on") {
+        localStorage.setItem("volume", "off");
+    } else {
+        localStorage.setItem("volume", "on");
+    }
+    initAudio();
 });
 
 function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
 }
+
+const socket=io();
+
+const TimeManager = {
+  currentGameType: getGameType(),
+  gameTimers: {},
+  
+  setGameType: function(type) {
+      this.currentGameType = `${type}min`;
+  },
+  
+  getCurrentGameTimer: function() {
+      // Returns current timer data for active game type
+      return this.gameTimers[this.currentGameType] || {
+          minute1: 0, // Tens place of minutes (unused in your case)
+          minute2: 0, // Single digit minutes
+          second1: 0, // Tens place of seconds
+          second2: 0, // Ones place of seconds
+          active: true
+      };
+  }
+};
+
+socket.on('timeUpdate', (data) => {
+  // Update TimeManager
+  TimeManager.currentTime = {
+    minute1: data.minute1,
+    minute2: data.minute2,
+    second1: data.second1,
+    second2: data.second2,
+    raw: new Date(data.timestamp)
+  };
+  
+  TimeManager.gameTimers = data.sessions;
+  
+  // Log each second change
+  if (!TimeManager.lastUpdate || 
+      TimeManager.lastUpdate.second2 !== data.second2) {
+    console.log(
+      `[TimeUpdate] New time received: ${data.minute1}${data.minute2}:${data.second1}${data.second2}`
+    );
+  }
+  
+  // Get current timer
+  const timer = TimeManager.getCurrentGameTimer();
+  
+  // Update UI
+  document.querySelectorAll('.bet-btn').forEach(btn => {
+    btn.disabled = !timer.active;
+  });
+});
 
 function countDownTimer({ GAME_TYPE_ID }) {
-  const getTimeMSS = (countDownDate) => {
-    var now = new Date().getTime();
-    var distance = countDownDate - now;
-    var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-    var minute = Math.ceil(minutes % parseInt(GAME_TYPE_ID));
-    var seconds1 = Math.floor((distance % (1000 * 60)) / 10000);
-    var seconds2 = Math.floor(((distance % (1000 * 60)) / 1000) % 10);
+    const getTimeMSS = (countDownDate) => {
+        var now = new Date().getTime();
+        // console.log(now);
+        var distance = countDownDate - now;
+        var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        var minute = Math.ceil(minutes % parseInt(GAME_TYPE_ID));
+        var seconds1 = Math.floor((distance % (1000 * 60)) / 10000);
+        var seconds2 = Math.floor(((distance % (1000 * 60)) / 1000) % 10);
 
-    return { minute, seconds1, seconds2 };
-  };
+        return { minute, seconds1, seconds2 };
+    };
 
-  var countDownDate = new Date("2030-07-16T23:59:59.9999999+03:00").getTime();
+    var countDownDate = new Date("2030-07-16T23:59:59.9999999+03:00").getTime();
 
-  countDownInterval1 = setInterval(function () {
-    const { minute, seconds1, seconds2, totalSeconds } = getTimeMSS(countDownDate);
+    countDownInterval1 = setInterval(function() {
+      console.log("Current time is",TimeManager.currentTime);
+        const { minute, seconds1, seconds2 } = getTimeMSS(countDownDate);
 
-    // Update timer display
-    if (GAME_TYPE_ID !== "1") {
-      $(".TimeLeft__C-time div:eq(1)").text(minute);
-    } else {
-      $(".TimeLeft__C-time div:eq(1)").text("0");
-    }
-    $(".TimeLeft__C-time div:eq(3)").text(seconds1);
-    $(".TimeLeft__C-time div:eq(4)").text(seconds2);
-  //  console.log(seconds1,":",seconds2)
-    // Disable betting buttons when 10 seconds or less remain
-    if (minute ==0 &&seconds1==0 && seconds2<=9) {
-      // alert("Button disabled");
-      $(".Betting__C-foot-b, .Betting__C-foot-s, #join_bet_btn").css({
-        "pointer-events": "none",
-        cursor: "not-allowed",
-        opacity: "0.6",
-      });
-    } else {
-      // Re-enable buttons when more than 5 seconds remain
-      // alert("button enabled")
-      $(".Betting__C-foot-b, .Betting__C-foot-s, #join_bet_btn").css({
-        "pointer-events": "auto",
-        cursor: "pointer",
-        opacity: "1",
-      });
-    }
-  }, 1000);
+        // Update timer display
+        if (GAME_TYPE_ID !== "1") {
+            $(".TimeLeft__C-time div:eq(1)").text(minute);
+        } else {
+            $(".TimeLeft__C-time div:eq(1)").text("0");
+        }
+        $(".TimeLeft__C-time div:eq(3)").text(seconds1);
+        $(".TimeLeft__C-time div:eq(4)").text(seconds2);
+        //  console.log(seconds1,":",seconds2)
+        // updateGameTypeText();
+        // Disable betting buttons when 10 seconds or less remain
+        if (minute == 0 && seconds1 == 0 && seconds2 <= 9) {
+            // alert("Button disabled");
+            $(".Betting__C-foot-b, .Betting__C-foot-s, #join_bet_btn").css({
+                "pointer-events": "none",
+                cursor: "not-allowed",
+                opacity: "0.6",
+            });
+        } else {
+            // Re-enable buttons when more than 5 seconds remain
+            // alert("button enabled")
+            $(".Betting__C-foot-b, .Betting__C-foot-s, #join_bet_btn").css({
+                "pointer-events": "auto",
+                cursor: "pointer",
+                opacity: "1",
+            });
+        }
+    }, 1000);
 
 
 
-  countDownInterval3 = setInterval(function () {
-    const { minute, seconds1, seconds2 } = getTimeMSS(countDownDate);
+    countDownInterval3 = setInterval(function() {
+        const { minute, seconds1, seconds2 } = getTimeMSS(countDownDate);
+        // updateGameTypeText();
+        if (minute == 0 && seconds1 == 0 && seconds2 <= 5) {
+            $(".van-overlay").fadeOut();
+            $(".popup-join").fadeOut();
 
-    if (minute == 0 && seconds1 == 0 && seconds2 <= 5) {
-      $(".van-overlay").fadeOut();
-      $(".popup-join").fadeOut();
-
-      $(".Betting__C-mark").css("display", "none");
-      // $(".Betting__C-mark div:eq(0)").text(seconds1);
-      // $(".Betting__C-mark div:eq(1)").text(seconds2);
-    } else {
-      $(".Betting__C-mark").css("display", "none");
-    }
-  }, 0);
+            $(".Betting__C-mark").css("display", "none");
+            // $(".Betting__C-mark div:eq(0)").text(seconds1);
+            // $(".Betting__C-mark div:eq(1)").text(seconds2);
+        } else {
+            $(".Betting__C-mark").css("display", "none");
+        }
+    }, 0);
 }
 
-$(document).ready(function () {
-  countDownTimer({ GAME_TYPE_ID });
+$(document).ready(function() {
+    countDownTimer({ GAME_TYPE_ID });
 });
 
 async function fetchAndDisplayPeriod() {
-  try {
-    const gameType = getGameType(); // Get current game type (1, 3, 5, or 10)
-    const response = await fetch(`/api/webapi/getPeriod/${gameType}`);
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch period');
+    try {
+        const gameType = getGameType(); // Get current game type (1, 3, 5, or 10)
+        const response = await fetch(`/api/webapi/getPeriod/${gameType}`);
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch period');
+        }
+
+        const data = await response.json(); // ✅ Await the parsed JSON data
+        // console.log("Fetched period:", data);
+
+        const period = data.period; // ✅ Access period from the JSON object
+        updatePeriodDisplay(period);
+    } catch (error) {
+        console.error('Error fetching period:', error);
+        updatePeriodDisplay("000000"); // Show default on error
     }
-
-    const data = await response.json();  // ✅ Await the parsed JSON data
-    console.log("Fetched period:", data);
-
-    const period = data.period;          // ✅ Access period from the JSON object
-    updatePeriodDisplay(period);
-  } catch (error) {
-    console.error('Error fetching period:', error);
-    updatePeriodDisplay("000000"); // Show default on error
-  }
 }
 
 
 function updatePeriodDisplay(period) {
-  // Update the period display in multiple places if needed
-  $(".period").text(period);
-  $("#current_period").text(period); // Add this element if needed
-  
-  // Also store it in localStorage for socket updates
-  localStorage.setItem("currentPeriod", period);
+    // Update the period display in multiple places if needed
+    $(".period").text(period);
+    $("#current_period").text(period); // Add this element if needed
+
+    // Also store it in localStorage for socket updates
+    localStorage.setItem("currentPeriod", period);
 }
 
+// Update game type text in the buttons
+// Update game type text in the buttons
+function updateGameTypeText() {
+    const gameTypeText = `${GAME_TYPE_ID} MIN`;
+
+    // Update the status display
+    $("#game_type_status").text(gameTypeText);
+
+    // Update the big/small button labels
+    $('.gameTypeBig').text(`(if the rate rises after ${GAME_TYPE_ID} min)`);
+    $('.gameTypeSmall').text(`(if the rate falls after ${GAME_TYPE_ID} min)`);
+
+    // Update any other elements that show game type
+    $('.current-game-type').text(gameTypeText);
+}
+
+// Call this function when initializing the game and when game type changes
+updateGameTypeText();
+
 const selectActiveClockByGameType = (GAME_TYPE_ID) => {
-  // Clear all existing intervals
-  clearInterval(countDownInterval1);
-  clearInterval(countDownInterval2);
-  clearInterval(countDownInterval3);
-  
-  // Remove all bet button event listeners
-  $('.Betting__C-foot-b, .Betting__C-foot-s').off('click');
-  
-  // Update game type
-  GAME_TYPE_ID = `${GAME_TYPE_ID}`;
-  GAME_NAME = GAME_TYPE_ID === "1" ? "wingo" : `wingo${GAME_TYPE_ID}`;
-  
-  // Update URL
-  window.history.pushState({}, "", `/wingo/?game_type=${GAME_TYPE_ID}`);
-  
-  fetchAndDisplayPeriod();
-  // Reinitialize game logic
-  initGameLogics({
-    GAME_TYPE_ID,
-    GAME_NAME,
-    // My_Bets_Pages,
-    Game_History_Pages,
-  });
-  
-  // Start new timer
-  countDownTimer({ GAME_TYPE_ID });
+    // Clear all existing intervals
+    clearInterval(countDownInterval1);
+    clearInterval(countDownInterval2);
+    clearInterval(countDownInterval3);
+
+    // Remove all bet button event listeners
+    $('.Betting__C-foot-b, .Betting__C-foot-s').off('click');
+
+    // Update game type
+    GAME_TYPE_ID = `${GAME_TYPE_ID}`;
+    GAME_NAME = GAME_TYPE_ID === "1" ? "wingo" : `wingo${GAME_TYPE_ID}`;
+
+    // Update URL
+    window.history.pushState({}, "", `/wingo/?game_type=${GAME_TYPE_ID}`);
+
+    selectActiveClock(GAME_TYPE_ID);
+    // Update the game type text immediately
+    updateGameTypeText();
+
+    fetchAndDisplayPeriod();
+    // Reinitialize game logic
+    initGameLogics({
+        GAME_TYPE_ID,
+        GAME_NAME,
+        Game_History_Pages,
+    });
+
+    // Start new timer
+
+    countDownTimer({ GAME_TYPE_ID });
+    // Force update of all UI elements
+    $(".gameTypeBig").text(`(if the rate rises after ${GAME_TYPE_ID} min)`);
+    $(".gameTypeSmall").text(`(if the rate falls after ${GAME_TYPE_ID} min)`);
+    $(".current-game-type").text(`${GAME_TYPE_ID} MIN`);
+
+    // Update the game type status display
+    $("#game_type_status").text(`${GAME_TYPE_ID} MIN`);
 };
 
 initGameLogics({ GAME_TYPE_ID, GAME_NAME, My_Bets_Pages, Game_History_Pages });
 
 fetch("/api/webapi/GetUserInfo")
-  .then((response) => response.json())
-  .then((data) => {
-    $(".Loading").fadeOut(0);
-    if (data.status === false) {
-      unsetCookie();
-      return false;
-    }
-    $("#balance_amount").text(`₹ ${formatIndianNumber(data.data.money_user)} `);
-    $("#bonus_balance_amount").text(
-      `₹ ${formatIndianNumber(data.data.bonus_money)} `,
-    );
-  });
-
-$(".reload_money").click(function (e) {
-  e.preventDefault();
-  $(this).addClass("action block-click");
-  setTimeout(() => {
-    $(this).removeClass("action block-click");
-  }, 3000);
-  fetch("/api/webapi/GetUserInfo")
     .then((response) => response.json())
     .then((data) => {
-      if (data.status === false) {
-        unsetCookie();
-        return false;
-      }
-      $("#balance_amount").text(
-        `₹ ${formatIndianNumber(data.data.money_user)} `,
-      );
-      $("#bonus_balance_amount").text(
-        `₹ ${formatIndianNumber(data.data.bonus_money)} `,
-      );
+        $(".Loading").fadeOut(0);
+        if (data.status === false) {
+            unsetCookie();
+            return false;
+        }
+
+        const balance = data.data.money_user;
+        const bonus = data.data.bonus_money;
+
+        // Update text
+        $("#balance_amount").text(`₹ ${formatIndianNumber(balance)} `);
+        $("#bonus_balance_amount").text(`₹ ${formatIndianNumber(bonus)} `);
+        $("#balance_amount").css("color", "white");
+
     });
+
+
+$(".reload_money").click(function(e) {
+    e.preventDefault();
+    $(this).addClass("action block-click");
+    setTimeout(() => {
+        $(this).removeClass("action block-click");
+    }, 3000);
+    fetch("/api/webapi/GetUserInfo")
+        .then((response) => response.json())
+        .then((data) => {
+            if (data.status === false) {
+                unsetCookie();
+                return false;
+            }
+            $("#balance_amount").text(
+                `₹ ${formatIndianNumber(data.data.money_user)} `,
+            );
+            $("#bonus_balance_amount").text(
+                `₹ ${formatIndianNumber(data.data.bonus_money)} `,
+            );
+        });
 });
 
 function drawChartLineInCanvas(topBoxNumber, bottomBoxNumber, canvasId) {
-  const myCanvas = document.getElementById(canvasId);
-  let boxXList = [10, 40, 70, 100, 128, 157, 186, 215, 244, 273];
-  const ctx0 = myCanvas.getContext("2d");
-  ctx0.strokeStyle = "#2b3270";
-  ctx0.beginPath();
-  ctx0.moveTo(boxXList[topBoxNumber], 21);
-  ctx0.lineTo(boxXList[bottomBoxNumber], 128);
-  ctx0.stroke();
+    const myCanvas = document.getElementById(canvasId);
+    let boxXList = [10, 40, 70, 100, 128, 157, 186, 215, 244, 273];
+    const ctx0 = myCanvas.getContext("2d");
+    ctx0.strokeStyle = "#2b3270";
+    ctx0.beginPath();
+    ctx0.moveTo(boxXList[topBoxNumber], 21);
+    ctx0.lineTo(boxXList[bottomBoxNumber], 128);
+    ctx0.stroke();
 }
 
 function selectActiveClock(currentTime) {
-  document.querySelector(".min_t_1").classList.remove("active");
-  document.querySelector(".min_t_3").classList.remove("active");
-  document.querySelector(".min_t_5").classList.remove("active");
-  document.querySelector(".min_t_10").classList.remove("active");
+    document.querySelector(".min_t_1").classList.remove("active");
+    document.querySelector(".min_t_3").classList.remove("active");
+    document.querySelector(".min_t_5").classList.remove("active");
+    document.querySelector(".min_t_10").classList.remove("active");
 
-  switch (parseInt(currentTime)) {
-    case 1:
-      document.querySelector(".min_t_1").classList.add("active");
-      break;
-    case 3:
-      document.querySelector(".min_t_3").classList.add("active");
-      break;
-    case 5:
-      document.querySelector(".min_t_5").classList.add("active");
-      break;
-    case 10:
-      document.querySelector(".min_t_10").classList.add("active");
-      break;
-    default:
-      throw new Error("Invalid time");
-  }
+    switch (parseInt(currentTime)) {
+        case 1:
+            document.querySelector(".min_t_1").classList.add("active");
+            break;
+        case 3:
+            document.querySelector(".min_t_3").classList.add("active");
+            break;
+        case 5:
+            document.querySelector(".min_t_5").classList.add("active");
+            break;
+        case 10:
+            document.querySelector(".min_t_10").classList.add("active");
+            break;
+        default:
+            throw new Error("Invalid time");
+    }
 }
 
 let autoCloseTimer = null;
 let countdownInterval = null;
-// const GAME_TYPE_ID = "Win"; // Set your game type ID as needed
 
 function showPopupModal() {
   $("#popup_modal").css("display", "flex");
 
-  let timeLeft = 3;
-  $("#popup_timer_note").text(`Auto close in ${timeLeft} seconds`);
+  // Reset and show circular timer
+  const circle = document.querySelector(".timer-circle .progress");
+  if (circle) {
+      circle.style.transition = "none";
+      circle.style.strokeDashoffset = "0";
 
+      // Trigger animation
+      setTimeout(() => {
+          circle.style.transition = "stroke-dashoffset 3s linear";
+          circle.style.strokeDashoffset = "113.1"; // full circle dash offset
+      }, 50);
+  }
+
+  // Clear previous timers
   clearInterval(countdownInterval);
-  countdownInterval = setInterval(() => {
-    timeLeft--;
-    if (timeLeft > 0) {
-      $("#popup_timer_note").text(`Auto close in ${timeLeft} seconds`);
-    } else {
-      clearInterval(countdownInterval);
-    }
-  }, 1000);
+  clearTimeout(autoCloseTimer);
 
-  if (autoCloseTimer) clearTimeout(autoCloseTimer);
-  autoCloseTimer = setTimeout(() => {
-    $("#popup_modal").hide();
-  }, 3000);
+  // autoCloseTimer = setTimeout(() => {
+  //     hidePopupModal();
+  // }, 10000);
 }
+
+
+function hidePopupModal() {
+  $("#popup_modal").fadeOut(300);
+  clearInterval(countdownInterval);
+  clearTimeout(autoCloseTimer);
+
+  // Reset circular timer
+  const circle = document.querySelector(".timer-circle .progress");
+  if (circle) {
+      circle.style.transition = "none";
+      circle.style.strokeDashoffset = "0";
+  }
+}
+
+
+// Close modal on close button click
+$(document).on('click', '.closeBtn', function () {
+    hidePopupModal();
+});
 
 function displayResultHandler({ status, amount, period, result }) {
-  if (typeof status === 'undefined' || typeof period === 'undefined') {
-    console.error("Missing required parameters in displayResultHandler");
-    return;
-  }
+    if (typeof status === 'undefined' || typeof period === 'undefined') {
+        console.error("Missing required parameters in displayResultHandler");
+        return;
+    }
 
-  let colorDisplay = "", bsDisplay = "", resultDisplay = "";
+    let bsDisplay = "", resultDisplay = "";
 
-  if (result === "d") {
-    colorDisplay = "Blue";
-    bsDisplay = "Draw";
-    resultDisplay = "Draw";
-  } else if (result === 'l') {
-    colorDisplay = "Green";
-    bsDisplay = "Up";
-    resultDisplay = "Up";
-  } else if (result === 'n') {
-    colorDisplay = "Red";
-    bsDisplay = "Down";
-    resultDisplay = "Down";
-  }
+    if (result === "d") {
+        bsDisplay = "Draw";
+        resultDisplay = "Draw";
+    } else if (result === 'l') {
+        bsDisplay = "Up";
+        resultDisplay = "Up";
+    } else if (result === 'n') {
+        bsDisplay = "Down";
+        resultDisplay = "Down";
+    }
 
-  $("#lottery_results_box")
-  .removeClass((index, className) =>
-    (className.match(/(^|\s)type\w+/g) || []).join(" ")
-  )
-  .addClass(`type${resultDisplay}`);
+    $("#lottery_results_box")
+        .removeClass((index, className) =>
+            (className.match(/(^|\s)type\w+/g) || []).join(" ")
+        )
+        .addClass(`type${resultDisplay}`);
 
-  $("#popup_bs_display").text(bsDisplay);
-  $("#popup_game_details").text(`Period: ${GAME_TYPE_ID} minute game ${period}`);
+    $("#popup_bs_display").text(bsDisplay);
+    $("#popup_game_details").text(`Trade: ${GAME_TYPE_ID} minute trade ${period}`);
 
-  const normalizedStatus = String(status).toLowerCase();
-  $("#popup_background").removeClass("win-bg loss-bg draw-bg");
+    const normalizedStatus = String(status).toLowerCase();
+    $("#popup_background").removeClass("win-bg loss-bg draw-bg");
+    $("#result_symbol").removeClass("bounce spin pulse");
 
-  if (normalizedStatus.includes('win')) {
-    $("#popup_win_rupees_display").text(`₹${parseFloat(amount).toFixed(2)}`);
-    $("#popup_greeting_display").text("🎉 Congratulations");
-    $("#popup_background").addClass("win-bg");
-    $("#popup_win_rupees_display, #popup_win_symbol").show();
-    $("#popup_loss_symbol").hide();
-  } else if (normalizedStatus.includes('loss')) {
-    $("#popup_greeting_display").text("😞 Sorry");
-    $("#popup_background").addClass("loss-bg");
-    $("#popup_win_rupees_display").text(`- ₹${parseFloat(amount).toFixed(2)}`);
-    $("#popup_win_symbol").hide();
-    $("#popup_loss_symbol").show();
-  } else if (normalizedStatus.includes('draw')) {
-    $("#popup_greeting_display").text("⚖️ Draw");
-    $("#popup_background").addClass("draw-bg");
-    $("#popup_win_rupees_display").text(`₹${parseFloat(amount).toFixed(2)}`);
-    $("#popup_win_rupees_display").show();
-    $("#popup_win_symbol").hide();
-    $("#popup_loss_symbol").hide();
-  }
+    if (normalizedStatus.includes('win')) {
+        $("#popup_win_rupees_display").text(`₹${parseFloat(amount).toFixed(2)}`);
+        $("#popup_greeting_display").text("Congratulations");
+        $("#result_symbol").html("🏆").addClass("bounce");
+        $("#popup_background").addClass("win-bg");
+        $("#popup_win_rupees_display, #popup_win_symbol").show();
+        $("#popup_loss_symbol").hide();
+    } else if (normalizedStatus.includes('loss')) {
+        $("#popup_greeting_display").text("Sorry");
+        $("#result_symbol").html("👎").addClass("pulse");
+        $("#popup_background").addClass("loss-bg");
+        $("#popup_win_rupees_display").text(`- ₹${parseFloat(amount).toFixed(2)}`);
+        $("#popup_win_symbol").hide();
+        $("#popup_loss_symbol").show();
+    } else if (normalizedStatus.includes('draw')) {
+        $("#popup_greeting_display").text("Draw");
+        $("#result_symbol").html("⚖️").addClass("spin");
+        $("#popup_background").addClass("draw-bg");
+        $("#popup_win_rupees_display").text(`₹${parseFloat(amount).toFixed(2)}`);
+        $("#popup_win_rupees_display").show();
+        $("#popup_win_symbol").hide();
+        $("#popup_loss_symbol").hide();
+    }
 
-  showPopupModal();
+    showPopupModal();
 }
 
-// Manual close
-$(document).ready(function () {
-  $(".closeBtn").click(function () {
-    $("#popup_modal").hide();
-    clearTimeout(autoCloseTimer);
-    clearInterval(countdownInterval);
-  });
+$(document).ready(function() {
+    $(".closeBtn").click(function() {
+        $("#popup_modal").hide();
+        // clearTimeout(3000);
+        // clearInterval(countdownInterval);
+    });
 });
 
 
 
-function showGameHistoryData(list_orders) {
-  const containerId = "#game_history_data_container";
+function showGameHistoryData(gameHistory) {
 
-  displayLast5Result({
-    results: list_orders.slice(0, 5).map((game) => game.amount),
-  });
+    const containerId = "#game_history_data_container";
+    // console.log(gameHistory);
 
-  if (list_orders.length == 0) {
-    return $(containerId).html(`
+    displayLast5Result({
+        results: gameHistory.slice(0, 5).map((game) => game.amount),
+    });
+
+    if (gameHistory.length == 0) {
+        return $(containerId).html(`
       <div data-v-a9660e98="" class="van-empty">
           <div class="van-empty__image">
               <img src="/images/empty-image-default.png" />
@@ -385,102 +499,110 @@ function showGameHistoryData(list_orders) {
           <p class="van-empty__description">No data</p>
       </div>
    `);
-  }
+    }
 
-  let html = list_orders
-    .map((list_order) => {
-      let colorHtml = "";
-      let colorClass = "";
-      if (list_order.amount == 0) {
-        colorClass = "mixedColor0";
-        colorHtml = `
-            <div data-v-c52f94a7="" class="GameRecord__C-origin-I red"></div>
-            <div data-v-c52f94a7="" class="GameRecord__C-origin-I violet"></div>
-            `;
-      } else if (list_order.amount == 5) {
-        colorClass = "mixedColor5";
-        colorHtml = `
-            <div data-v-c52f94a7="" class="GameRecord__C-origin-I green"></div>
-            <div data-v-c52f94a7="" class="GameRecord__C-origin-I violet"></div>
-            `;
-      } else if (list_order.amount % 2 == 0) {
-        colorClass = "defaultColor";
-        colorHtml = `
-            <div data-v-c52f94a7="" class="GameRecord__C-origin-I red"></div>
-            `;
-      } else {
-        colorClass = "greenColor";
-        colorHtml = `
-               <div data-v-c52f94a7="" class="GameRecord__C-origin-I green"></div>
-            `;
-      }
-  console.log(list_order);
-      
-  
-      return `
+    let html = gameHistory
+        .map((list_order) => {
+            let colorHtml = "";
+            let colorClass = "";
+            // if (list_order.amount == 0) {
+            //   colorClass = "mixedColor0";
+            //   colorHtml = `
+            //       <div data-v-c52f94a7="" class="GameRecord__C-origin-I red"></div>
+            //       <div data-v-c52f94a7="" class="GameRecord__C-origin-I violet"></div>
+            //       `;
+            // } else if (list_order.amount == 5) {
+            //   colorClass = "mixedColor5";
+            //   colorHtml = `
+            //       <div data-v-c52f94a7="" class="GameRecord__C-origin-I green"></div>
+            //       <div data-v-c52f94a7="" class="GameRecord__C-origin-I violet"></div>
+            //       `;
+            // } else if (list_order.amount % 2 == 0) {
+            //   colorClass = "defaultColor";
+            //   colorHtml = `
+            //       <div data-v-c52f94a7="" class="GameRecord__C-origin-I red"></div>
+            //       `;
+            // } else {
+            //   colorClass = "greenColor";
+            //   colorHtml = `
+            //          <div data-v-c52f94a7="" class="GameRecord__C-origin-I green"></div>
+            //       `;
+            // }
+            // console.log(list_order);
+
+
+            return `
          <div data-v-c52f94a7="" class="van-row"  style="background-color: #0d063db9;">
             <div data-v-c52f94a7="" class="van-col van-col--12">${list_order.period}</div>
            
-             <div data-v-c52f94a7="" class="van-col van-col--12"><span data-v-c52f94a7="">${list_order.bet === 'l' ? "Up" : list_order.bet === 'n' ? "Down" :"Draw"}</span></div>
+             <div data-v-c52f94a7="" class="van-col van-col--12"><span data-v-c52f94a7="">${list_order.result === 'l' ? "Up" : list_order.result === 'n' ? "Down" :"Draw"}</span></div>
         
          </div>`;
-    })
-    .join(" ");
+        })
+        .join(" ");
 
-  $(containerId).html(html);
+    $(containerId).html(html);
 }
 
 function showTrendData(list_orders) {
   const containerId = "#chart_container";
 
+  // ✅ Define this BEFORE any usage
+  const coinDisplayNames = {
+    BTC: "Bitcoin",
+    ETH: "Ethereum",
+    BNB: "Binance Coin",
+    ADA: "Cardano",
+    DOGE: "Dogecoin"
+  };
+
   if (list_orders.length == 0) {
     return $(containerId).html(`
-    <div data-v-a9660e98="" class="van-empty">
-      <div class="van-empty__image">
-        <img src="/images/empty-image-default.png" />
-      </div>
-      <p class="van-empty__description">No data</p>
-    </div>`);
+      <div data-v-a9660e98="" class="van-empty">
+        <div class="van-empty__image">
+          <img src="/images/empty-image-default.png" />
+        </div>
+        <p class="van-empty__description">No data</p>
+      </div>`);
   }
 
   const html = list_orders
     .map((order, index) => {
       const isBig = parseInt(order.amount) >= 5;
       const NumberList = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
-
       const isLastOrder = index === list_orders.length - 1;
 
       return `
-            <div data-v-54016b1c="" issuenumber="${order.period}" number="${order.amount}" colour="${isBig ? "red" : "green"}" rowid="${index}">
-               <div data-v-54016b1c="" class="van-row">
-                  <div data-v-54016b1c="" class="van-col van-col--8">
-                     <div data-v-54016b1c="" class="Trend__C-body2-IssueNumber">${order.period}</div>
-                  </div>
-                  <div data-v-54016b1c="" class="van-col van-col--16">
-                     <div data-v-54016b1c="" class="Trend__C-body2-Num">
-                        <canvas data-v-54016b1c="" canvas="" id="myCanvas${index}" class="line-canvas"></canvas>
-                        ${NumberList.map((number, index) => {
-                          return `<div data-v-54016b1c="" class="Trend__C-body2-Num-item ${order.amount == number ? `action${number}` : ""}">${number}</div>`;
-                        }).join(" ")}
-                        <div data-v-54016b1c="" class="Trend__C-body2-Num-BS ${isBig ? "isB" : ""}">${isBig ? "B" : "S"}</div>
-                     </div>
-                  </div>
-                ${
-                  isLastOrder
-                    ? ""
-                    : `
-                  <script>
-                     drawChartLineInCanvas(${order.amount},${list_orders[index + 1].amount}, "myCanvas${index}")
-                  </script>`
-                }
-               </div>
-            </div>`;
+        <div data-v-54016b1c="" issuenumber="${order.period}" number="${order.amount}" colour="${isBig ? "red" : "green"}" rowid="${index}">
+          <div data-v-54016b1c="" class="van-row">
+            <div data-v-54016b1c="" class="van-col van-col--8">
+              <div data-v-54016b1c="" class="Trend__C-body2-IssueNumber">${order.period}</div>
+              <div style="font-size: 0.9em; color: #bbb;">
+                ${coinDisplayNames[order.coinType] || order.coinType}
+              </div>
+            </div>
+            <div data-v-54016b1c="" class="van-col van-col--16">
+              <div data-v-54016b1c="" class="Trend__C-body2-Num">
+                <canvas data-v-54016b1c="" canvas="" id="myCanvas${index}" class="line-canvas"></canvas>
+                ${NumberList.map((number) => {
+                  return `<div data-v-54016b1c="" class="Trend__C-body2-Num-item ${order.amount == number ? `action${number}` : ""}">${number}</div>`;
+                }).join(" ")}
+                <div data-v-54016b1c="" class="Trend__C-body2-Num-BS ${isBig ? "isB" : ""}">${isBig ? "B" : "S"}</div>
+              </div>
+            </div>
+            ${
+              isLastOrder
+                ? ""
+                : `<script>drawChartLineInCanvas(${order.amount}, ${list_orders[index + 1].amount}, "myCanvas${index}")</script>`
+            }
+          </div>
+        </div>`;
     })
     .join(" ");
 
-  $(containerId).empty();
-  $(containerId).html(html);
+  $(containerId).empty().html(html);
 }
+
 
 let currentDisplay = "";
 function openGameBetDetails(index) {
@@ -496,8 +618,14 @@ function openGameBetDetails(index) {
 }
 
 function showMyBetsData(list_orders) {
+  const coinDisplayNames = {
+    BTC: "Binanca coin",
+    ETH: "Bitcoin SV",
+    BNB: "Uniswap",
+    ADA: "NEM(XEM)",
+  };
   const containerId = "#my_bets_data_container";
-  selectActiveClock(parseInt(GAME_TYPE_ID));
+  // selectActiveClock(parseInt(GAME_TYPE_ID));
   if (list_orders.length === 0) {
     return $(containerId).html(`
       <div data-v-a9660e98="" class="van-empty" style=""background: rgba(255, 255, 255, 0.1);">
@@ -509,6 +637,7 @@ function showMyBetsData(list_orders) {
     `);
   }
 
+  
   const html = list_orders
     .map((list_order, index) => {
       let join = list_order.bet;
@@ -587,6 +716,7 @@ function showMyBetsData(list_orders) {
         : ""
       }
       
+      
     
       <div style="margin-bottom: 10px; ">
         <strong>Order number:</strong>
@@ -596,7 +726,7 @@ function showMyBetsData(list_orders) {
       <div class="main-fields" style="display:flex; gap:2em; font-size:1.3em; font-weight:600;">
     
       <div style="margin-bottom: 10px;">
-        <strong>Period:</strong>
+        <strong>Trade:</strong>
         <span style="color:rgba(217, 211, 24, 1)">${list_order.stage}</span>
       </div>
 
@@ -604,24 +734,34 @@ function showMyBetsData(list_orders) {
       <strong>Status:</strong>
       <span style="color: ${
         list_order.status === 1
-          ? "#28a745"
+          ? "#28a745" 
           : list_order.status === 3
           ? "#ffc107"
           : "#dc3545"
       };">
-        ${
-          list_order.status === 1
-            ? "Success"
-            : list_order.status === 3
-            ? "Draw"
-            : "Failed"
-        }
+      ${
+        list_order.status === 1
+          ? "Success"
+          : list_order.status === 0
+          ? ""
+          : list_order.status === 3
+          ? "Draw"
+          : list_order.status === 2
+          ? "Failed"
+          : ""
+      }
+      
       </span>
     </div>
 
     </div>
     
-    
+    <div style="margin-bottom: 10px;">
+    <strong>Coin Type:</strong>
+    <span>${
+      coinDisplayNames[list_order.coinType] || list_order.coinType
+    }</span>
+  </div>
       <div style="margin-bottom: 10px;">
         <strong>Purchase amount:</strong>
         <span>₹${parseFloat(list_order.fee + list_order.money).toFixed(2)}</span>
@@ -654,18 +794,14 @@ function showMyBetsData(list_orders) {
           `
       }
     
+
       <div style="margin-bottom: 10px;">
-        <strong>Quantity:</strong>
-        <span>${parseFloat(list_order.amount).toFixed(2)}</span>
-      </div>
-    
-      <div style="margin-bottom: 10px;">
-        <strong>Amount after tax:</strong>
+        <strong>Amount after Broker Charges:</strong>
         <span style="color: #d9534f;">₹${parseFloat(list_order.money).toFixed(2)}</span>
       </div>
     
       <div style="margin-bottom: 10px;">
-        <strong>Tax:</strong>
+        <strong>Broker Charges:</strong>
         <span>₹${parseFloat(list_order.fee).toFixed(2)}</span>
       </div>
     
@@ -983,8 +1119,9 @@ function initGameLogics({
     
     $('#betAmountInput').on('change', function() {
         let value = parseInt($(this).val());
-        if (isNaN(value) || value < 1) {
-            $(this).val(1);
+        if (isNaN(value) || value < 20) {
+          alertMessage("Please enter amount greater then 20");
+            $(this).val(20);
         }
     });
     
@@ -1012,70 +1149,92 @@ function initGameLogics({
     
     // Function to place bet
     function placeBet(join) {
-        const betAmount = parseInt($('#betAmountInput').val());
-        console.log(betAmount);
-        const totalAmount = betAmount * currentMultiplier;
-        
-        if (!join || !betAmount || !currentMultiplier) {
-            alertMessage("Please enter valid bet details");
-            return;
-        }
-        
-        let currentStartPoint = JSON.parse(localStorage.getItem("startPoint"));
-        if (GAME_TYPE_ID === '1') {
-            currentStartPoint = JSON.parse(localStorage.getItem("startPoint"));
-        } else if (GAME_TYPE_ID === '3') {
-            currentStartPoint = JSON.parse(localStorage.getItem("3minStartPoint"));
-        } else if (GAME_TYPE_ID === '5') {
-            currentStartPoint = JSON.parse(localStorage.getItem("5minStartPoint"));
-        } else if (GAME_TYPE_ID === '10') {
-            currentStartPoint = JSON.parse(localStorage.getItem("10minStartPoint"));
-        }
-        
-        if (!currentStartPoint) {
-            alertMessage("Start point not available yet.");
-            return;
-        }
-        
-        const startPrice = currentStartPoint.price;
-        const coinType = getCoinType();
-        
-        // Disable buttons during request
-        $('.Betting__C-foot-b, .Betting__C-foot-s').addClass('block-click');
-        console.log(GAME_TYPE_ID);
-        $.ajax({
-            type: "POST",
-            url: "/api/webapi/action/join",
-            data: {
-                typeid: GAME_TYPE_ID,
-                join: join,
-                x: currentMultiplier,
-                money: betAmount,
-                startPrice,
-                coinType
-            },
-            dataType: "json",
-            success: function(response) {
-                alertMessage(response.message);
-                if (response.status === false) return;
-                
-                $("#balance_amount").text(`₹ ${formatIndianNumber(response.money)} `);
-                $("#bonus_balance_amount").text(`₹ ${formatIndianNumber(response.bonus_money)} `);
-                
-                initMyBets();
-                
-                socket.emit("data-server_2", {
-                    money: totalAmount,
-                    join,
-                    time: Date.now(),
-                    change: response.change,
-                });
-            },
-            complete: function() {
-                $('.Betting__C-foot-b, .Betting__C-foot-s').removeClass('block-click');
-            }
-        });
-    }
+      const betAmount = parseInt($('#betAmountInput').val());
+      // console.log(betAmount);
+      const totalAmount = betAmount * currentMultiplier;
+  
+      if (!join || !betAmount || !currentMultiplier) {
+          alertMessage("Please enter valid bet details");
+          return;
+      }
+  
+      // let currentStartPoint = JSON.parse(localStorage.getItem("startPoint"));
+      // if (GAME_TYPE_ID === '1') {
+      //     currentStartPoint = JSON.parse(localStorage.getItem("startPoint"));
+      // } else if (GAME_TYPE_ID === '3') {
+      //     currentStartPoint = JSON.parse(localStorage.getItem("3minStartPoint"));
+      // } else if (GAME_TYPE_ID === '5') {
+      //     currentStartPoint = JSON.parse(localStorage.getItem("5minStartPoint"));
+      // } else if (GAME_TYPE_ID === '10') {
+      //     currentStartPoint = JSON.parse(localStorage.getItem("10minStartPoint"));
+      // }
+  
+      // if (!currentStartPoint) {
+      //     alertMessage("Start point not available yet.");
+      //     return;
+      // }
+  
+      // Dynamically retrieve start point based on coinType and interval
+      const coinType = getCoinType(); // e.g., 'BTC', 'ETH', 'BNB', 'ADA'
+      const key = `startPoints_${GAME_TYPE_ID}min`;  // Dynamically created key (e.g., "startPoints_3min")
+  
+      // Retrieve the data from localStorage
+      const data = localStorage.getItem(key);
+  
+      // Check if data exists in localStorage
+      if (data) {
+          // Parse the JSON string into a JavaScript object
+          const parsedData = JSON.parse(data);
+  
+          // Access the price of the selected coin type dynamically
+          const coinPrice = parsedData[coinType]?.price;  // Access the price of the specific coin (e.g., BTC, ETH)
+  
+          if (!coinPrice) {
+              alertMessage(`${coinType} price not available.`);
+              return;
+          }
+  
+          // Log the coin price that will be used as the startPrice
+          // console.log(`${coinType} Price for ${GAME_TYPE_ID} interval:`, coinPrice);
+  
+          // Send the correct start point and coin price to the server
+          $.ajax({
+              type: "POST",
+              url: "/api/webapi/action/join",
+              data: {
+                  typeid: GAME_TYPE_ID,
+                  join: join,
+                  x: currentMultiplier,
+                  money: betAmount,
+                  startPrice: coinPrice,  // Send the selected coin's price as the start price
+                  coinType
+              },
+              dataType: "json",
+              success: function(response) {
+                  alertMessage(response.message);
+                  if (response.status === false) return;
+  
+                  $("#balance_amount").text(`₹ ${formatIndianNumber(response.money)} `);
+                  $("#bonus_balance_amount").text(`₹ ${formatIndianNumber(response.bonus_money)} `);
+  
+                  initMyBets();
+  
+                  socket.emit("data-server_2", {
+                      money: totalAmount,
+                      join,
+                      time: Date.now(),
+                      change: response.change,
+                  });
+              },
+              complete: function() {
+                  $('.Betting__C-foot-b, .Betting__C-foot-s').removeClass('block-click');
+              }
+          });
+      } else {
+          alertMessage("Data not available for the specified interval.");
+      }
+  }
+  
     
     // Helper function to show alert messages
     function alertMessage(text) {
@@ -1141,6 +1300,7 @@ function initGameLogics({
       success: function (response) {
         Game_History_Pages = response.page;
         let list_orders = response.data.gameslist;
+        let gameHistory=response.data.gameHistory;
         
         // $("#period").text(response.period);
 
@@ -1157,7 +1317,7 @@ function initGameLogics({
 
         $(".Loading").fadeOut(0);
 
-        showGameHistoryData(list_orders);
+        showGameHistoryData(gameHistory);
       },
     });
   };
@@ -1527,7 +1687,7 @@ function formatIndianNumber(num) {
   return formattedNum;
 }
 
-var socket = io();
+// var socket = io();
 var pageno = 0;
 var limit = 10;
 var page = 1;
@@ -1556,27 +1716,86 @@ function getCurrentPricePoint() {
     return null;
   }
 
+  const now = new Date();
+  now.setSeconds(1, 0); // Align to 1st second
+  const timestamp = now.getTime();
+
   const result = {
     coin: currentCoin,
     price: parseFloat(currentPrice.toFixed(2)),
-    timestamp: Date.now()
+    timestamp: timestamp
   };
 
-  console.log("Current price returned", result.coin, result.price);
+  console.log("Current price returned", result.coin, result.price, new Date(result.timestamp));
   return result;
 }
 
 
 let currentStartPoint = null;
 
-socket.on("getStartPoint", () => {
-  const point = getCurrentPricePoint();
-  if (point) {
-    localStorage.setItem("startPoint", JSON.stringify(point)); 
-    console.log("Start point set.", point);
-  }
+
+
+socket.on('startPointsData', (data) => {
+  console.log("Start Point received from server", data);
+  // Adjust timestamp to align with 1st second
+  const adjustedPoints = {};
+  Object.keys(data.points).forEach(coin => {
+    adjustedPoints[coin] = {
+      ...data.points[coin],
+      timestamp: Math.floor(data.points[coin].timestamp / 1000) * 1000 + 1000 // Align to 1st second
+    };
+  });
+  localStorage.setItem(`startPoints_${data.session}`, JSON.stringify(adjustedPoints));
 });
 
+// Define updateLiveGames function to handle session updates
+function updateLiveGames(session, data) {
+  try {
+    // Adjust timestamp to align with 1st second
+    const now = new Date(data.timestamp);
+    now.setSeconds(1, 0);
+    const adjustedTimestamp = now.getTime();
+
+    localStorage.setItem(`startPoints_${session}`, JSON.stringify(data));
+    
+    if (data.active) {
+      sessionLines[session] = {
+        startTime: adjustedTimestamp,
+        endTime: adjustedTimestamp + GAME_SESSIONS[session].duration,
+        price: data.price,
+        duration: session
+      };
+    } else {
+      sessionLines[session] = null;
+    }
+
+    const currentSession = getCurrentGameSession();
+    if (session === currentSession && window.chart) {
+      updateChart();
+    }
+
+    if (data.period) {
+      updatePeriodDisplay(data.period);
+    }
+
+    console.log(`Session ${session} updated with data:`, sessionLines[session]);
+  } catch (error) {
+    console.error('Error in updateLiveGames:', error);
+  }
+}
+
+
+socket.on('sessionUpdate', (update) => {
+  console.log("Session Update received from server", update);
+  if (update.type === 'START_POINTS') {
+    // Adjust timestamp to align with 1st second
+    const adjustedData = {
+      ...update.data,
+      timestamp: Math.floor(update.data.timestamp / 1000) * 1000 + 1000 // Align to 1st second
+    };
+    updateLiveGames(update.session, adjustedData);
+  }
+});
 // $(document).ready(() => {
 //   const storedPeriod = JSON.parse(localStorage.getItem("period"));
 //   if (storedPeriod) {
@@ -1632,7 +1851,7 @@ socket.on("data-server", async function (msg) {
     //   console.log("End Point received",point);
     // }
     GAME_TYPE_ID = getGameType();
-   console.log(GAME_NAME);
+  //  console.log(GAME_NAME);
     if (msg.data[0].game != GAME_NAME) {
       return;
     }
@@ -1699,13 +1918,7 @@ socket.on("data-server", async function (msg) {
           result: lastGame?.result,
         });
       }
-    } else {
-      // displayResultHandler({
-      //    status: STATUS_MAP.NONE,
-      //    period: lastGame?.period,
-      //    result: lastGame?.amount,
-      // });
-    }
+    } 
 
     $("#period").text(gameDataResponse.data.period);
     $("#number_result__gameHistory").text(`1/${gameDataResponse.data.page}`);
@@ -1801,11 +2014,19 @@ socket.on('initialData', (data) => {
   // Update session lines
   Object.keys(data.sessions).forEach(session => {
     const sessionData = data.sessions[session];
-    // console.log(sessionData);
+    console.log(sessionData);
     if (sessionData.active) {
+      // Calculate the end time based on current client time and timeLeft
+      const endTime = Date.now() + sessionData.timeLeft;
+    
+      // Calculate the start time and align it to :01 seconds
+      const duration = GAME_SESSIONS[session].duration;
+      const startTime = new Date(endTime - duration);
+      startTime.setSeconds(1, 0); // Force seconds to 01.000
+    
       sessionLines[session] = {
-        startTime: Date.now() - (GAME_SESSIONS[session].duration - sessionData.timeLeft),
-        endTime: Date.now() + sessionData.timeLeft,
+        startTime: startTime.getTime(),
+        endTime: endTime,
         price: sessionData.price,
         duration: session
       };
@@ -1829,6 +2050,10 @@ socket.on('initialData', (data) => {
   }
 });
 
+// socket.on("setStartPoint",(Point)=>{
+//     console.log("startPoint received",Point);
+// })
+
 // Handle price updates from server
 socket.on('priceUpdate', (update) => {
   // Update coin data
@@ -1837,7 +2062,6 @@ socket.on('priceUpdate', (update) => {
       x: update.timestamp,
       y: update.prices[coin]
     });
-    // console.log(update);
     // Remove data older than 24 hours
     const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
     coinData[coin] = coinData[coin].filter(point => point.x >= oneDayAgo);
@@ -1846,11 +2070,14 @@ socket.on('priceUpdate', (update) => {
   // Update session lines from server
   Object.keys(update.sessions).forEach(session => {
     const sessionData = update.sessions[session];
-    // console.log(sessionData);
     if (sessionData.active) {
+      // Modified to start at 1st second of the minute
+      const now = new Date(update.timestamp);
+      const startAtFirstSecond = new Date(now).setSeconds(0, 0);
+      
       sessionLines[session] = {
-        startTime: update.timestamp - (GAME_SESSIONS[session].duration - sessionData.timeLeft),
-        endTime: update.timestamp + sessionData.timeLeft,
+        startTime: startAtFirstSecond,
+        endTime: startAtFirstSecond + GAME_SESSIONS[session].duration,
         price: sessionData.price,
         duration: session
       };
@@ -1871,7 +2098,6 @@ socket.on('priceUpdate', (update) => {
     updateChart();
   }
 });
-
 // Handle end point setting confirmation
 socket.on('endPointSet', ({ session, coin, price, startTime, duration }) => {
   sessionLines[session] = {
@@ -1881,7 +2107,7 @@ socket.on('endPointSet', ({ session, coin, price, startTime, duration }) => {
     duration: session
   };
   
-  console.log(`${session} end point set at ${price} for ${coin}`);
+  // console.log(`${session} end point set at ${price} for ${coin}`);
   
   // Disable buttons when end point is set (last minute of session)
   const getTimeMSS = (countDownDate) => {
@@ -1891,11 +2117,9 @@ socket.on('endPointSet', ({ session, coin, price, startTime, duration }) => {
     var minute = Math.ceil(minutes % parseInt(GAME_TYPE_ID));
     var seconds1 = Math.floor((distance % (1000 * 60)) / 10000);
     var seconds2 = Math.floor(((distance % (1000 * 60)) / 1000) % 10);
-    var totalSeconds = Math.floor(distance / 1000);
 
-    return { minute, seconds1, seconds2, totalSeconds };
+    return { minute, seconds1, seconds2 };
   };
-
 
 
   if (session === getCurrentGameSession()) {
@@ -1924,446 +2148,795 @@ let hasUserScrolled = false; // Tracks if the user has scrolled the chart
 // Initialize chart with session line plugin
 function initializeChart() {
   const canvas = document.getElementsByClassName('priceChart')[0];
+  console.log(canvas);
   const ctx = canvas.getContext('2d');
   
+  // Variables for drag scrolling
+  let isDraggingChart = false;
+  let lastDragPosition = null;
+  let dragStartX = null;
+
   // Session line plugin
-
-
   function getSessionStartPrice(coin, sessionStartTime) {
     try {
-        if (!coinData || !coinData[coin] || !Array.isArray(coinData[coin])) {
-            console.warn('Invalid coin data structure');
-            return null;
-        }
-        
-        const dataPoints = coinData[coin];
-        if (dataPoints.length === 0) return null;
-        
-        // Find the data point closest to the session start time
-        let closestPoint = null;
-        let minDiff = Infinity;
-        
-        for (const point of dataPoints) {
-            // Skip invalid points
-            if (!point || point.x === undefined || point.y === undefined) continue;
-            
-            const diff = Math.abs(point.x - sessionStartTime);
-            if (diff < minDiff) {
-                minDiff = diff;
-                closestPoint = point;
-            }
-        }
-        
-        return closestPoint ? closestPoint.y : null;
-    } catch (error) {
-        console.error('Error in getSessionStartPrice:', error);
+      if (!coinData || !coinData[coin] || !Array.isArray(coinData[coin])) {
+        console.warn('Invalid coin data structure');
         return null;
-    }
-}
-
-const sessionLinePlugin = {
-  id: 'sessionLine',
-  afterDatasetsDraw(chart) {
-    try {
-      const ctx = chart.ctx;
-      const xAxis = chart.scales.x;
-      const yAxis = chart.scales.y;
-      const chartArea = chart.chartArea;
-      
-      // Get current coin from select element
-      const coinSelect = document.getElementById('coinSelect');
-      const currentCoin = coinSelect ? coinSelect.value : 'BTC';
-      
-      // Safety check
-      if (!coinData || !coinData[currentCoin]) {
-        console.warn('Coin data not available for', currentCoin);
-        return;
       }
       
-      // Get the current game type duration in milliseconds
-      const gameType = getGameType();
-      let sessionDuration;
-      switch(gameType) {
-        case '1': sessionDuration = 60 * 1000; break;
-        case '3': sessionDuration = 180 * 1000; break;
-        case '5': sessionDuration = 300 * 1000; break;
-        case '10': sessionDuration = 600 * 1000; break;
-        default: sessionDuration = 60 * 1000;
+      const dataPoints = coinData[coin];
+      if (dataPoints.length === 0) return null;
+      
+      // Find the data point closest to the session start time
+      let closestPoint = null;
+      let minDiff = Infinity;
+      
+      for (const point of dataPoints) {
+        // Skip invalid points
+        if (!point || point.x === undefined || point.y === undefined) continue;
+        
+        const diff = Math.abs(point.x - sessionStartTime);
+        if (diff < minDiff) {
+          minDiff = diff;
+          closestPoint = point;
+        }
       }
       
-      // Get the current time and calculate session start time
-      const now = Date.now();
-      const sessionStartTime = now - (now % sessionDuration);
-      
-      // Only draw if the session start is in the visible range
-      if (sessionStartTime < xAxis.min || sessionStartTime > xAxis.max) {
-        return;
-      }
-      
-      // Get the start price for this session with safety checks
-      const startPrice = getSessionStartPrice(currentCoin, sessionStartTime);
-      if (startPrice === null || startPrice === undefined) {
-        console.warn('Could not determine session start price');
-        return;
-      }
-      
-      // Draw the session start point
-      ctx.save();
-      
-      const x = xAxis.getPixelForValue(sessionStartTime);
-      const y = yAxis.getPixelForValue(startPrice);
-      
-      // Draw a yellow circle at the session start point
-      ctx.beginPath();
-      ctx.arc(x, y, 3, 0, Math.PI * 2);
-      ctx.fillStyle = 'yellow';
-      ctx.fill();
-      ctx.strokeStyle = 'rgba(0,0,0,0.5)';
-      ctx.lineWidth = 1;
-      ctx.stroke();
-      
-      // Add label near the point
-      ctx.fillStyle = 'yellow';
-      ctx.font = 'bold 12px Arial';
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'bottom';
-      ctx.fillText('Session Start', x + 10, y - 5);
-      
-      ctx.restore();
+      return closestPoint ? closestPoint.y : null;
     } catch (error) {
-      console.error('Error in sessionLinePlugin:', error);
+      console.error('Error in getSessionStartPrice:', error);
+      return null;
     }
   }
-};
 
-  function countDownTimer({ GAME_TYPE_ID }) {
-    const getTimeMSS = (countDownDate) => {
-      var now = new Date().getTime();
-      var distance = countDownDate - now;
-      var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-      var minute = Math.ceil(minutes % parseInt(GAME_TYPE_ID));
-      var seconds1 = Math.floor((distance % (1000 * 60)) / 10000);
-      var seconds2 = Math.floor(((distance % (1000 * 60)) / 1000) % 10);
-      var totalSeconds = Math.floor(distance / 1000);
-  
-      return { minute, seconds1, seconds2, totalSeconds };
-    };
-  
-    var countDownDate = new Date("2030-07-16T23:59:59.9999999+03:00").getTime();
-  
-    countDownInterval1 = setInterval(function () {
-      const { minute, seconds1, seconds2, totalSeconds } = getTimeMSS(countDownDate);
-      
-      // Update timer display
-      if (GAME_TYPE_ID !== "1") {
-        $(".TimeLeft__C-time div:eq(1)").text(minute);
-      } else {
-        $(".TimeLeft__C-time div:eq(1)").text("0");
+  const sessionLinePlugin = {
+    id: 'sessionLine',
+    afterDatasetsDraw(chart) {
+      try {
+        const ctx = chart.ctx;
+        const xAxis = chart.scales.x;
+        const yAxis = chart.scales.y;
+        
+        // Get current coin from select element
+        const coinSelect = document.getElementById('coinSelect');
+        const currentCoin = coinSelect ? coinSelect.value : 'BTC';
+        
+        // Get the current game type duration in milliseconds
+        const gameType = getGameType();
+        let sessionDuration;
+        switch(gameType) {
+          case '1': sessionDuration = 60 * 1000; break;
+          case '3': sessionDuration = 180 * 1000; break;
+          case '5': sessionDuration = 300 * 1000; break;
+          case '10': sessionDuration = 600 * 1000; break;
+          default: sessionDuration = 60 * 1000;
+        }
+        
+        // Calculate session start and end time
+        const now = new Date();
+        now.setSeconds(1, 0);
+        const sessionStartTime = Math.floor(now.getTime() / sessionDuration) * sessionDuration + 1000;
+        const sessionEndTime = sessionStartTime + sessionDuration;
+        
+        // Add 1 second (1000ms) to the session start time
+        // const adjustedSessionStartTime = sessionStartTime + 1000;
+        
+        // Only draw if any part of the session is in the visible range
+        if (sessionEndTime < xAxis.min || sessionStartTime > xAxis.max) {
+          return; 
+        }
+        
+        // Get the start price for this session
+        const startPrice = getSessionStartPrice(currentCoin,sessionStartTime);
+        if (startPrice === null || startPrice === undefined) {
+          console.warn('Could not determine session start price');
+          return;
+        }
+        
+        // Draw the session line
+        ctx.save();
+        
+        // Calculate the visible start and end points
+        const visibleStartX = Math.max(xAxis.getPixelForValue(sessionStartTime), xAxis.left);
+        const visibleEndX = Math.min(xAxis.getPixelForValue(sessionEndTime), xAxis.right);
+        const y = yAxis.getPixelForValue(startPrice);
+        
+        // Draw the horizontal line for the entire session duration
+        ctx.beginPath();
+        ctx.moveTo(visibleStartX, y);
+        ctx.lineTo(visibleEndX, y);
+        ctx.strokeStyle = 'rgba(255, 255, 0, 0.5)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        // Draw a yellow circle at the session start point
+        ctx.beginPath();
+        ctx.arc(visibleStartX, y, 5, 0, Math.PI * 2);
+        ctx.fillStyle = 'yellow';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        
+        // Add label near the start point
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 12px Arial';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText('Session Price', visibleStartX + 10, y - 5);
+        
+        ctx.restore();
+      } catch (error) {
+        console.error('Error in sessionLinePlugin:', error);
       }
-      $(".TimeLeft__C-time div:eq(3)").text(seconds1);
-      $(".TimeLeft__C-time div:eq(4)").text(seconds2);
-  
-      // Disable betting buttons in last 10 seconds
-      if (totalSeconds <= 10) {
-        $(".bet_button, #join_bet_btn").css({
-          "pointer-events": "none",
-          "cursor": "not-allowed",
-          "opacity": "0.6"
-        });
-      } else {
-        // Re-enable buttons when not in last 10 seconds
-        $(".bet_button, #join_bet_btn").css({
-          "pointer-events": "auto",
-          "cursor": "pointer",
-          "opacity": "1"
-        });
-      }
-    }, 1000); // Update every second for smoother button control
-  
-    countDownInterval3 = setInterval(function () {
-      const { minute, seconds1, seconds2 } = getTimeMSS(countDownDate);
-  
-      if (minute == 0 && seconds1 == 0 && seconds2 <= 5) {
-        $(".van-overlay").fadeOut();
-        $(".popup-join").fadeOut();
-        $(".Betting__C-mark").css("display", "none");
-      } else {
-        $(".Betting__C-mark").css("display", "none");
-      }
-    }, 1000); // Adjusted to 1 second for consistency
-  }
+    }
+  };
   
   const trackingLinePlugin = {
     id: 'trackingLine',
     afterDatasetsDraw(chart) {
-        const ctx = chart.ctx;
-        const dataset = chart.data.datasets[0];
-        const meta = chart.getDatasetMeta(0);
-        const yAxis = chart.scales.y;
-        
-        if (!dataset.data.length) return;
+      const ctx = chart.ctx;
+      const dataset = chart.data.datasets[0];
+      const meta = chart.getDatasetMeta(0);
+      const yAxis = chart.scales.y;
+      
+      if (!dataset.data.length) return;
 
-        const lastIndex = dataset.data.length - 1;
-        const lastPoint = meta.data[lastIndex];
-        if (!lastPoint) return;
+      const lastIndex = dataset.data.length - 1;
+      const lastPoint = meta.data[lastIndex];
+      if (!lastPoint) return;
 
-        const currentPrice = dataset.data[lastIndex].y;
-        const priceText = currentPrice.toFixed(2);
-        const x = lastPoint.x;
-        const y = lastPoint.y;
-        const chartArea = chart.chartArea;
+      const currentPrice = dataset.data[lastIndex].y;
+      const priceText = currentPrice.toFixed(2);
+      const x = lastPoint.x;
+      const y = lastPoint.y;
+      const chartArea = chart.chartArea;
 
-        ctx.save();
+      ctx.save();
 
-        // Draw tracking lines (added back)
-        ctx.strokeStyle = coinConfigs[currentCoin].color;
-        ctx.lineWidth = 1;
-        ctx.setLineDash([3, 3]);
-        ctx.globalAlpha = 0.3;
-        
-        // Vertical line
-        ctx.beginPath();
-        ctx.moveTo(x, chartArea.top);
-        ctx.lineTo(x, chartArea.bottom);
-        ctx.stroke();
-        
-        // Horizontal line
-        ctx.beginPath();
-        ctx.moveTo(chartArea.left, y);
-        ctx.lineTo(chartArea.right, y);
-        ctx.stroke();
+      // Draw tracking lines (added back)
+      ctx.strokeStyle = coinConfigs[currentCoin].color;
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3, 3]);
+      ctx.globalAlpha = 1;
+      
+      // Vertical line
+      ctx.beginPath();
+      ctx.moveTo(x, chartArea.top);
+      ctx.lineTo(x, chartArea.bottom);
+      ctx.stroke();
+      
+      // Horizontal line
+      ctx.beginPath();
+      ctx.moveTo(chartArea.left, y);
+      ctx.lineTo(chartArea.right, y);
+      ctx.stroke();
 
-        // Draw capsule-shaped indicator (unchanged)
-        const textWidth = ctx.measureText(priceText).width;
-        const capsuleWidth = textWidth + 16;
-        const capsuleHeight = 24;
-        const radius = capsuleHeight / 2;
-        const capsuleX = chart.chartArea.right + 50;
-        const capsuleY = y;
-        
-        ctx.globalAlpha = 1;
-        ctx.fillStyle = coinConfigs[currentCoin].color;
-        ctx.beginPath();
-        ctx.arc(capsuleX - capsuleWidth/2 + radius, capsuleY, radius, Math.PI/2, Math.PI*3/2);
-        ctx.arc(capsuleX + capsuleWidth/2 - radius, capsuleY, radius, Math.PI*3/2, Math.PI/2);
-        ctx.closePath();
-        ctx.fill();
+      // Draw capsule-shaped indicator (unchanged)
+      const textWidth = ctx.measureText(priceText).width;
+      const capsuleWidth = textWidth + 16;
+      const capsuleHeight = 24;
+      const radius = capsuleHeight / 2;
+      const capsuleX = chart.chartArea.right + 50;
+      const capsuleY = y;
+      
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = coinConfigs[currentCoin].color;
+      ctx.beginPath();
+      ctx.arc(capsuleX - capsuleWidth/2 + radius, capsuleY, radius, Math.PI/2, Math.PI*3/2);
+      ctx.arc(capsuleX + capsuleWidth/2 - radius, capsuleY, radius, Math.PI*3/2, Math.PI/2);
+      ctx.closePath();
+      ctx.fill();
 
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 12px Arial';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(priceText, capsuleX, capsuleY);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 12px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(priceText, capsuleX, capsuleY);
 
-        // Connector line (modified to connect to horizontal line)
-        ctx.strokeStyle = coinConfigs[currentCoin].color;
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(chartArea.right, y);
-        ctx.lineTo(capsuleX - capsuleWidth/2, y);
-        ctx.stroke();
+      // Connector line (modified to connect to horizontal line)
+      ctx.strokeStyle = coinConfigs[currentCoin].color;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(chartArea.right, y);
+      ctx.lineTo(capsuleX - capsuleWidth/2, y);
+      ctx.stroke();
 
-        ctx.restore();
+      ctx.restore();
     }
-};
+  };
 
+  function getDynamicYRange() {
+    const visibleData = coinData[currentCoin].filter(point => {
+      const xAxis = window.chart?.scales.x;
+      if (!xAxis) return false;
+      return point.x >= xAxis.min && point.x <= xAxis.max;
+    });
 
-function getDynamicYRange() {
-  const visibleData = coinData[currentCoin].filter(point => {
-    const xAxis = window.chart?.scales.x;
-    if (!xAxis) return false;
-    return point.x >= xAxis.min && point.x <= xAxis.max;
-  });
+    if (visibleData.length === 0) {
+      return {
+        min: currentPrice - currentPrice * 0.4,
+        max: currentPrice + currentPrice * 0.5
+      };
+    }
 
-  if (visibleData.length === 0) {
+    const prices = visibleData.map(point => point.y);
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+    const range = maxPrice - minPrice;
+    const padding = range * 0.4 || (maxPrice * 0.05);
+
     return {
-      min: currentPrice - currentPrice * 1.8, // Default 1% range
-      max: currentPrice + currentPrice * 1.5
+      min: minPrice - padding,
+      max: maxPrice + padding
     };
   }
 
-  const prices = visibleData.map(point => point.y);
-  const minPrice = Math.min(...prices);
-  const maxPrice = Math.max(...prices);
-  const range = maxPrice - minPrice;
-  const padding = range * 0.9 || (maxPrice * 0.05); // adjust y-axis range
-
-  return {
-    min: minPrice - padding,
-    max: maxPrice + padding
+  let animationState = {
+    currentPoint: null,
+    startTime: null,
+    isAnimating: false,
+    previousLastPoint: null
   };
-}
+  const POINT_ANIMATION_DURATION = 700; 
 
+  function getInterpolatedPoint(startPoint, endPoint, progress) {
+    return {
+      x: startPoint.x + (endPoint.x - startPoint.x) * progress,
+      y: startPoint.y + (endPoint.y - startPoint.y) * progress
+    };
+  }
+
+  // Drag handlers
+  function handleDragStart(e) {
+    if (e.touches && e.touches.length > 1) return; // Ignore if multi-touch
+    
+    isDraggingChart = true;
+    dragStartX = e.clientX || e.touches[0].clientX;
+    lastDragPosition = dragStartX;
+    
+    // Change cursor to grabbing
+    canvas.style.cursor = 'grabbing';
+  }
+
+  function handleDragMove(e) {
+    if (!isDraggingChart || !window.chart) return;
+    
+    const currentX = e.clientX || e.touches[0].clientX;
+    const deltaX = currentX - lastDragPosition;
+    lastDragPosition = currentX;
+    
+    const xScale = window.chart.scales.x;
+    const pixelRange = xScale.max - xScale.min;
+    const pixelToTimeRatio = pixelRange / window.chart.width;
+    
+    // Calculate new min/max based on drag distance
+    const timeDelta = deltaX * pixelToTimeRatio;
+    const newMin = xScale.min - timeDelta;
+    const newMax = xScale.max - timeDelta;
+    
+    // Check boundaries (don't scroll past data)
+    const data = window.chart.data.datasets[0].data;
+    if (data.length > 0) {
+      const firstPoint = data[0].x;
+      const lastPoint = data[data.length - 1].x;
+      
+      // Don't allow scrolling past the data
+      if (newMin < firstPoint) {
+        const adjustment = firstPoint - newMin;
+        window.chart.options.scales.x.min = firstPoint;
+        window.chart.options.scales.x.max = newMax - adjustment;
+      } else if (newMax > lastPoint) {
+        const adjustment = newMax - lastPoint;
+        window.chart.options.scales.x.min = newMin - adjustment;
+        window.chart.options.scales.x.max = lastPoint;
+      } else {
+        window.chart.options.scales.x.min = newMin;
+        window.chart.options.scales.x.max = newMax;
+      }
+    } else {
+      window.chart.options.scales.x.min = newMin;
+      window.chart.options.scales.x.max = newMax;
+    }
+    
+    window.chart.update('none');
+    hasUserScrolled = true;
+    document.getElementById('resetScroll').style.display = 'inline-block';
+  }
+
+  function handleDragEnd() {
+    isDraggingChart = false;
+    dragStartX = null;
+    lastDragPosition = null;
+    
+    // Reset cursor
+    canvas.style.cursor = 'crosshair';
+  }
+
+  // Add event listeners for drag scrolling
+  canvas.addEventListener('mousedown', handleDragStart);
+  canvas.addEventListener('touchstart', handleDragStart);
   
-window.chart = new Chart(ctx, {
-  type: 'line',
-  data: {
-    datasets: [{
-      label: `${coinConfigs[currentCoin].name} Price`,
-      data: coinData[currentCoin],
-      borderColor: coinConfigs[currentCoin].color,
-      backgroundColor: 'rgba(59, 130, 246, 0.1)',
-      borderWidth: 0.5,
-      tension: 0,
-      fill: true,
-      pointRadius: 0,
-      pointHoverRadius: 2
-    }]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    layout: {
-      padding: {
-        left: 0,
-        right: 6 // For price capsule
-      }
+  document.addEventListener('mousemove', handleDragMove);
+  document.addEventListener('touchmove', handleDragMove);
+  
+  document.addEventListener('mouseup', handleDragEnd);
+  document.addEventListener('touchend', handleDragEnd);
+  
+  // Prevent page scrolling when touching chart
+  canvas.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 1) {
+      e.preventDefault();
+    }
+  }, { passive: false });
+
+  window.chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      datasets: [{
+        label: `${coinConfigs[currentCoin].name} Price`,
+        data: coinData[currentCoin],
+        borderColor: coinConfigs[currentCoin].color,
+        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        borderWidth: 0.5,
+        tension: 0.1,
+        fill: true,
+        pointRadius: 0,
+        pointHoverRadius: 2
+      }, 
+      {
+        data: [coinData[currentCoin][coinData[currentCoin].length - 1]],
+        borderColor: coinConfigs[currentCoin].color,
+        backgroundColor: coinConfigs[currentCoin].color,
+        borderWidth: 2,
+        pointRadius: 3,
+        pointHoverRadius: 4,
+        showLine: true,
+        animation: {
+          duration: 1000,
+          easing: 'easeOutQuad',
+          properties: ['x', 'y']
+        }
+      }]
     },
-    animation: false,
-    scales: {
-      x: {
-        type: 'time',
-        time: {
-          unit: 'minute', // Display daily intervals
-          displayFormats: {
-            day: 'D MMM' // Format as "13 Nov", "14 Nov", etc.
-          }
-        },
-        ticks: {
-          color: 'rgba(255, 255, 255, 0.5)', // Match the white with slight opacity
-          font: {
-            size: 12
-          }
-        },
-        grid: {
-          display: true, // Show grid lines
-          color: 'rgba(255, 255, 255, 0.1)', // Subtle white grid lines
-          drawBorder: false
-        },
-        min: () => Date.now() -   3 * 60 * 1000,
-        max: () => Date.now()
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      layout: {
+        padding: {
+          left: 0,
+          right: 6
+        }
       },
-      y: {
-        beginAtZero: false,
-        position: 'right',
-        grid: {
-          display: true, // Show grid lines
-          color: 'rgba(255, 255, 255, 0.1)', // Subtle white grid lines
-          drawBorder: false
-        },
-        
-        ticks: {
-          color: 'rgba(255, 255, 255, 0.5)', // Match the white with slight opacity
-          callback: function(value) {
-            return value.toFixed(2);
+      animation: false,
+      transitions: {
+        active: {
+          animation: {
+            duration: 1000
+          }
+        }
+      },
+      scales: {
+        x: {
+          type: 'time',
+          time: {
+            unit: 'minute',
+            stepSize: 3,
+            minUnit: 'second',
+            displayFormats: {
+              day: 'D MMM',
+              minute: 'HH:mm'
+            }
           },
-          padding: 12,
-          maxTicksLimit: 8 // Cleaner look
+          ticks: {
+            color: 'rgba(255, 255, 255, 0.5)',
+            font: {
+              size: 12
+            }
+          },
+          grid: {
+            display: true,
+            color: 'rgba(255, 255, 255, 0.1)',
+            drawBorder: false
+          },
+          min: () => Date.now() - 30 * 1000,
+          max: () => Date.now()
         },
-        min: () => getDynamicYRange().min,
-        max: () => getDynamicYRange().max
-      }
-    },
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        mode: 'index',
-        intersect: false
+        y: {
+          beginAtZero: false,
+          position: 'right',
+          grid: {
+            display: true,
+            color: 'rgba(255, 255, 255, 0.1)',
+            drawBorder: false
+          },
+          ticks: {
+            color: 'rgba(255, 255, 255, 0.5)',
+            callback: function(value) {
+              return value.toFixed(2);
+            },
+            padding: 12,
+            maxTicksLimit: 8
+          },
+          min: () => getDynamicYRange().min,
+          max: () => getDynamicYRange().max
+        }
       },
-      zoom: {
-        pan: {
+      plugins: {
+        legend: { display: false },
+        tooltip: {
           enabled: true,
-          mode: 'x',
-          modifierKey: null,
-          scaleMode: 'x',
-          threshold: 10
+          mode: 'index',
+          intersect: false
         },
+        crosshair: false,
         zoom: {
-          wheel: {
+          pan: {
             enabled: true,
-            speed: 0.1
+            mode: 'x',
+            modifierKey: null,
+            threshold: 10,
+            onPan: ({chart}) => {
+              hasUserScrolled = true;
+              document.getElementById('resetScroll').style.display = 'inline-block';
+            }
           },
-          mode: 'x',
-          overScaleMode: 'x'
+          zoom: {
+            wheel: {
+              enabled: true,
+              speed: 0.1,
+              modifierKey: 'ctrl',
+              onZoom: ({chart}) => {
+                hasUserScrolled = true;
+                document.getElementById('resetScroll').style.display = 'inline-block';
+              }
+            },
+            pinch: {
+              enabled: true
+            },
+            mode: 'x',
+            onZoom: ({chart}) => {
+              hasUserScrolled = true;
+              document.getElementById('resetScroll').style.display = 'inline-block';
+            }
+          }
+        }
+      },
+      interaction: {
+        mode: 'nearest',
+        axis: 'x',
+        intersect: false
+      }
+    },
+    plugins: [{
+      id: 'sequentialAnimation',
+      afterDatasetsUpdate: function(chart) {
+        const now = Date.now();
+        const points = coinData[currentCoin];
+        
+        if (!points || points.length === 0) return;
+        
+        const currentLastPoint = points[points.length - 1];
+        
+        // Initialize animation if not running
+        if (!animationState.isAnimating) {
+          if (!animationState.previousLastPoint) {
+            // First render - show all data
+            chart.data.datasets[0].data = points;
+            chart.data.datasets[1].data = [currentLastPoint];
+            animationState.previousLastPoint = currentLastPoint;
+            return;
+          }
+          
+          // Start new animation if point changed
+          if (currentLastPoint.x !== animationState.previousLastPoint.x || 
+              currentLastPoint.y !== animationState.previousLastPoint.y) {
+            animationState = {
+              currentPoint: {...animationState.previousLastPoint},
+              startTime: now,
+              isAnimating: true,
+              previousLastPoint: animationState.previousLastPoint,
+              targetPoint: currentLastPoint,
+              originalData: [...points.slice(0, -1)]
+            };
+          }
+        }
+        
+        // Handle ongoing animation
+        if (animationState.isAnimating) {
+          const elapsed = now - animationState.startTime;
+          const progress = Math.min(elapsed / POINT_ANIMATION_DURATION, 1);
+          
+          // Animate point movement
+          animationState.currentPoint = getInterpolatedPoint(
+            animationState.previousLastPoint,
+            animationState.targetPoint,
+            progress
+          );
+          
+          // Update point dataset (datasets[1]) to show animated position
+          chart.data.datasets[1].data = [animationState.currentPoint];
+          
+          // Update line dataset (datasets[0]) to grow gradually
+          const lineData = [...animationState.originalData, animationState.currentPoint];
+          chart.data.datasets[0].data = lineData;
+          
+          // When animation completes, finalize both datasets
+          if (progress >= 1) {
+            chart.data.datasets[0].data = points;
+            chart.data.datasets[1].data = [currentLastPoint];
+            animationState.previousLastPoint = currentLastPoint;
+            animationState.isAnimating = false;
+          }
+          
+          // Continue animation on next frame
+          if (progress < 1) {
+            requestAnimationFrame(() => {
+              chart.update('none');
+            });
+          }
         }
       }
-    },
-    interaction: {
-      mode: 'nearest',
-      axis: 'x',
-      intersect: false
-    }
-  },
-  plugins: [sessionLinePlugin, trackingLinePlugin]
-});
+    }, sessionLinePlugin, trackingLinePlugin]
+  });
 }
 
 const canvas = document.getElementsByClassName('priceChart')[0];
 
 // Handle click events for scrolling
-canvas.addEventListener('click', (event) => {
-  const rect = canvas.getBoundingClientRect();
-  const clickX = event.clientX - rect.left; // X position relative to canvas
-  const canvasWidth = rect.width;
+// canvas.addEventListener('click', (event) => {
+//   const rect = canvas.getBoundingClientRect();
+//   const clickX = event.clientX - rect.left; // X position relative to canvas
+//   const canvasWidth = rect.width;
 
-  // Determine if the click is on the left or right half of the chart
-  const threshold = canvasWidth / 2;
-  if (clickX < threshold) {
-    handleChartScroll('left'); // Scroll left if clicked on the left side
-  } else {
-    handleChartScroll('right'); // Scroll right if clicked on the right side
+//   // Determine if the click is on the left or right half of the chart
+//   const threshold = canvasWidth / 5;
+//   if (clickX < threshold) {
+//     handleChartScroll('left'); // Scroll left if clicked on the left side
+//   } else {
+//     handleChartScroll('right'); // Scroll right if clicked on the right side
+//   }
+// });
+
+// Handle touch events for swiping
+// let touchStartX = 0;
+// let touchEndX = 0;
+
+// canvas.addEventListener('touchstart', (event) => {
+//   touchStartX = event.touches[0].clientX; // Record the starting X position of the touch
+// });
+
+// canvas.addEventListener('touchmove', (event) => {
+//   touchEndX = event.touches[0].clientX; // Update the ending X position as the user moves their finger
+// });
+
+// canvas.addEventListener('touchend', () => {
+//   const swipeDistance = touchEndX - touchStartX;
+//   const swipeThreshold = 5; // Minimum distance (in pixels) to consider it a swipe
+
+//   if (Math.abs(swipeDistance) > swipeThreshold) {
+//     if (swipeDistance > 0) {
+//       handleChartScroll('left'); // Swipe right (scroll left)
+//     } else {
+//       handleChartScroll('right'); // Swipe left (scroll right)
+//     }
+//   }
+// });
+
+
+
+// Zoom levels configuration
+const ZOOM_LEVELS = [0.5, 0.7, 1, 1.5, 2, 3];
+let currentZoomLevel = 2; // Default level (index in ZOOM_LEVELS)
+
+// Zoom functions
+function zoomChart(direction) {
+  if (!window.chart) return;
+  
+  const xScale = window.chart.scales.x;
+  const currentRange = xScale.max - xScale.min;
+  const center = xScale.min + currentRange / 2;
+  
+  // Determine new zoom level
+  if (direction === 'in' && currentZoomLevel > 0) {
+    currentZoomLevel--;
+  } else if (direction === 'out' && currentZoomLevel < ZOOM_LEVELS.length - 1) {
+    currentZoomLevel++;
+  }
+  
+  const zoomFactor = ZOOM_LEVELS[currentZoomLevel];
+  const newRange = (30 * 1000) / zoomFactor; // Base range is 30 seconds
+  
+  // Calculate new min/max
+  const newMin = center - newRange / 2;
+  const newMax = center + newRange / 2;
+  
+  // Animate zoom
+  animateZoom(newMin, newMax);
+  
+  hasUserScrolled = true;
+  updateZoomButtons(window.chart);
+  document.getElementById('resetScroll').style.display = 'inline-block';
+}
+
+function resetZoom() {
+  if (!window.chart) return;
+  
+  const lastPoint = coinData[currentCoin][coinData[currentCoin].length - 1];
+  if (!lastPoint) return;
+  
+  const viewDuration = 20 * 1000;
+  const lookAhead = 0.1 * 60 * 1000;
+  const targetMin = lastPoint.x - (viewDuration - lookAhead);
+  const targetMax = lastPoint.x + lookAhead;
+  
+  animateZoom(targetMin, targetMax);
+  currentZoomLevel = 2; // Reset to default zoom level
+  
+  updateZoomButtons(window.chart);
+}
+
+function animateZoom(targetMin, targetMax) {
+  const startTime = performance.now();
+  const duration = 100;
+  const xScale = window.chart.scales.x;
+  const startMin = xScale.min;
+  const startMax = xScale.max;
+  
+  const animate = (timestamp) => {
+    const elapsed = timestamp - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const easeProgress = easeOutQuad(progress);
+    
+    window.chart.options.scales.x.min = startMin + (targetMin - startMin) * easeProgress;
+    window.chart.options.scales.x.max = startMax + (targetMax - startMax) * easeProgress;
+    window.chart.update('none');
+    
+    if (progress < 1) {
+      requestAnimationFrame(animate);
+    }
+  };
+  
+  requestAnimationFrame(animate);
+}
+
+// function updateZoomButtons(chart) {
+//   const xScale = chart.scales.x;
+//   const currentRange = xScale.max - xScale.min;
+  
+//   document.getElementById('zoomIn').disabled = currentRange <= 5 * 1000; // 5 seconds
+//   document.getElementById('zoomOut').disabled = currentRange >= 120 * 1000; // 2 minutes
+//   document.getElementById('resetZoom').disabled = currentZoomLevel === 2; // Default level
+// }
+
+// Add event listeners
+// document.getElementById('zoomIn').addEventListener('click', () => zoomChart('in'));
+// document.getElementById('zoomOut').addEventListener('click', () => zoomChart('out'));
+// document.getElementById('resetZoom').addEventListener('click', resetZoom);
+
+// Mobile pinch zoom handler
+let initialDistance = null;
+
+canvas.addEventListener('touchstart', (e) => {
+  if (e.touches.length === 2) {
+    initialDistance = Math.hypot(
+      e.touches[0].clientX - e.touches[1].clientX,
+      e.touches[0].clientY - e.touches[1].clientY
+    );
   }
 });
 
-// Handle touch events for swiping
-let touchStartX = 0;
-let touchEndX = 0;
-
-canvas.addEventListener('touchstart', (event) => {
-  touchStartX = event.touches[0].clientX; // Record the starting X position of the touch
-});
-
-canvas.addEventListener('touchmove', (event) => {
-  touchEndX = event.touches[0].clientX; // Update the ending X position as the user moves their finger
-});
-
-canvas.addEventListener('touchend', () => {
-  const swipeDistance = touchEndX - touchStartX;
-  const swipeThreshold = 50; // Minimum distance (in pixels) to consider it a swipe
-
-  if (Math.abs(swipeDistance) > swipeThreshold) {
-    if (swipeDistance > 0) {
-      handleChartScroll('left'); // Swipe right (scroll left)
-    } else {
-      handleChartScroll('right'); // Swipe left (scroll right)
+canvas.addEventListener('touchmove', (e) => {
+  if (e.touches.length === 2 && initialDistance !== null) {
+    e.preventDefault();
+    const currentDistance = Math.hypot(
+      e.touches[0].clientX - e.touches[1].clientX,
+      e.touches[0].clientY - e.touches[1].clientY
+    );
+    
+    if (Math.abs(currentDistance - initialDistance) > 10) {
+      const direction = currentDistance > initialDistance ? 'out' : 'in';
+      zoomChart(direction);
+      initialDistance = currentDistance;
     }
   }
 });
 
-function handleChartScroll(direction) {
+canvas.addEventListener('touchend', () => {
+  initialDistance = null;
+});
+
+document.getElementById('resetScroll').addEventListener('click', function() {
+  resetChartScroll();
+});
+
+
+
+function resetChartScroll() {
   if (!window.chart) return;
-
+  
   const xScale = window.chart.scales.x;
-  const currentRange = xScale.max - xScale.min;
+  const startMin = xScale.min;
+  const startMax = xScale.max;
+  const lastPoint = coinData[currentCoin][coinData[currentCoin].length - 1];
+  
+  if (!lastPoint) return;
+  
+  const viewDuration = 20 * 1000; // 20 seconds of historical data
+  const lookAhead = 0.1 * 60 * 1000; // 6 seconds of look ahead
+  const targetMin = lastPoint.x - (viewDuration - lookAhead);
+  const targetMax = lastPoint.x + lookAhead;
+  
+  const startTime = performance.now();
+  const duration = 300;
+  
+  const animateReset = (timestamp) => {
+    const elapsed = timestamp - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const easeProgress = easeOutQuad(progress);
+    
+    window.chart.options.scales.x.min = startMin + (targetMin - startMin) * easeProgress;
+    window.chart.options.scales.x.max = startMax + (targetMax - startMax) * easeProgress;
+    window.chart.update('none');
+    
+    if (progress < 1) {
+      requestAnimationFrame(animateReset);
+    } else {
+      hasUserScrolled = false;
+      document.getElementById('resetScroll').style.display = 'none'; // Hide after reset
+    }
+  };
+  
+  requestAnimationFrame(animateReset);
+}
 
-  const scrollAmount = currentRange * 0.2; // Scroll 20% of current view
-  // Move both min and max by the same amount to maintain centered view
-  window.chart.options.scales.x.min = direction === 'left'
-      ? xScale.min - scrollAmount
-      : xScale.min + scrollAmount;
+// function handleChartScroll(direction) {
+//   if (!window.chart) return;
 
-  window.chart.options.scales.x.max = direction === 'left'
-      ? xScale.max - scrollAmount
-      : xScale.max + scrollAmount;
+//   const xScale = window.chart.scales.x;
+//   const currentRange = xScale.max - xScale.min;
 
-  hasUserScrolled = true; // Set flag to true when user scrolls
+//   // Reduce scroll amount for smoother movement
+//   const scrollAmount = currentRange * 0.05; // Changed from 0.6 to 0.3 for smoother scroll
+  
+//   // Use requestAnimationFrame for smooth animation
+//   const startTime = performance.now();
+//   const duration = 300; // Animation duration in ms
+  
+//   const animateScroll = (timestamp) => {
+//     const elapsed = timestamp - startTime;
+//     const progress = Math.min(elapsed / duration, 1);
+//     const easeProgress = easeOutQuad(progress); // Apply easing function
+    
+//     const currentMin = xScale.min;
+//     const currentMax = xScale.max;
+    
+//     const newMin = direction === 'left'
+//       ? currentMin - (scrollAmount * easeProgress)
+//       : currentMin + (scrollAmount * easeProgress);
+    
+//     const newMax = direction === 'left'
+//       ? currentMax - (scrollAmount * easeProgress)
+//       : currentMax + (scrollAmount * easeProgress);
+    
+//     window.chart.options.scales.x.min = newMin;
+//     window.chart.options.scales.x.max = newMax;
+//     window.chart.update('none');
+    
+//     if (progress < 1) {
+//       requestAnimationFrame(animateScroll);
+//     }
+//   };
+  
+//   requestAnimationFrame(animateScroll);
 
-  // Show the reset scroll and zoom buttons
-  // document.getElementById('resetScroll').style.display = 'inline-block';
-  // document.getElementById('zoomIn').style.display = 'inline-block';
-  // document.getElementById('zoomOut').style.display = 'inline-block';
+//   hasUserScrolled = true;
+//   document.getElementById('resetScroll').style.display = 'inline-block';
+// }
 
-  window.chart.update('none'); // Use 'none' to disable animations
+// Easing function for smooth animation
+function easeOutQuad(t) {
+  return t * (2 - t);
 }
 
 // Add scroll buttons to DOM (add these to your HTML)
@@ -2374,37 +2947,37 @@ function handleChartScroll(direction) {
 function updateChart(autoScroll = true) {
   if (!window.chart) return;
 
-  // Store the current x-axis range before updating the dataset
   const xScale = window.chart.scales.x;
   const currentMin = xScale.min;
   const currentMax = xScale.max;
 
-  // Update the dataset with new data
+  // Update dataset properties
   window.chart.data.datasets[0].data = coinData[currentCoin];
   window.chart.data.datasets[0].borderColor = coinConfigs[currentCoin].color;
+  
+  if (coinData[currentCoin].length > 0) {
+    window.chart.data.datasets[1].data = [coinData[currentCoin][coinData[currentCoin].length - 1]];
+    window.chart.data.datasets[1].borderColor = coinConfigs[currentCoin].color;
+    window.chart.data.datasets[1].backgroundColor = coinConfigs[currentCoin].color;
+  }
 
-  // Only center the view if the user hasn't scrolled
   if (autoScroll && !hasUserScrolled) {
     const lastPoint = coinData[currentCoin][coinData[currentCoin].length - 1];
     if (lastPoint) {
-      // Calculate view duration (2 minutes total, matching your current range)
-      const viewDuration = 2 * 60 * 1000; // 2 minutes in milliseconds
-
-      // Center the view around the latest data point's timestamp
-      const latestTime = lastPoint.x; // Use the timestamp of the latest point
-      window.chart.options.scales.x.min = latestTime - (viewDuration / 2); // 1 minute before
-      window.chart.options.scales.x.max = latestTime + (viewDuration / 2); // 1 minute after
+      const viewDuration = 20 * 1000; // 20 seconds of historical data
+      const lookAhead = 0.1 * 60 * 1000; // 0.1 minutes (6 seconds) of look ahead
+      window.chart.options.scales.x.min = lastPoint.x - (viewDuration - lookAhead);
+      window.chart.options.scales.x.max = lastPoint.x + lookAhead;
+      document.getElementById('resetScroll').style.display = 'none';
     }
-  } else {
-    // Preserve the current x-axis range if the user has scrolled
+  }else {
     window.chart.options.scales.x.min = currentMin;
     window.chart.options.scales.x.max = currentMax;
   }
 
-  // Update the chart without animations to avoid jitter
+  // Update chart without default animation, relying on sequentialAnimation plugin
   window.chart.update('none');
 }
-
 
 // Update price info display
 function updatePriceInfo() {
@@ -2415,13 +2988,13 @@ function updatePriceInfo() {
   const currentTimeEl = document.getElementById('currentTimeDisplay');
 
   if (currentPriceEl) {
-    currentPriceEl.textContent = currentPrice.toFixed(2);
+    currentPriceEl.textContent = currentPrice.toFixed(4);
   }
 
   if (priceChangeEl) {
     priceChangeEl.textContent = `${priceChange}`;
     priceChangeEl.style.color = priceChange > 0 ? '#10b981' :
-                                priceChange < 0 ? '#ef4444' : '#6b7280';
+    priceChangeEl.style.color = priceChange < 0 ? '#ef4444' : '#6b7280';
   }
 
   if (currentTimeEl) {

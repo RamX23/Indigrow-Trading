@@ -15,6 +15,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.7.2/axios.min.js"
     integrity="sha512-JSCFHhKDilTRRXe9ak/FJ28dcpOJxzQaCd3Xg8MyF6XFjODhy/YMCM8HW0TFDckNHWUewW+kfvhin43hKtJxAw=="
     crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <!-- Add SheetJS for Excel export -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
 </head>
 
 <body class="hold-transition sidebar-mini">
@@ -27,6 +29,12 @@
               <div class="col-sm-6">
                 <h1>Browse withdrawals <img data-v-7b283485="" width="35px" height="35px" src="/images/withdraw.png"
                     class="chackImg"></h1>
+              </div>
+              <div class="col-sm-6 text-right">
+                <!-- Add Excel download button -->
+                <button id="exportExcel" class="btn btn-success">
+                  <i class="fas fa-file-excel"></i> Export to Excel
+                </button>
               </div>
             </div>
           </div>
@@ -262,6 +270,9 @@
       DENIED: 2,
     }
 
+    // Store withdrawals data globally
+    let withdrawalsData = [];
+
     function formateT(params) {
       let result = (params < 10) ? "0" + params : params;
       return result;
@@ -346,6 +357,47 @@
       initTableData()
     })
 
+    // Function to export data to Excel
+ // Function to export data to Excel (only headers)
+function exportToExcel() {
+  // Create an empty array with just the headers
+  let excelData = [];
+  
+  if (ActiveTab === WITHDRAWAL_METHODS_MAP.BANK_CARD) {
+    // Add just the headers for BANK_CARD
+    excelData.push({
+      "Phone Number": "",
+      "Bank Name": "",
+      "Recipient Name": "",
+      "Bank Account Number": "",
+      "IFSC": "",
+      "Amount": ""
+    });
+  } else {
+    // Add just the headers for USDT_ADDRESS
+    excelData.push({
+      "Phone Number": "",
+      "USDT Address": "",
+      "Amount": ""
+    });
+  }
+
+  // Create worksheet
+  const ws = XLSX.utils.json_to_sheet(excelData);
+  
+  // Remove the empty data row while keeping headers
+  XLSX.utils.sheet_add_json(ws, [], {skipHeader: true});
+  
+  // Create workbook
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Withdrawals Template");
+  
+  // Generate Excel file and trigger download
+  const fileName = ActiveTab === WITHDRAWAL_METHODS_MAP.BANK_CARD 
+    ? "Bank_Withdrawals_Template.xlsx" 
+    : "USDT_Withdrawals_Template.xlsx";
+  XLSX.writeFile(wb, fileName);
+}
     function showWithDrawals(params) {
       if (params.length == 0) {
         $('tbody').html(`
@@ -356,6 +408,8 @@
         return;
       }
 
+      // Store the data for Excel export
+      withdrawalsData = params;
 
       let html;
 
@@ -438,9 +492,6 @@
               </tr>`;
         }).join("")
       }
-
-
-      // <!-- <a class="btn btn-info btn-sm" href="#"><i class="fas fa-pencil-alt"></i></a> -->
 
       $('tbody').html(html);
 
@@ -600,6 +651,10 @@
       $('.popup_root').css('display', 'none')
     })
 
+    // Add click event for export button
+    $(document).ready(function() {
+      $('#exportExcel').click(exportToExcel);
+    });
 
     const initTableData = async () => {
       try {

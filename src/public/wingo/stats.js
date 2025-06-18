@@ -60,6 +60,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function updateStatsDisplay(data) {
+    console.log(data);
     // totalProfit.textContent = `₹${data.amountWon.toFixed(2)}`;
     totalBetsEl.textContent = data.totalBets;
     betsWonEl.textContent = data.betsWon;

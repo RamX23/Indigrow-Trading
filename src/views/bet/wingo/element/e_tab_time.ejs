@@ -13,21 +13,31 @@
   .GameList__C div {
     padding-block:6px;
     cursor: pointer;
-    /* border-radius: 4px; */
-    background:  #122855; 
+    background: #122855; 
     color: #fff;
     border: 2px solid rgba(0, 0, 0, 0.1);
     font-size: 0.3rem;
     font-weight: 500;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    transition: all 0.2s ease;
+    /* transition: all 0.2s ease; */
     text-align: center;
-    min-width: 1.2rem;
-  }
+    padding: 0.4em;
+    /* min-width: 1.2rem; */
+}
   
-  .GameList__C div:hover {
+.GameList__C div:hover {
     background: linear-gradient(135deg, #3a4b6d, #2c3a58);
-  }
+}
+
+/* Add this for active state */
+.GameList__C div.active {
+    background: linear-gradient(135deg, #1e88e5, #0d47a1);
+    border-color: rgba(255, 255, 255, 0.5);
+    font-weight: bold;
+    /* box-shadow: 0 0 10px rgba(30, 136, 229, 0.7);
+    transform: scale(1.05);
+    transition: all 0.3s ease; */
+}
   </style>
   
   <div class="GameList__C">

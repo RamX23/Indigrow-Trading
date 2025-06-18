@@ -5,13 +5,14 @@
 
     <meta charset="UTF-8">
     <link rel="icon" type="image/svg+xml"
-        href="https://ossimg.tirangaagent.com/Tiranga/other/h5setting_20231017190406lyb3.ico">
+    href="/assets/png/PNG - A Logo - Indigrow Trading.png">
+
     <meta name="google" content="notranslate">
     <meta name="robots" content="noindex,nofollow">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
     <link rel="manifest" href="/manifest.tiranga.json?version=1.1">
-    <title>Tiranga</title>
+    <title>IndiGrow</title>
 
     <link rel="stylesheet" href="/assets/css/modules-b642e9bc.css">
     <link rel="stylesheet" href="/assets/css/page-activity-4fe5c6bf.css">
@@ -4217,10 +4218,6 @@
                         </div>
                         <div data-v-9e03166f="" class="Recharge__content-paymoney__money-list" id="quick_money_options">
                             <div data-v-9e03166f="" class="Recharge__content-paymoney__money-list__item">
-                                <div data-v-9e03166f="" class="amount"><span data-v-9e03166f="">₹</span> 110
-                                </div>
-                            </div>
-                            <div data-v-9e03166f="" class="Recharge__content-paymoney__money-list__item">
                                 <div data-v-9e03166f="" class="amount"><span data-v-9e03166f="">₹</span> 300
                                 </div>
                             </div>
@@ -4404,10 +4401,7 @@
                 <div data-v-3e71d3da="" class="dialog__outside"></div>
             </div>
         </div><!--online custom service-->
-        <div class="customer" id="customerId" onclick="location.href='/support'"
-            style="--f13b4d11-currentFontFamily: 'Roboto', 'Inter', sans-serif; --f6a705e1-currentFontFamily: bahnschrift;">
-            <img class="" data-origin="/assets/png/icon_sevice-af9dd176.png" src="/assets/png/icon_sevice-af9dd176.png">
-        </div>
+
     </div>
 
 
@@ -4756,39 +4750,37 @@
         }
 
         const handleMoneyAmountInput = (event) => {
-            inputMoney = parseInt(MoneyAmountInput.value)
-            const minimumMoneyAllowedUSDT = parseInt(`<%=MINIMUM_MONEY_USDT%>`)
-            const minimumMoneyAllowedINR = parseInt(`<%=MINIMUM_MONEY_INR%>`)
+    inputMoney = parseInt(MoneyAmountInput.value)
+    const minimumMoneyAllowedUSDT = 100;
+    const minimumMoneyAllowedINR = 100;
 
-            if (selectedPaymentMethod === PaymentMethodsMap.USDT_MANUAL) {
-                $("#usdt_inr_amount").text(`${(Number(inputMoney) * USDT_INR_EXCHANGE_RATE) || 0}`)
-            }
+    if (selectedPaymentMethod === PaymentMethodsMap.USDT_MANUAL) {
+        $("#usdt_inr_amount").text(`${(Number(inputMoney) * USDT_INR_EXCHANGE_RATE) || 0}`)
+    }
 
-
-            if (selectedPaymentMethod === PaymentMethodsMap.USDT_MANUAL) {
-                if (inputMoney < minimumMoneyAllowedUSDT) {
-                    $("#deposit_fund_btn").removeClass("rechage_active")
-                    return
-                }
-            } else {
-                if (inputMoney < minimumMoneyAllowedINR) {
-                    $("#deposit_fund_btn").removeClass("rechage_active")
-                    return
-                }
-            }
-
-            $("#deposit_fund_btn").addClass("rechage_active")
-
-            Array.from(QuickMoneyOptions.children).forEach((child) => {
-                const amount = parseInt(child.getAttribute("data-money"))
-
-                if (amount === inputMoney) {
-                    child.classList.add("active")
-                } else {
-                    child.classList.remove("active")
-                }
-            })
+    if (selectedPaymentMethod === PaymentMethodsMap.USDT_MANUAL) {
+        if (inputMoney < minimumMoneyAllowedUSDT) {
+            $("#deposit_fund_btn").removeClass("rechage_active")
+            return;
         }
+    } else {
+        if (inputMoney < minimumMoneyAllowedINR) {
+            $("#deposit_fund_btn").removeClass("rechage_active")
+            return;
+        }
+    }
+
+    $("#deposit_fund_btn").addClass("rechage_active");
+
+    Array.from(QuickMoneyOptions.children).forEach((child) => {
+        const amount = parseInt(child.getAttribute("data-money"));
+        if (amount === inputMoney) {
+            child.classList.add("active");
+        } else {
+            child.classList.remove("active");
+        }
+    });
+}
 
         const handleQuickMoney = (item) => (event) => {
             const amount = parseInt(item.getAttribute("data-money"))

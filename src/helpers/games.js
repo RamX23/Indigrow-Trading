@@ -23,22 +23,19 @@ export function getNthMinuteSinceDayStart() {
 //   return parseInt(NewGamePeriod);
 // }
 
+
 export function generatePeriod(gameRepresentationId) {
   const now = moment();
-  const startOfDay = now.clone().startOf('day');
   
-  // Calculate total minutes since start of day (more reliable than getNthMinuteSinceDayStart)
-  const minutesSinceStartOfDay = Math.floor(now.diff(startOfDay, 'minutes', true)) + 1;
-  
-  // Format components
-  const datePart = now.format("YYYYMMDD");
+  // Format components (DD = day, HH = 24-hour, mm = minute, ss = second)
+  const dayPart = now.format("DD");
+  const timePart = now.format("HHmmss");
   const gamePart = gameRepresentationId;
-  const minutePart = String(minutesSinceStartOfDay).padStart(4, '0');
   
-  // Combine into period
-  let NewGamePeriod = `${datePart}${gamePart}${minutePart}`;
+  // Combine into period (format: DD + HHmmss + game ID)
+  const periodString = `${dayPart}${timePart}${gamePart}`;
   
-  return parseInt(NewGamePeriod);
+  return parseInt(periodString);
 }
 
 export const generateClaimRewardID = () => {

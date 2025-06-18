@@ -8,8 +8,8 @@ import connection from "./config/connectDB.js";
 import cookieParser from "cookie-parser";
 import http from "http";
 import { Server } from "socket.io";
-import seedrandom from 'seedrandom';
-
+import seedrandom from "seedrandom";
+import cron from "node-cron";
 
 const app = express();
 const server = http.createServer(app);
@@ -17,286 +17,416 @@ const io = new Server(server);
 
 const port = process.env.PORT || 5001;
 
+// Shared data structure to store endpoint data
+const ENDPOINT_DATA = {
+  "1min": { endPrices: {}, startPrices: {}, timestamp: null },
+  "3min": { endPrices: {}, startPrices: {}, timestamp: null },
+  "5min": { endPrices: {}, startPrices: {}, timestamp: null },
+  "10min": { endPrices: {}, startPrices: {}, timestamp: null },
+};
+
 async function initialize() {
   try {
     app.use(cookieParser());
     app.use(express.urlencoded({ extended: true }));
     app.use(express.json());
 
-    // setup viewEngine
     configViewEngine(app);
-    // init Web Routes
     routes.initWebRouter(app);
 
-    // Cron job
-    cronJobController.cronJobGame1p(io);
+    // Pass ENDPOINT_DATA to cronJobController
+    cronJobController.cronJobGame1p(io, ENDPOINT_DATA);
 
-    // Socket message
     socketIoController.sendMessageAdmin(io);
 
     // Game session configurations
     const GAME_SESSIONS = {
-      '1min': { duration: 60000, currentEndPoint: null },
-      '3min': { duration: 180000, currentEndPoint: null },
-      '5min': { duration: 300000, currentEndPoint: null },
-      '10min': { duration: 600000, currentEndPoint: null }
+      "1min": { duration: 60000, currentEndPoint: null },
+      "3min": { duration: 180000, currentEndPoint: null },
+      "5min": { duration: 300000, currentEndPoint: null },
+      "10min": { duration: 600000, currentEndPoint: null },
     };
-    
-    // Coin configurations
+
     const COIN_CONFIGS = {
       BTC: { basePrice: 60000, volatility: 0.00005 },
       ETH: { basePrice: 3000, volatility: 0.0008 },
       BNB: { basePrice: 500, volatility: 0.001 },
-      ADA: { basePrice: 0.5, volatility: 0.002 }
+      ADA: { basePrice: 0.5, volatility: 0.002 },
     };
-    
-    // Store price data for each coin
+
     const coinData = {};
-    Object.keys(COIN_CONFIGS).forEach(coin => {
+    Object.keys(COIN_CONFIGS).forEach((coin) => {
       coinData[coin] = generateInitialData(coin);
     });
-    
-    // Generate initial data for a coin
+
     function generateInitialData(coin) {
       const data = [];
       const now = Date.now();
       const config = COIN_CONFIGS[coin];
-      
+
       for (let i = 0; i < 60; i++) {
         const timestamp = now - (60 - i) * 1000;
-        const price = i === 0 
-          ? config.basePrice 
-          : generateNewPrice(data[i-1].price, coin, timestamp);
+        const price = i === 0 ? config.basePrice : generateNewPrice(data[i - 1].price, coin, timestamp);
         data.push({ timestamp, price });
       }
-      
+
       return data;
     }
+
     
-    // Generate new price with consideration of end points
     function generateNewPrice(lastPrice, coin, timestamp) {
       const config = COIN_CONFIGS[coin];
       const history = coinData[coin] || [];
       
-      // Trend control logic
-      let trend = null;
-      if (history.length >= 3) {
-        const last3 = history.slice(-3);
+      // Get recent price movements (last 3 data points)
+      const recentMovements = history.length >= 3 ? [
+        history[history.length - 1].price - history[history.length - 2].price,
+        history[history.length - 2].price - history[history.length - 3].price
+      ] : [0, 0];
     
-        const direction1 = Math.sign(last3[1].price - last3[0].price);
-        const direction2 = Math.sign(last3[2].price - last3[1].price);
-    
-        if (direction1 === direction2 && direction1 !== 0) {
-          trend = direction1; // 1 for up, -1 for down
+      // Determine current trend strength and direction
+      const trendDirection = Math.sign(recentMovements[0]);
+      const trendStrength = Math.abs(recentMovements[0]) / (config.basePrice * config.volatility);
+      
+      // Initialize RNG with seed for reproducibility
+      const rng = seedrandom(`${timestamp}-${coin}`);
+      
+      // 15% chance of plateau (no movement or very small movement)
+      const isPlateau = rng() < 0.15 && history.length > 5;
+      
+      let change;
+      if (isPlateau) {
+        // Plateau period - minimal movement
+        change = (rng() * 2 - 1) * config.volatility * lastPrice * 0.1; // 10% of normal volatility
+        // console.log(`[${coin}] Plateau period - minimal movement`);
+      } else {
+        // Normal movement with trend enforcement
+        change = (rng() * 2 - 1) * config.volatility * lastPrice;
+        
+        // Enforce trend reversal if same direction for 2+ periods
+        if (trendDirection !== 0 && 
+            Math.sign(recentMovements[0]) === Math.sign(recentMovements[1])) {
+          const reversalStrength = 0.5 + (rng() * 0.5); // 50-100% reversal
+          change = -trendDirection * Math.abs(change) * reversalStrength;
+          // console.log(`[${coin}] Trend reversal enforced after 2 moves in same direction`);
+        }
+        
+        // Apply momentum damping for strong trends
+        if (trendStrength > 0.7) {
+          change *= 0.7; // Reduce movement by 30% if trend is too strong
+          // console.log(`[${coin}] Damping strong trend`);
         }
       }
     
-      const rng = seedrandom(`${timestamp}-${coin}`);
-      let change = (rng() * 2 - 1) * config.volatility * lastPrice;
+      // Calculate new price with bounds checking
+      let newPrice = lastPrice + change;
+      newPrice = Math.max(0.01, newPrice); // Absolute minimum price
+      
+      // Apply additional bounds based on volatility
+      const maxChange = lastPrice * config.volatility;
+      newPrice = Math.max(
+        lastPrice - maxChange * 1.5, // Allow slightly larger downward moves
+        Math.min(
+          lastPrice + maxChange, 
+          newPrice
+        )
+      );
     
-      // If there's a 3-point trend in one direction, reverse it
-      if (trend === 1 && change > 0) {
-        change *= -1;
-      } else if (trend === -1 && change < 0) {
-        change *= -1;
+      // Ensure we don't have more than 2 consecutive moves in same direction
+      const newDirection = Math.sign(newPrice - lastPrice);
+      if (history.length >= 1) {
+        const prevDirection1 = Math.sign(history[history.length - 1].price - history[history.length - 2].price);
+        const prevDirection2 = history.length >= 2 ? 
+          Math.sign(history[history.length - 2].price - history[history.length - 3].price) : 0;
+        
+        if (newDirection !== 0 && newDirection === prevDirection1 && newDirection === prevDirection2) {
+          // Force reversal if 3rd consecutive move in same direction
+          newPrice = lastPrice - (newPrice - lastPrice) * (0.3 + rng() * 0.7); // 30-100% reversal
+          // console.log(`[${coin}] Forced reversal after 3 consecutive moves`);
+        }
       }
     
-      let newPrice = lastPrice + change;
-    
-      newPrice = Math.max(0.01, newPrice);
-      const maxChange = lastPrice * COIN_CONFIGS[coin].volatility;
-      return Math.max(
-        lastPrice - maxChange,
-        Math.min(lastPrice + maxChange, newPrice)
-      );
+      return parseFloat(newPrice.toFixed(4));
     }
-    
-    
-    // Helper function to handle endpoint setting
-    function handleEndPoint(session, coin, price) {
-      if (GAME_SESSIONS[session] && COIN_CONFIGS[coin]) {
-        GAME_SESSIONS[session].currentEndPoint = {
-          coin,
-          price: parseFloat(price),
-          startTime: Date.now()
-        };
-        console.log(`Set ${session} end point for ${coin} at ${price}`);
-        
-        // Broadcast the new end point to all clients
-        io.emit('endPointSet', {
-          session,
-          coin,
-          price: parseFloat(price),
-          startTime: Date.now(),
-          duration: GAME_SESSIONS[session].duration
+
+    // Example function to process ENDPOINT_DATA
+    function processEndpointData(session) {
+      const data = ENDPOINT_DATA[session];
+      if (data && data.endPrices && Object.keys(data.endPrices).length > 0) {
+        // console.log(`[${session}] Endpoint Data:`, data);
+        Object.keys(data.endPrices).forEach((coin) => {
+          // console.log(`[${session}] ${coin} endPrice: ${data.endPrices[coin]}, startPrice: ${data.startPrices[coin]}`);
+          GAME_SESSIONS[session].currentEndPoint = {
+            coin,
+            price: parseFloat(data.endPrices[coin]),
+            startTime: data.timestamp,
+          };
         });
       }
     }
-    
-    // Update prices every second
+
+    // Periodically check or use ENDPOINT_DATA
+    setInterval(() => {
+      Object.keys(ENDPOINT_DATA).forEach((session) => {
+        if (ENDPOINT_DATA[session].timestamp) {
+          processEndpointData(session);
+        }
+      });
+    }, 1000); // Check every second
+
     const priceUpdateInterval = setInterval(() => {
       try {
         const now = Date.now();
-        const start = now;
-      
-        // Verify global objects
-        if (!COIN_CONFIGS || typeof COIN_CONFIGS !== 'object') {
-          console.error('COIN_CONFIGS is undefined or invalid');
-          return;
-        }
-        if (!coinData || typeof coinData !== 'object') {
-          console.error('coinData is undefined or invalid');
-          return;
-        }
-        if (!GAME_SESSIONS || typeof GAME_SESSIONS !== 'object') {
-          console.error('GAME_SESSIONS is undefined or invalid');
-          return;
-        }
-      
-        // Update prices
-        Object.keys(COIN_CONFIGS).forEach(coin => {
+        Object.keys(COIN_CONFIGS).forEach((coin) => {
           if (!Array.isArray(coinData[coin])) {
             console.error(`coinData[${coin}] is not an array`);
             coinData[coin] = [];
           }
-      
+    
           const lastDataPoint = coinData[coin][coinData[coin].length - 1];
-          if (!lastDataPoint || typeof lastDataPoint.price !== 'number') {
+          if (!lastDataPoint || typeof lastDataPoint.price !== "number") {
             console.warn(`Invalid lastDataPoint for ${coin}:`, lastDataPoint);
             return;
           }
-      
-          const newPrice = generateNewPrice(lastDataPoint.price, coin, now);
-          if (typeof newPrice !== 'number' || isNaN(newPrice)) {
+    
+          let newPrice = null;
+          let targetPrice = null;
+          let timeLeftToTarget = 0;
+    
+          // Check ENDPOINT_DATA for each session to find valid endPrices
+          for (const session of Object.keys(GAME_SESSIONS)) {
+            const endpointData = ENDPOINT_DATA[session];
+            if (endpointData?.endPrices?.[coin] && endpointData.timestamp) {
+              const timeSinceTargetSet = now - endpointData.timestamp;
+              
+              // If within the convergence window (last 10 seconds)
+              if (timeSinceTargetSet <= 10000) {
+                targetPrice = parseFloat(endpointData.endPrices[coin]);
+                timeLeftToTarget = 10000 - timeSinceTargetSet;
+                
+                if (timeLeftToTarget <= 1000) {
+                  // Exact target at the end
+                  newPrice = targetPrice;
+                  console.log("price setted up to target price",newPrice);
+                } else {
+                  // Independent oscillation pattern
+                  const oscillationCount = 5; // Number of full peaks+dips
+                  const rawOscillation = Math.sin((now/1000) * oscillationCount * 0.5 * Math.PI);
+                  
+                  // Calculate maximum oscillation magnitude
+                  const priceRange = Math.abs(targetPrice - lastDataPoint.price);
+                  const maxOscillation = Math.min(
+                    priceRange * 0.4, // Up to 40% of price difference
+                    lastDataPoint.price * 0.02 // Or 2% of current price
+                  );
+                  
+                  // Apply oscillation
+                  const oscillation = rawOscillation * maxOscillation;
+                  
+                  // Calculate base adjustment (ensures we reach target)
+                  const remainingDifference = targetPrice - lastDataPoint.price;
+                  const baseAdjustment = remainingDifference * 0.1; // Adjust 10% of remaining gap
+                  
+                  // Combine components
+                  newPrice = lastDataPoint.price + baseAdjustment + oscillation;
+                  
+                  // Ensure we don't overshoot too much near the end
+                  if (timeLeftToTarget < 2000) {
+                    const endWeight = timeLeftToTarget / 2000;
+                    newPrice = newPrice * endWeight + targetPrice * (1 - endWeight);
+                  }
+                }
+                break;
+              }
+            }
+          }
+    
+          // Fall back to random price if no active convergence
+          if (newPrice === null) {
+            newPrice = generateNewPrice(lastDataPoint.price, coin, now);
+          }
+    
+          // Validate and store
+          if (typeof newPrice !== "number" || isNaN(newPrice)) {
             console.error(`Invalid price for ${coin}:`, newPrice);
             return;
           }
-      
           coinData[coin].push({ timestamp: now, price: newPrice });
-      
-          // Keep only the last 24 hours of data
+    
+          // Prune old data
           if (coinData[coin].length > 86400) {
-            console.log(`Pruning ${coinData[coin].length - 86400} old data points for ${coin}`);
             coinData[coin].shift();
           }
         });
-      
-        // Prepare session data
+    
+        // Emit updates
         const sessions = Object.fromEntries(
-          Object.entries(GAME_SESSIONS).map(([session, data]) => {
-            if (data.currentEndPoint && (typeof data.currentEndPoint.startTime !== 'number' || typeof data.duration !== 'number')) {
-              console.error(`Invalid session data for ${session}:`, data);
-            }
-            return [
-              session,
-              {
-                active: data.currentEndPoint !== null,
-                price: data.currentEndPoint?.price || null,
-                timeLeft: data.currentEndPoint
-                  ? Math.max(0, data.currentEndPoint.startTime + data.duration - now)
-                  : null
-              }
-            ];
-          })
+          Object.entries(GAME_SESSIONS).map(([session, data]) => [
+            session,
+            {
+              active: data.currentEndPoint !== null,
+              price: data.currentEndPoint?.price || null,
+              timeLeft: data.currentEndPoint ? 
+                Math.max(0, data.currentEndPoint.startTime + data.duration - now) : null,
+            },
+          ])
         );
-      
-        // Broadcast updates
-        io.emit('priceUpdate', {
+    
+        io.emit("priceUpdate", {
           timestamp: now,
           prices: Object.fromEntries(
-            Object.keys(COIN_CONFIGS).map(coin => [
-              coin,
+            Object.keys(COIN_CONFIGS).map((coin) => [
+              coin, 
               coinData[coin][coinData[coin].length - 1]?.price || null
             ])
           ),
-          sessions
+          sessions,
         });
-      
-        // Log sessions and performance
-        // console.log('Sessions:', sessions);
-        // console.log(`Interval execution time: ${Date.now() - start}ms`);
-      } catch(err) {
-        console.error("Error occurred while updating client:", err);
+      } catch (err) {
+        console.error("Error in price update:", err);
       }
     }, 1000);
+
     
-    // Handle socket connections
-    io.on('connection', (socket) => {
-      console.log('New client connected');
-      
-      // Send initial data when a client connects
-      socket.emit('initialData', {
+    io.on("connection", (socket) => {
+      console.log(`Client connected: ${socket.id}`);
+
+      socket.emit("initialData", {
         coins: coinData,
         sessions: Object.fromEntries(
           Object.entries(GAME_SESSIONS).map(([session, data]) => [
             session,
-            { 
+            {
               active: data.currentEndPoint !== null,
               price: data.currentEndPoint?.price || null,
-              timeLeft: data.currentEndPoint 
-                ? Math.max(0, data.currentEndPoint.startTime + data.duration - Date.now())
-                : null
-            }
+              timeLeft: data.currentEndPoint ? Math.max(0, data.currentEndPoint.startTime + data.duration - Date.now()) : null,
+            },
           ])
-        )
-      });
-      
-      // Handle setting end points from server (cron jobs)
-      // socket.on('setEndPoint', ({ coin, price }) => {
-      //   handleEndPoint('1min', coin, price);
-      // });
-
-      // socket.on('set3minEndPoint', ({ coin, price }) => {
-      //   handleEndPoint('3min', coin, price);
-      // });
-
-      // socket.on('set5minEndPoint', ({ coin, price }) => {
-      //   handleEndPoint('5min', coin, price);
-      // });
-
-      // socket.on('set10minEndPoint', ({ coin, price }) => {
-      //   handleEndPoint('10min', coin, price);
-      // });
-
-      // Handle getting start points
-      socket.on('getStartPoint', (data) => {
-        console.log('Received start point for 1min game:', coinData[coinData.length-1]);
-        // Store this in your game session data if needed
+        ),
       });
 
-      socket.on('get3minStartPoint', (data) => {
-        console.log('Received start point for 3min game:', data);
+      socket.on("getStartPoint", (data) => {
+        const session = data?.session || "1min";
+        handleGetStartPoint(session, socket);
       });
 
-      socket.on('get5minStartPoint', (data) => {
-        console.log('Received start point for 5min game:', data);
-      });
-
-      socket.on('get10minStartPoint', (data) => {
-        console.log('Received start point for 10min game:', data);
-      });
-
-      socket.on('disconnect', () => {
-        console.log('Client disconnected');
+      socket.on("disconnect", () => {
+        console.log("Client disconnected");
       });
     });
 
-    // Cleanup on server shutdown
-    process.on('SIGTERM', () => {
+    // Start point handling
+    const startPoints = {
+      "1min": {},
+      "3min": {},
+      "5min": {},
+      "10min": {},
+    };
+
+    function handleGetStartPoint(session, socket) {
+      try {
+        const sessionConfig = GAME_SESSIONS[session];
+        if (!sessionConfig) {
+          throw new Error(`Session ${session} not configured`);
+        }
+
+        const points = {};
+        const now = Date.now();
+
+        Object.keys(COIN_CONFIGS).forEach((coin) => {
+          const coinHistory = coinData[coin];
+          if (!coinHistory || coinHistory.length === 0) {
+            console.warn(`No data available for ${coin}`);
+            return;
+          }
+
+          const latest = coinHistory[coinHistory.length - 1];
+          if (!latest || !latest.price) {
+            console.warn(`Invalid price data for ${coin}`);
+            return;
+          }
+
+          startPoints[session][coin] = {
+            price: latest.price,
+            timestamp: now,
+          };
+
+          points[coin] = {
+            price: latest.price,
+            timestamp: now,
+            sessionDuration: sessionConfig.duration,
+          };
+        });
+
+        if (socket) {
+          socket.emit("startPointsData", {
+            session,
+            points,
+            serverTime: now,
+          });
+        }
+
+        io.emit("sessionUpdate", {
+          type: "START_POINTS",
+          session,
+          data: points,
+        });
+
+        return points;
+      } catch (error) {
+        console.error(`[${session}] Start point error:`, error);
+        if (socket) {
+          socket.emit("startPointError", {
+            session,
+            error: error.message,
+          });
+        }
+        return null;
+      }
+    }
+
+    // Start point cron jobs
+    cron.schedule("1 * * * * *", () => {
+      const session = "1min";
+      const points = handleGetStartPoint(session);
+      GAME_SESSIONS[session].currentStartPoints = points;
+      // console.log(`[CRON] ${session} start points ready`, points);
+    });
+
+    cron.schedule("1 */3 * * * *", () => {
+      const session = "3min";
+      const points = handleGetStartPoint(session);
+      GAME_SESSIONS[session].currentStartPoints = points;
+      // console.log(`[CRON] ${session} start points ready`, points);
+    });
+
+    cron.schedule("1 */5 * * * *", () => {
+      const session = "5min";
+      const points = handleGetStartPoint(session);
+      GAME_SESSIONS[session].currentStartPoints = points;
+      // console.log(`[CRON] ${session} start points ready`, points);
+    });
+
+    cron.schedule("1 */10 * * * *", () => {
+      const session = "10min";
+      const points = handleGetStartPoint(session);
+      GAME_SESSIONS[session].currentStartPoints = points;
+      // console.log(`[CRON] ${session} start points ready`, points);
+    });
+
+    process.on("SIGTERM", () => {
       clearInterval(priceUpdateInterval);
       server.close();
     });
 
-    process.on('SIGINT', () => {
+    process.on("SIGINT", () => {
       clearInterval(priceUpdateInterval);
       server.close();
     });
 
-    // Start server AFTER all init
     server.listen(port, () => {
       console.log(`Connected successfully at http://localhost:${port}`);
     });
-
   } catch (err) {
     console.error("Error during initialization:", err);
     process.exit(1);

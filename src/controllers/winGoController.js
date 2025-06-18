@@ -541,7 +541,7 @@ const betWinGo = async (req, res) => {
     period,
     userInfo.level,
     total,
-    x,
+    money,
     fee,
     0,
     gameJoin,
@@ -582,7 +582,7 @@ const betWinGo = async (req, res) => {
     // rosesPlus(auth, money * x);
 
     return res.status(200).json({
-      message: "Successful bet",
+      message: "Successful Trade",
       status: true,
       data: result,
       change: users[0].level,
@@ -643,10 +643,32 @@ const listOrderOld = async (req, res) => {
   );
 
 
+  // const [wingoAll] = await connection.query(
+  //   "SELECT COUNT(*) as game_length FROM wingo WHERE status != 0 AND game = ?",
+  //   [game],
+  // );
   const [wingoAll] = await connection.query(
-    "SELECT COUNT(*) as game_length FROM wingo WHERE status != 0 AND game = ?",
-    [game],
+    `SELECT w.id AS id, w.period AS period, m.result AS result
+     FROM wingo w
+     JOIN minutes_2 m ON w.period = m.stage
+     WHERE w.status = 1 AND w.release_status = 2 AND w.game = ?
+     ORDER BY w.id DESC
+     LIMIT ?, ?`,
+    [game, Number(pageno), Number(pageto)]
   );
+  
+  const [wingo1]=await connection.query(
+    `select count(*) as game_length
+    from wingo 
+    where  status!=0 && release_status!=0 && game=?`,
+    [game]
+  )
+  
+
+  // select id,stage,result 
+  // from minutes_2
+  // group by id,stage,result
+  // order by id desc
   const [period] = await connection.query(
     "SELECT period FROM wingo WHERE status = 0 AND game = ? ORDER BY id DESC LIMIT 1",
     [game],
@@ -671,13 +693,14 @@ const listOrderOld = async (req, res) => {
       status: true,
     });
 
-  let page = Math.ceil(wingoAll[0].game_length / 10);
-
+  let page = Math.ceil(wingo1[0].game_length / 10);
+// console.log(page);
   return res.status(200).json({
     code: 0,
     msg: "Receive success",
     data: {
       gameslist: wingo,
+      gameHistory:wingoAll,
     },
     period: period[0].period,
     page: page,
@@ -755,7 +778,6 @@ const GetMyEmerdList = async (req, res) => {
     let { id, phone, code, invite, level, game, ...others } = data;
     return others;
   });
-  console.log(datas);
   return res.status(200).json({
     code: 0,
     msg: "Receive success",
@@ -767,242 +789,151 @@ const GetMyEmerdList = async (req, res) => {
   });
 };
 
+
+
+
 // const addWinGo = async (game) => {
 //   try {
 //     let join = "";
-//     if (game == 1) join = "wingo";
-//     if (game == 3) join = "wingo3";
-//     if (game == 5) join = "wingo5";
-//     if (game == 10) join = "wingo10";
+//     if (game === 1) join = "wingo";
+//     else if (game === 3) join = "wingo3";
+//     else if (game === 5) join = "wingo5";
+//     else if (game === 10) join = "wingo10";
+//     else throw new Error("Invalid game type");
 
+//     // Fetch current pending game period (if any)
 //     const [winGoNow] = await connection.query(
 //       "SELECT period FROM wingo WHERE status = 0 AND game = ? ORDER BY id DESC LIMIT 1",
-//       [join],
+//       [join]
 //     );
+
+//     // Fetch start price from minutes_2
+//     const [startPriceRow] = await connection.query(
+//       "SELECT startPrice AS start_point FROM minutes_2 WHERE status = 0 AND game = ? ORDER BY id DESC LIMIT 1",
+//       [join]
+//     );
+
+//     let startPoint = null;
+//     let endPoint = null;
+//     let bigTotal = 0;
+//     let smallTotal = 0;
+
 //     const isPendingGame = winGoNow.length > 0;
 
 //     if (isPendingGame) {
-//       const [setting] = await connection.query("SELECT * FROM `admin_ac` ");
+//       startPoint = parseFloat(startPriceRow[0].start_point);
+//       const previousPeriod = winGoNow[0].period;
 
-//       let previousPeriod = winGoNow[0].period;
-//       let amount = Math.floor(Math.random() * 10);
+//       // Get admin settings
+//       const [setting] = await connection.query("SELECT * FROM `admin_ac`");
 
-//       const [minPlayers] = await connection.query(
-//         "SELECT * FROM minutes_1 WHERE status = 0 AND game = ?",
-//         [join],
+//       // Get total money for big/small bets
+//       const [betResults] = await connection.query(
+//         `SELECT 
+//             SUM(CASE WHEN bet = 'l' THEN money ELSE 0 END) AS big_total,
+//             SUM(CASE WHEN bet = 'n' THEN money ELSE 0 END) AS small_total
+//          FROM minutes_2 
+//          WHERE game = ? AND status = 0`,
+//         [join]
+//       );
+      
+//       bigTotal = parseFloat(betResults[0].big_total) || 0;
+//       smallTotal = parseFloat(betResults[0].small_total) || 0;
+
+//       // Default calculation based on betting distribution
+//       if (bigTotal <= smallTotal) {
+//         console.log("Big Total is winning so price will be higher than start");
+//         endPoint = parseFloat((startPoint + Math.random() * 0.1).toFixed(2));
+//       } else {
+//         console.log("Small total is winning so price will be lower than start");
+//         endPoint = parseFloat((startPoint - Math.random() * 0.1).toFixed(2));
+//       }
+
+//       // Apply admin override
+//       let adminOverrideValue = "-1";
+//       if (game === 1) adminOverrideValue = setting[0].wingo1;
+//       if (game === 3) adminOverrideValue = setting[0].wingo3;
+//       if (game === 5) adminOverrideValue = setting[0].wingo5;
+//       if (game === 10) adminOverrideValue = setting[0].wingo10;
+
+//       if (adminOverrideValue === 'l') {
+//         // Force endpoint to be higher than start
+//         endPoint = parseFloat((startPoint + Math.random() * 0.1).toFixed(2));
+//         console.log("Admin override: Forcing result to be higher (l)");
+//       } else if (adminOverrideValue === 'n') {
+//         // Force endpoint to be lower than start
+//         endPoint = parseFloat((startPoint - Math.random() * 0.1).toFixed(2));
+//         console.log("Admin override: Forcing result to be lower (n)");
+//       } else if (adminOverrideValue === 'd') {
+//         // Force draw - make start and end points equal
+//         endPoint = startPoint;
+//         console.log("Admin override: Forcing result to be draw (d)");
+//       } else {
+//         console.log("No valid admin override, using default calculation");
+//       }
+
+//       // Update game result
+//       await connection.query(
+//         "UPDATE wingo SET amount = ?, status = 1, release_status = 1 WHERE period = ? AND game = ?",
+//         [endPoint.toFixed(3), previousPeriod, join]
 //       );
 
-//       if (minPlayers.length >= 2) {
-//         const betColumns = [
-//           // red_small
-//           { name: "red_0", bets: ["0", "t", "d", "n"] },
-//           { name: "red_2", bets: ["2", "d", "n"] },
-//           { name: "red_4", bets: ["4", "d", "n"] },
-//           // green small
-//           { name: "green_1", bets: ["1", "x", "n"] },
-//           { name: "green_3", bets: ["3", "x", "n"] },
-//           // green big
-//           { name: "green_5", bets: ["5", "x", "t", "l"] },
-//           { name: "green_7", bets: ["7", "x", "l"] },
-//           { name: "green_9", bets: ["9", "x", "l"] },
-//           // red big
-//           { name: "red_6", bets: ["6", "d", "l"] },
-//           { name: "red_8", bets: ["8", "d", "l"] },
-//         ];
-
-//         const totalMoneyPromises = betColumns.map(async (column) => {
-//           // Generate placeholders for the array elements
-//           const placeholders = column.bets.map(() => "?").join(",");
-//           // Prepare the query, using placeholders for the array
-//           const query = `
-//                    SELECT SUM(money) AS total_money
-//                    FROM minutes_1
-//                    WHERE game = ? AND status = 0 AND bet IN (${placeholders})
-//                `;
-//           // Execute the query, spreading the array into the parameters
-//           const [result] = await connection.query(query, [
-//             join,
-//             ...column.bets,
-//           ]);
-//           return {
-//             name: column.name,
-//             total_money: result[0]?.total_money
-//               ? parseInt(result[0].total_money, 10)
-//               : 0,
-//           };
-//         });
-
-//         const categories = await Promise.all(totalMoneyPromises);
-//         let smallestCategory = categories.reduce(
-//           (smallest, category) =>
-//             smallest === null || category.total_money < smallest.total_money
-//               ? category
-//               : smallest,
-//           null,
-//         );
-//         const colorBets = {
-//           red_6: [6],
-//           red_8: [8],
-//           red_2: [2], //0 removed
-//           red_4: [4],
-//           green_3: [3],
-//           green_7: [7], //5 removed
-//           green_9: [9], //
-//           green_1: [1],
-//           green_5: [5],
-//           red_0: [0],
-//         };
-
-//         const betsForCategory = colorBets[smallestCategory.name] || [];
-//         const availableBets = betsForCategory.filter(
-//           (bet) =>
-//             !categories.find(
-//               (category) =>
-//                 category.name === smallestCategory.name &&
-//                 category.total_money < smallestCategory.total_money,
-//             ),
-//         );
-//         let lowestBet;
-//         if (availableBets.length > 0) {
-//           lowestBet = availableBets[0];
-//         } else {
-//           lowestBet = betsForCategory.reduce((lowest, bet) =>
-//             bet < lowest ? bet : lowest,
-//           );
-//         }
-
-//         amount = lowestBet;
-//       } else if (
-//         minPlayers.length === 1 &&
-//         parseFloat(minPlayers[0].money) >= 20
-//       ) {
-//         const betColumns = [
-//           { name: "red_small", bets: ["0", "2", "4", "d", "n"] },
-//           { name: "red_big", bets: ["6", "8", "d", "l"] },
-//           { name: "green_big", bets: ["5", "7", "9", "x", "l"] },
-//           { name: "green_small", bets: ["1", "3", "x", "n"] },
-//           { name: "violet_small", bets: ["0", "t", "n"] },
-//           { name: "violet_big", bets: ["5", "t", "l"] },
-//         ];
-
-//         const categories = await Promise.all(
-//           betColumns.map(async (column) => {
-//             const [result] = await connection.query(
-//               `
-//                      SELECT SUM(money) AS total_money
-//                      FROM minutes_1
-//                      WHERE game = ? AND status = 0 AND bet IN (?)
-//                      `,
-//               [join, column.bets],
-//             );
-//             return {
-//               name: column.name,
-//               total_money: parseInt(result[0]?.total_money) || 0,
-//             };
-//           }),
-//         );
-
-//         const colorBets = {
-//           red_big: [6, 8],
-//           red_small: [2, 4], //0 removed
-//           green_big: [7, 9], //5 removed
-//           green_small: [1, 3],
-//           violet_big: [5],
-//           violet_small: [0],
-//         };
-
-//         const smallestCategory = categories.reduce((smallest, category) =>
-//           !smallest || category.total_money < smallest.total_money
-//             ? category
-//             : smallest,
-//         );
-
-//         const betsForCategory = colorBets[smallestCategory.name] || [];
-//         const availableBets = betsForCategory.filter(
-//           (bet) =>
-//             !categories.find(
-//               (category) =>
-//                 category.name === smallestCategory.name &&
-//                 category.total_money < smallestCategory.total_money,
-//             ),
-//         );
-
-//         const lowestBet =
-//           availableBets.length > 0
-//             ? availableBets[0]
-//             : Math.min(...betsForCategory);
-//         amount = lowestBet;
-//       }
-
-//       let nextResult = "";
-//       if (game == 1) nextResult = setting[0].wingo1;
-//       if (game == 3) nextResult = setting[0].wingo3;
-//       if (game == 5) nextResult = setting[0].wingo5;
-//       if (game == 10) nextResult = setting[0].wingo10;
-
-//       let newArr = "";
-//       if (nextResult == "-1") {
-//         // game algorithm generate result
-//         await connection.query(
-//           "UPDATE wingo SET amount = ?, status = 1, release_status = 1 WHERE period = ? AND game = ?",
-//           [amount, previousPeriod, join],
-//         );
-//         newArr = "-1";
-//       } else {
-//         // admin set result
-//         let result = "";
-//         let arr = nextResult.split("|");
-//         let check = arr.length;
-//         if (check == 1) {
-//           newArr = "-1";
-//         } else {
-//           for (let i = 1; i < arr.length; i++) {
-//             newArr += arr[i] + "|";
-//           }
-//           newArr = newArr.slice(0, -1);
-//         }
-//         result = arr[0];
-//         await connection.query(
-//           "UPDATE wingo SET amount = ?, status = 1, release_status = 1 WHERE period = ? AND game = ?",
-//           [result, previousPeriod, join],
-//         );
-//       }
-
+//       // Clear the admin override after applying it
 //       let adminWingoKey = "";
-//       if (game == 1) adminWingoKey = "wingo1";
-//       if (game == 3) adminWingoKey = "wingo3";
-//       if (game == 5) adminWingoKey = "wingo5";
-//       if (game == 10) adminWingoKey = "wingo10";
+//       if (game === 1) adminWingoKey = "wingo1";
+//       if (game === 3) adminWingoKey = "wingo3";
+//       if (game === 5) adminWingoKey = "wingo5";
+//       if (game === 10) adminWingoKey = "wingo10";
 
-//       await connection.query(`UPDATE admin_ac SET ${adminWingoKey} = ?`, [
-//         newArr,
-//       ]);
+//       await connection.query(
+//         `UPDATE admin_ac SET ${adminWingoKey} = ?`,
+//         ["-1"] // Reset to default value
+//       );
 //     }
 
-//     let timeNow = Date.now();
-//     let gameRepresentationId = GameRepresentationIds.WINGO[game];
-//     let NewGamePeriod = generatePeriod(gameRepresentationId);
+//     // Insert new game for the next period
+//     const timeNow = Date.now();
+//     const gameRepresentationId = GameRepresentationIds.WINGO[game];
+//     const NewGamePeriod = generatePeriod(gameRepresentationId);
 
-//     //console.log(NewGamePeriod, join);
-
+//     console.log("⏳ About to insert new game:", NewGamePeriod, join, timeNow);
 //     await connection.query(
-//       `
-//          INSERT INTO wingo
-//          SET period = ?, amount = 0, game = ?, status = 0, time = ?
-//       `,
-//       [NewGamePeriod, join, timeNow],
+//       `INSERT INTO wingo SET period = ?, amount = 0, game = ?, status = 0, time = ?`,
+//       [NewGamePeriod, join, timeNow]
 //     );
+//     // console.log("✅ New wingo game inserted",);
+    
+//     console.log("Debug Info:", {
+//       startPoint,
+//       endPoint,
+//       bigTotal,
+//       smallTotal
+//     });
+
+//     return {
+//       startPoint,
+//       endPoint,
+//       bigTotal,
+//       smallTotal
+//     };
 //   } catch (error) {
-//     if (error) {
-//       console.log(error);
-//     }
+//     console.error("❌ Error in addWinGo:", error.message);
+//     throw error;
 //   }
 // };
 
 
-
 const addWinGo = async (game) => {
   try {
+    const COIN_CONFIGS = {
+      BTC: { basePrice: 60000, volatility: 0.07 },
+      ETH: { basePrice: 3000, volatility: 0.05 },
+      BNB: { basePrice: 500, volatility: 0.04 },
+      ADA: { basePrice: 0.5, volatility: 0.02 },
+    };
+
+
+ 
     let join = "";
     if (game === 1) join = "wingo";
     else if (game === 3) join = "wingo3";
@@ -1016,127 +947,207 @@ const addWinGo = async (game) => {
       [join]
     );
 
-    // Fetch start price from minutes_2
-    const [startPriceRow] = await connection.query(
-      "SELECT startPrice AS start_point FROM minutes_2 WHERE status = 0 AND game = ? ORDER BY id DESC LIMIT 1",
+    // Fetch start prices for all coins from minutes_2
+    const [startPriceRows] = await connection.query(
+      `SELECT 
+        MAX(CASE WHEN coinType = 'BTC' THEN startPrice ELSE NULL END) as btc_start,
+        MAX(CASE WHEN coinType = 'ETH' THEN startPrice ELSE NULL END) as eth_start,
+        MAX(CASE WHEN coinType = 'BNB' THEN startPrice ELSE NULL END) as bnb_start,
+        MAX(CASE WHEN coinType = 'ADA' THEN startPrice ELSE NULL END) as ada_start
+      FROM minutes_2 
+      WHERE status = 0 AND game = ?`,
       [join]
     );
 
-    let startPoint = null;
-    let endPoint = null;
-    let bigTotal = 0;
-    let smallTotal = 0;
 
-    const isPendingGame = winGoNow.length > 0;
+    
 
-    if (isPendingGame) {
-      startPoint = parseFloat(startPriceRow[0].start_point);
-      const previousPeriod = winGoNow[0].period;
-
-      // Get admin settings
-      const [setting] = await connection.query("SELECT * FROM `admin_ac`");
-
-      // Get total money for big/small bets
-      const [betResults] = await connection.query(
-        `SELECT 
-            SUM(CASE WHEN bet = 'l' THEN money ELSE 0 END) AS big_total,
-            SUM(CASE WHEN bet = 'n' THEN money ELSE 0 END) AS small_total
-         FROM minutes_2 
-         WHERE game = ? AND status = 0`,
-        [join]
-      );
-      
-      bigTotal = parseFloat(betResults[0].big_total) || 0;
-      smallTotal = parseFloat(betResults[0].small_total) || 0;
-
-      // Default calculation based on betting distribution
-      if (bigTotal <= smallTotal) {
-        console.log("Big Total is winning so price will be higher than start");
-        endPoint = parseFloat((startPoint + Math.random() * 0.1).toFixed(2));
-      } else {
-        console.log("Small total is winning so price will be lower than start");
-        endPoint = parseFloat((startPoint - Math.random() * 0.1).toFixed(2));
-      }
-
-      // Apply admin override
-      let adminOverrideValue = "-1";
-      if (game === 1) adminOverrideValue = setting[0].wingo1;
-      if (game === 3) adminOverrideValue = setting[0].wingo3;
-      if (game === 5) adminOverrideValue = setting[0].wingo5;
-      if (game === 10) adminOverrideValue = setting[0].wingo10;
-
-      if (adminOverrideValue === 'l') {
-        // Force endpoint to be higher than start
-        endPoint = parseFloat((startPoint + Math.random() * 0.1).toFixed(2));
-        console.log("Admin override: Forcing result to be higher (l)");
-      } else if (adminOverrideValue === 'n') {
-        // Force endpoint to be lower than start
-        endPoint = parseFloat((startPoint - Math.random() * 0.1).toFixed(2));
-        console.log("Admin override: Forcing result to be lower (n)");
-      } else if (adminOverrideValue === 'd') {
-        // Force draw - make start and end points equal
-        endPoint = startPoint;
-        console.log("Admin override: Forcing result to be draw (d)");
-      } else {
-        console.log("No valid admin override, using default calculation");
-      }
-
-      // Update game result
-      await connection.query(
-        "UPDATE wingo SET amount = ?, status = 1, release_status = 1 WHERE period = ? AND game = ?",
-        [endPoint.toFixed(3), previousPeriod, join]
-      );
-
-      // Clear the admin override after applying it
-      let adminWingoKey = "";
-      if (game === 1) adminWingoKey = "wingo1";
-      if (game === 3) adminWingoKey = "wingo3";
-      if (game === 5) adminWingoKey = "wingo5";
-      if (game === 10) adminWingoKey = "wingo10";
-
-      await connection.query(
-        `UPDATE admin_ac SET ${adminWingoKey} = ?`,
-        ["-1"] // Reset to default value
-      );
+    // Check if we have valid start prices
+    if (!startPriceRows || startPriceRows.length === 0) {
+      console.error("Error: Missing start prices for one or more coins");
+      return;
     }
+
+    const startPrices = {
+      BTC: parseFloat(startPriceRows[0].btc_start),
+      ETH: parseFloat(startPriceRows[0].eth_start),
+      BNB: parseFloat(startPriceRows[0].bnb_start),
+      ADA: parseFloat(startPriceRows[0].ada_start)
+    };
+
+    console.log(startPrices);
+    const previousPeriod = winGoNow[0].period;
+
+    // Get admin settings
+    const [setting] = await connection.query("SELECT * FROM `admin_ac`");
+    if (!setting || setting.length === 0) {
+      console.error("Error: No admin settings found.");
+      return;
+    }
+
+    // Get total money for big/small bets (across all coins)
+    const [betResults] = await connection.query(
+      `SELECT 
+          SUM(CASE WHEN bet = 'l' THEN money ELSE 0 END) AS big_total,
+          SUM(CASE WHEN bet = 'n' THEN money ELSE 0 END) AS small_total
+       FROM minutes_2 
+       WHERE game = ? AND status = 0`,
+      [join]
+    );
+
+
+
+    if (!betResults || betResults.length === 0) {
+      console.error("Error: No betting data found.");
+      return;
+    }
+
+    const bigTotal = parseFloat(betResults[0].big_total) || 0;
+    const smallTotal = parseFloat(betResults[0].small_total) || 0;
+
+    if (bigTotal === 0 && smallTotal === 0) {
+      console.log("No bets placed - ending game without price movement");
+      // You might want to handle this case differently
+      return;
+    }
+
+    // Calculate end prices for each coin based on the same logic
+    const endPrices = {};
+    const priceChanges = {};
+
+    // Get admin override value
+    let adminOverrideValue = "-1";
+    if (game === 1) adminOverrideValue = setting[0].wingo1;
+    if (game === 3) adminOverrideValue = setting[0].wingo3;
+    if (game === 5) adminOverrideValue = setting[0].wingo5;
+    if (game === 10) adminOverrideValue = setting[0].wingo10;
+
+    // Calculate price movement direction (same for all coins)
+    let shouldGoUp = null;
+
+  console.log("big total is:",bigTotal);
+  console.log("Small total is:",smallTotal);
+  let result=null;
+    if (bigTotal < smallTotal) {
+      console.log("Big Total is winning so price will be higher than start");
+      shouldGoUp=true;
+      result='l';
+    } else {
+      console.log("Small total is winning so price will be lower than start");
+      shouldGoUp=false;
+      result='n';
+    }
+
+
+    if (adminOverrideValue === 'l') {
+      shouldGoUp = true;
+      console.log("Price will go up due to admin override")
+    }
+    else if (adminOverrideValue === 'n') {
+      shouldGoUp = false;
+      console.log("Price will go Down due to admin override")
+    }
+    else if (adminOverrideValue === 'd') shouldGoUp = null; // draw
+
+
+
+    // Calculate end prices for each coin
+    const BTC_TARGET_MOVEMENT = 1;
+
+// Calculate end prices with strict movement ranges
+for (const coin in startPrices) {
+  const startPrice = startPrices[coin];
+  
+  // Define exact movement ranges for each coin
+  const MOVEMENT_RANGES = {
+    BTC: { min: 1.00, max: 2.00 },   // $0.10 to $2.00
+    ETH: { min: 0.3, max: 2.00 },   // $0.05 to $1.00
+    BNB: { min: 0.02, max: 0.20 },   // $0.02 to $0.50
+    ADA: { min: 0.0001, max: 0.002 } // $0.0001 to $0.002
+  };
+  
+  // Calculate movement amount within specified range
+  let movementAmount = MOVEMENT_RANGES[coin].min + 
+    (Math.random() * (MOVEMENT_RANGES[coin].max - MOVEMENT_RANGES[coin].min));
+  
+  // Apply direction
+  let endPrice;
+  if (shouldGoUp === true) {
+    endPrice = startPrice + movementAmount;
+  } else if (shouldGoUp === false) {
+    endPrice = startPrice - movementAmount;
+  } else {
+    endPrice = startPrice; // Draw
+  }
+  
+  // Ensure we don't go below minimum price
+  endPrice = Math.max(0.01, endPrice);
+  
+  endPrices[coin] = parseFloat(endPrice.toFixed(4));
+  priceChanges[coin] = parseFloat((endPrice - startPrice).toFixed(4));
+  
+  console.log(`[${coin}] Change: ${priceChanges[coin].toFixed(4)} ` +
+             `(Range: ${MOVEMENT_RANGES[coin].min.toFixed(4)}-${MOVEMENT_RANGES[coin].max.toFixed(4)})`);
+}
+    
+
+    // Update game result with all coin prices
+    await connection.query(
+      "UPDATE wingo SET amount = 0, status = 1, release_status = 1 WHERE period = ? AND game = ?",
+      [previousPeriod, join]
+    );
+
+    // Clear the admin override after applying it
+    let adminWingoKey = "";
+    if (game === 1) adminWingoKey = "wingo1";
+    if (game === 3) adminWingoKey = "wingo3";
+    if (game === 5) adminWingoKey = "wingo5";
+    if (game === 10) adminWingoKey = "wingo10";
+
+    await connection.query(
+      `UPDATE admin_ac SET ${adminWingoKey} = ?`,
+      ["-1"]
+    );
 
     // Insert new game for the next period
     const timeNow = Date.now();
     const gameRepresentationId = GameRepresentationIds.WINGO[game];
     const NewGamePeriod = generatePeriod(gameRepresentationId);
 
-    console.log("⏳ About to insert new game:", NewGamePeriod, join, timeNow);
     await connection.query(
       `INSERT INTO wingo SET period = ?, amount = 0, game = ?, status = 0, time = ?`,
       [NewGamePeriod, join, timeNow]
     );
-    // console.log("✅ New wingo game inserted",);
-    
-    console.log("Debug Info:", {
-      startPoint,
-      endPoint,
+
+    console.log("Game result calculated:", {
+      startPrices,
+      endPrices,
+      priceChanges,
       bigTotal,
-      smallTotal
+      smallTotal,
+      adminOverride: adminOverrideValue,
+      result
     });
 
     return {
-      startPoint,
-      endPoint,
+      startPrices,
+      endPrices,
+      priceChanges,
       bigTotal,
-      smallTotal
+      smallTotal,
+      result
     };
+
   } catch (error) {
     console.error("❌ Error in addWinGo:", error.message);
     throw error;
   }
 };
 
-
-
-
-async function handlingWinGo1P(typeid, startPoint, endPoint, bigtotal, smalltotal) {
+async function handlingWinGo1P(typeid,bigtotal, smalltotal,result) {
   try {
     // Map typeid to game name
+    console.log("handleWingo1P started getting executed");
     let game;
     switch (typeid) {
       case 1: game = "wingo"; break;
@@ -1160,23 +1171,28 @@ async function handlingWinGo1P(typeid, startPoint, endPoint, bigtotal, smalltota
     }
 
     // Determine the winning result
-    let result;
     let winningSide;
     let winAmount;
     let loseAmount;
 
-    if (startPoint > endPoint) {
+    if (result === 'n') {
       result = 'n'; // Down wins
       winningSide = 'Down';
       winAmount = smalltotal;
       loseAmount = bigtotal;
-    } else if (startPoint < endPoint) {
+    } else if (result=== 'l') {
       result = 'l'; // Up wins
       winningSide = 'Up';
       winAmount = bigtotal;
       loseAmount = smalltotal;
-    } else {
+    } else if(result==='d'){
       result = 'd'; // Draw
+      winningSide = 'Draw';
+      winAmount = 0; // No winnings in a draw
+      loseAmount = 0; // No losses in a draw
+    }
+    else{
+      result = 'invalid'; // Draw
       winningSide = 'Draw';
       winAmount = 0; // No winnings in a draw
       loseAmount = 0; // No losses in a draw
@@ -1311,7 +1327,7 @@ export const getPeriod = async (req, res) => {
 
 const calculateWinAmount = (bet, result, total) => {
   // Simple payout calculation - adjust multiplier as needed
-  const payoutMultiplier = 1.98; // Standard payout for binary options
+  const payoutMultiplier = 1.90; // Standard payout for binary options
   
   // Convert to lowercase for case-insensitive comparison
   bet = bet.toLowerCase();
@@ -1454,14 +1470,14 @@ const getStatsByTimePeriod = async (req, res) => {
     );
 
     const [[amountWon]] = await connection.query(
-      `SELECT SUM(money) AS win_amount 
+      `SELECT SUM(amount) AS win_amount 
        FROM minutes_2 
        WHERE code = ? AND result = bet ${timeCondition}`,
       [user.code]
     );
 
     const [[amountSpent]] = await connection.query(
-      `SELECT SUM(money) AS amount 
+      `SELECT SUM(amount) AS amount 
        FROM minutes_2 
        WHERE code = ? ${timeCondition}`,
       [user.code]
@@ -1513,7 +1529,7 @@ const getOverallProfitOrLoss = async (req, res) => {
     }
 
     const [[{ amount }]] = await connection.query(
-      `SELECT SUM(CASE WHEN result = bet THEN money ELSE -money END) AS amount 
+      `SELECT SUM(CASE WHEN result = bet THEN amount ELSE -money END) AS amount 
        FROM minutes_2 
        WHERE code = ? ${dateCondition}`,
       [user.code]
@@ -1536,6 +1552,20 @@ const getOverallProfitOrLoss = async (req, res) => {
 };
 
 
+// Get current server time split into 4 digits
+const getCurrentTimeDigits = (req, res) => {
+  const now = new Date();
+  const minutes = now.getMinutes(); // 0-59
+  const seconds = now.getSeconds(); // 0-59
+
+  res.json({
+    min1: Math.floor(minutes / 10), // First digit of minute (e.g., "3" for 35 mins)
+    min2: minutes % 10,             // Second digit (e.g., "5" for 35 mins)
+    sec1: Math.floor(seconds / 10), // First digit of second (e.g., "0" for 09 secs)
+    sec2: seconds % 10,             // Second digit (e.g., "9" for 09 secs)
+    serverTime: now.getTime()       // Current server timestamp (for sync)
+  });
+};
 
 
 const winGoController = {
@@ -1552,7 +1582,8 @@ const winGoController = {
   getPeriod,
   getStatsByGame,
   getStatsByTimePeriod,
-  getOverallProfitOrLoss
+  getOverallProfitOrLoss,
+  getCurrentTimeDigits
 };
 
 export default winGoController;

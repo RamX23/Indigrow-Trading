@@ -1135,7 +1135,7 @@ textarea {
   font-weight: 400;
   border: none;
   border-radius: 0.13333rem;
-  box-shadow: 0 0.10667rem 0.21333rem #d0d0ed5c;
+  /* box-shadow: 0 0.10667rem 0.21333rem #d0d0ed5c; */
 }
 .ar-searchbar input::-webkit-input-placeholder {
   color: #acafc2;
@@ -1433,7 +1433,7 @@ textarea {
 .navbar-fixed.wc .navbar__content-title[data-v-19888208],
 .navbar-fixed.wc .navbar__content-left .van-icon[data-v-19888208],
 .navbar-fixed.wc .navbar__content-title .van-icon[data-v-19888208] {
-  color: #fff;
+  color: white;
 }
 .navbar__content[data-v-19888208] {
   position: relative;
@@ -1464,7 +1464,7 @@ textarea {
   top: 0;
 }
 .navbar__content-left .van-icon[data-v-19888208] {
-  color: #333;
+  color: white;
   font-size: 0.48rem;
 }
 .navbar__content-center[data-v-19888208] {

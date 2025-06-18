@@ -4,6 +4,7 @@ import {
   REWARD_STATUS_TYPES_MAP,
   REWARD_TYPES_MAP,
 } from "../constants/reward_types.js";
+import jwt from "jsonwebtoken";
 import {
   generateClaimRewardID,
   getBonuses,
@@ -11,8 +12,28 @@ import {
 } from "../helpers/games.js";
 import e from "express";
 import moment from "moment";
+import bcrypt from 'bcrypt'
+import _ from "lodash";
+
 
 let timeNow = Date.now();
+
+const utils = {
+  generateUniqueNumberCodeByDigit(digit) {
+    const timestamp = new Date().getTime().toString();
+    const randomNum = _.random(1e12).toString();
+    const combined = timestamp + randomNum;
+    return _.padStart(combined.slice(-digit), digit, "0");
+  },
+  getIpAddress(req) {
+    let ipAddress =
+      req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+    if (ipAddress.substr(0, 7) == "::ffff:") {
+      ipAddress = ipAddress.substr(7);
+    }
+    return ipAddress;
+  },
+};
 
 const adminPage = async (req, res) => {
   return res.render("manage/index.ejs");
@@ -99,9 +120,13 @@ const settings = async (req, res) => {
   return res.render("manage/settings.ejs");
 };
 
-const editsubordinate=async(req,res)=>{
-  return res.render("manage/editSubordinate.ejs")
-}
+// const editsubordinate=async(req,res)=>{
+//   return res.render("manage/editSubordinate.ejs")
+// }
+
+const createUser = async (req, res) => {
+  return res.render("manage/createUser.ejs");
+};
 
 // xác nhận admin
 const middlewareAdminController = async (req, res, next) => {
@@ -758,7 +783,7 @@ const settingGet = async (req, res) => {
       datas: bank_recharge,
       momo: {
         bank_name: bank_recharge_momo_data?.name_bank || "",
-        username: bank_recharge_momo_data?.name_user || "",
+        phoneNumber: bank_recharge_momo_data?.name_user || "",
         upi_id: bank_recharge_momo_data?.stk || "",
         usdt_wallet_address: bank_recharge_momo_data?.qr_code_image || "",
       },
@@ -828,7 +853,7 @@ const getUserDataByPhone = async (phone) => {
   return {
     phone: user.phone,
     code: user.code,
-    username: user.name_user,
+    phoneNumber: user.name_user,
     invite: user.invite,
   };
 };
@@ -1038,13 +1063,13 @@ const settingBank = async (req, res) => {
       // await connection.query(`UPDATE bank_recharge SET name_bank = ?, name_user = ?, stk = ?, qr_code_image = ? WHERE type = 'upi'`, [name_bank, name, info, qr]);
 
       const bankName = req.body.bank_name;
-      const username = req.body.username;
+      const phoneNumber = req.body.phoneNumber;
       const upiId = req.body.upi_id;
       const usdtWalletAddress = req.body.usdt_wallet_address;
 
       await connection.query(
         "INSERT INTO bank_recharge SET name_bank = ?, name_user = ?, stk = ?, qr_code_image = ?, type = 'momo'",
-        [bankName, username, upiId, usdtWalletAddress],
+        [bankName, phoneNumber, upiId, usdtWalletAddress],
       );
 
       return res.status(200).json({
@@ -1396,81 +1421,157 @@ const timeCreate = () => {
   return time;
 };
 
+const saltRounds = 10; 
+
 const register = async (req, res) => {
-  let { username, password, invitecode } = req.body;
-  let id_user = randomNumber(10000, 99999);
-  let name_user = "Member" + randomNumber(10000, 99999);
-  let code = randomString(5) + randomNumber(10000, 99999);
-  let ip = ipAddress(req);
-  let time = timeCreate();
-
-  invitecode = "2cOCs36373";
-
-  if (!username || !password || !invitecode) {
-    return res.status(200).json({
-      message: "ERROR!!!",
-      status: false,
-    });
-  }
-
-  if (!username) {
-    return res.status(200).json({
-      message: "phone error",
-      status: false,
-    });
-  }
-
   try {
+    const { fullName, phoneNumber, pwd, invitecode, dialCode } = req.body;
+
+    let id_user = utils.generateUniqueNumberCodeByDigit(7);
+    while (true) {
+      const [rows] = await connection.query(
+        "SELECT `id_user` FROM users WHERE `id_user` = ?",
+        [id_user]
+      );
+      if (_.isEmpty(rows)) break;
+      id_user = utils.generateUniqueNumberCodeByDigit(7);
+    }
+
+    const otp = utils.generateUniqueNumberCodeByDigit(6);
+    const name_user = fullName;
+    const code = utils.generateUniqueNumberCodeByDigit(5) + id_user;
+    const bonus_money = process.env.BONUS_MONEY_ON_REGISTER || 0;
+    const ip = utils.getIpAddress(req);
+    const time = moment().valueOf();
+    const timeNow = moment().valueOf(); // Added declaration
+
     const [check_u] = await connection.query(
-      "SELECT * FROM users WHERE phone = ? ",
-      [username],
+      "SELECT * FROM users WHERE phone = ?",
+      [phoneNumber]
     );
-    if (check_u.length == 1) {
+    const [check_i] = await connection.query(
+      "SELECT * FROM users WHERE code = ?",
+      [invitecode]
+    );
+    const [check_ip] = await connection.query(
+      "SELECT * FROM users WHERE ip_address = ?",
+      [ip]
+    );
+
+    if (check_u.length > 0) {
       return res.status(200).json({
-        message: "register account", //Số điện thoại đã được đăng ký
+        message: "Registered phone number",
         status: false,
       });
-    } else {
-      const sql = `INSERT INTO users SET 
-            id_user = ?,
-            phone = ?,
-            name_user = ?,
-            password = ?,
-            money = ?,
-            level = ?,
-            code = ?,
-            invite = ?,
-            veri = ?,
-            ip_address = ?,
-            status = ?,
-            time = ?`;
-      await connection.execute(sql, [
+    }
+
+    if (check_i.length === 0) {
+      return res.status(200).json({
+        message: "Referrer code does not exist",
+        status: false,
+      });
+    }
+
+    // if (check_ip.length > 3) {
+    //   return res.status(200).json({
+    //     message: "Registered IP address",
+    //     status: false,
+    //   });
+    // }
+
+    const ctv = check_i[0].level === 2 ? check_i[0].phone : check_i[0].ctv;
+
+    const hashedPassword = await bcrypt.hash(pwd, 10); // saltRounds assumed as 10
+
+    await connection.execute(
+      `INSERT INTO users SET 
+        id_user = ?, phone = ?, name_user = ?, password = ?, plain_password = ?, 
+        money = ?, bonus_money = ?, code = ?, invite = ?, ctv = ?, veri = ?, 
+        otp = ?, ip_address = ?, status = ?, time = ?, dial_code = ?`,
+      [
         id_user,
-        username,
+        phoneNumber,
         name_user,
-        md5(password),
+        hashedPassword,
+        pwd,
         0,
-        2,
+        bonus_money,
         code,
         invitecode,
+        ctv,
         1,
+        otp,
         ip,
         1,
         time,
-      ]);
-      await connection.execute(
-        "INSERT INTO point_list SET phone = ?, level = 2",
-        [username],
-      );
-      return res.status(200).json({
-        message: "registration success", //Register Sucess
-        status: true,
-      });
+        dialCode,
+      ]
+    );
+
+    await connection.execute(
+      "INSERT INTO point_list SET phone = ?",
+      [phoneNumber]
+    );
+
+    if (check_i[0].name_user !== "Admin") {
+      const levels = [2, 5, 8, 11, 14, 17, 20, 23, 26, 29, 32, 35, 38, 41, 44];
+      for (let i = 0; i < levels.length; i++) {
+        if (check_i.length < levels[i]) break;
+        await connection.execute(
+          "UPDATE users SET user_level = ? WHERE code = ?",
+          [i + 1, invitecode]
+        );
+      }
     }
+
+    await connection.execute(
+      "INSERT INTO turn_over SET phone = ?, code = ?, invite = ?",
+      [phoneNumber, code, invitecode]
+    );
+
+    const [userRows] = await connection.query(
+      "SELECT * FROM users WHERE phone = ?",
+      [phoneNumber]
+    );
+    const others = userRows[0];
+
+    const accessToken = jwt.sign(
+      {
+        user: {
+          ...others,
+          password: undefined,
+          money: undefined,
+          ip: undefined,
+          veri: undefined,
+          ip_address: undefined,
+          status: undefined,
+          time: undefined,
+        },
+        timeNow: timeNow,
+      },
+      process.env.JWT_ACCESS_TOKEN,
+      { expiresIn: "1d" }
+    );
+
+    await connection.execute(
+      "UPDATE users SET token = ? WHERE phone = ?",
+      [md5(accessToken), phoneNumber]
+    );
+
+    return res.status(200).json({
+      message: "Registered successfully",
+      status: true,
+    });
   } catch (error) {
-    if (error) console.log(error);
+    console.error(error);
+    return res.status(500).json({
+      status: false,
+      message: "Internal Server Error",
+    });
   }
 };
+
+
 
 const profileUser = async (req, res) => {
   let phone = req.body.phone;
@@ -2701,9 +2802,54 @@ const adminOverrideSubordinates = async (req, res) => {
   }
 };
 
+const getBalance=async(req,res)=>{
+  // console.log("req received")
+  try{
+   const phone=req.params();
+   await connection.execute(`
+   select  money from users where phone=?
+   `,[phone]);
+  return res.status(200).json({message:"Balance fetched successfully"});
+  }
+  catch(err){
+    console.error("Error in fetching wallet amount for admin",err);
+    return res.status(500).json({message:error.message});
+  }
+}
+
+const editAmount = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const amount = req.body.amount;
+
+    const [rows] = await connection.query(
+      `SELECT * FROM users WHERE id = ?`,
+      [id]
+    );
+
+    if (!rows || rows.length === 0) {
+      return res.status(404).json({ message: "Invalid user ID" });
+    }
+
+    await connection.execute(
+      `UPDATE users SET money = ? WHERE id = ?`,
+      [amount, id]
+    );
+
+    res.json({ success: true, message: "Amount updated successfully." });
+
+  } catch (err) {
+    console.error("Error occurred while editing balance:", err);
+    res.status(500).json({ success: false, message: "Error updating amount." });
+  }
+};
+
+
+
+
 const adminController = {
   adminPage,
-  editsubordinate,
+  createUser,
   adminPage3,
   adminPage5,
   adminPage10,
@@ -2758,7 +2904,9 @@ const adminController = {
   listCheckSalaryEligibility,
   getSalary,
   adminOverrideSubordinates,
-  editSubordinate
+  editSubordinate,
+  getBalance,
+  editAmount
 };
 
 export default adminController;

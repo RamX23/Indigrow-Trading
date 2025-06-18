@@ -37,7 +37,7 @@
     align-items: center;
     height: auto;
     padding-top: .6rem;
-    background-image: url(/assets/png/promotionbg-13880556.png), var(--main_gradient-color);
+    /* background-image: url(/assets/png/promotionbg-13880556.png), var(--main_gradient-color); */
     background-repeat: no-repeat;
     background-position: center;
     background-size: cover, 100% 100%
@@ -212,7 +212,7 @@
     min-height: 2.93333rem;
     padding: .25333rem .18667rem;
     border-radius: .13333rem;
-    background-color: var(--bg_color_L2);
+    background-color: #293b5c;
     box-shadow: var(--BoxShadowColor-9);
     margin-bottom: 2.66667rem
 }
@@ -293,7 +293,7 @@
 
 .promote__cell-item[data-v-600663f7] {
     padding: .37333rem .26667rem .37333rem .37333rem;
-    background: var(--bg_color_L2);
+    background: #293b5c;
     box-shadow: var(--BoxShadowColor-9);
     border-radius: .26667rem;
     display: -webkit-box;

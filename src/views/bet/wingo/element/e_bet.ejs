@@ -1,44 +1,193 @@
 <style>
-    .chart-controls {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    z-index: 100;
-}
-.chart-controls button {
-    background: rgba(0,0,0,0.5);
-    color: white;
-    border: none;
-    padding: 5px 10px;
-    margin: 0 2px;
-    cursor: pointer;
+    /* Base styles for the container */
+    .Betting__C {
+    min-height: calc(100dvh - 80px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    max-height: calc(100dvh - 80px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    background-color: #0f0832;
+    width: 100%;
+    padding-left: 0;
+    padding-right: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-sizing: border-box;
 }
 
+    /* Chart header adjustments */
+    .chart-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.5em 0.5em;
+        flex-shrink: 0;
+    }
+
+    /* Chart container with dynamic height */
+    .Betting__C-numC {
+        position: relative;
+        flex: 1 1 auto;
+        min-height: 0;
+        background-color: rgba(11, 4, 47, 0.832);
+        width: 100%;
+        padding: 0;
+        margin-top: 0.5em;
+    }
+
+    /* Controls below chart */
+    .below-chart {
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        padding: 0.5em;
+        flex-shrink: 0;
+    }
+
+    /* Buttons at bottom */
+    .Betting__C-foot {
+        margin-top: 0.5em;
+        display: flex;
+        justify-content: space-around;
+        background-color: rgba(11, 4, 47, 0.832);
+        padding: 0.5em;
+        flex-shrink: 0;
+        position: relative;
+        z-index: 10; /* Ensure buttons stay above nav */
+    }
+    .TimeLeft__C-time{
+        font-size: 0.1em;
+    }
+    /* Mobile-specific adjustments */
+    @media (max-width: 768px) {
+        /* Make timer smaller on mobile */
+        .TimeLeft__C-time div {
+            font-size: 5em !important;
+        }
+        
+        /* Adjust bet amount input */
+        #betAmountInput {
+            width: 4em !important;
+            padding: 10px !important; /* Larger tap target */
+        }
+        
+        /* Make buttons more compact but still touch-friendly */
+        .Betting__C-foot-b, .Betting__C-foot-s {
+            min-width: 8em !important;
+            height: 3em !important;
+            font-size: 0.9em;
+            padding: 0.5em !important;
+        }
+        
+        /* Adjust chart height for mobile */
+        .Betting__C-numC {
+            height: 50vh !important;
+        }
+        
+        /* Increase tap target size for all buttons */
+        .amount-btn, .multiplier-btn, .quick-amount-btn {
+            min-width: 25px !important;
+            min-height: 20px !important;
+        }
+        .TimeLeft__C-time{
+            font-size: 0.2em;
+        }
+    }
+
+    /* Very small devices (e.g., iPhone 5/SE) */
+    @media (max-width: 320px) {
+        .chart-header {
+            flex-direction: row; /* Keep horizontal layout */
+            gap: 0.5em;
+            padding: 0.3em;
+        }
+        
+        .TimeLeft__C-time div {
+            font-size: 3.5em !important; /* Slightly larger than before */
+        }
+        
+        .Betting__C-foot-b, .Betting__C-foot-s {
+            min-width: 6em !important;
+            font-size: 0.8em;
+        }
+        
+        /* Adjust input field */
+        #betAmountInput {
+            width: 3.5em !important;
+            font-size: 14px;
+        }
+    }
+
+    /* Prevent zooming on mobile */
+    @media (max-width: 768px) {
+        input, select, textarea {
+            font-size: 16px;
+        }
+        
+        /* Disable pinch zoom */
+        touch-action: pan-x pan-y;
+    }
+
+    /* Ensure buttons are always clickable above nav */
+    @media (max-height: 700px) {
+        .Betting__C-numC {
+            height: 40vh !important;
+        }
+        
+        .Betting__C-foot {
+            padding-bottom: 10px;
+            margin-bottom: env(safe-area-inset-bottom); /* For iPhone X+ */
+        }
+    }
 </style>
-<div data-v-4aca9bd1="" data-v-40958d9a="" class="Betting__C" voicetype="1" typeid="1" style="height: 100vh; background-color:rgba(11, 4, 47, 0.832); width: 100%;  padding: 0; margin-bottom: 0; margin-top: 0; ">
+
+
+<div data-v-4aca9bd1="" data-v-40958d9a="" class="Betting__C" voicetype="1" typeid="1" style="height: 90vh; background-color:#0f0832; width: 100%;  padding: 0; margin-bottom: 0; margin-top: 0; ">
     <!-- Hidden mark div kept for compatibility -->
     <div data-v-4aca9bd1="" class="Betting__C-mark" style="display: none;">
         <div data-v-4aca9bd1="">2</div>
         <div data-v-4aca9bd1="">7</div>
     </div>
 
-    <div class="chart-header" style="display: flex;  align-items: center; justify-content: space-between; margin-top: 0; padding-top: 0;">
+    <div class="chart-header" style="display: flex;  align-items: center; justify-content: space-between; margin-top: 0.3em; padding-top: 0; padding-inline: 1em;">
         <!-- Coin selection dropdown -->
-        <div class="right-header" style="display: flex; justify-content: center; align-items: center; flex-direction: column; gap: 0.2em; padding-left: 1em;"> 
-            <div class="period" style="color: white;">Period</div>
-        <div data-v-4aca9bd1="" class="Betting__C-coin-select" style="width: 3.5rem;"> 
-            <select id="coinSelect" style="padding: 5px; width: 100%; border-radius: 4px; border: 1px solid #ccc; font-size: 10px; background: #05294d; color: white;">
-                <option value="BTC">Bitcoin (BTC)</option>
-                <option value="ETH">Ethereum (ETH)</option>
-                <option value="BNB">Binance Coin (BNB)</option>
-                <option value="ADA">Cardano (ADA)</option>
-            </select>
+        <div class="right-header" style="display: flex; justify-content: center; align-items: center; flex-direction: column; gap: 0.2em; padding-left: 1em;">
+            <div class="period" style="color: white; font-weight: bold;">Period</div>
+            <div data-v-4aca9bd1="" class="Betting__C-coin-select" style="width: 3.5rem;">
+                <div class="custom-select-wrapper">
+                    <div class="custom-select-trigger">
+                        <img src="/assets/svg/bnb-bnb-logo.png" alt="BNB" style="width: 16px; height: 16px; margin-right: 5px;">
+                        <span>Binance coin(BNB)</span>
+                        <div class="arrow"></div>
+                    </div>
+                    <div class="custom-options">
+                        <div class="custom-option" data-value="BTC">
+                            <img src="/assets/svg/bnb-bnb-logo.png" alt="BNB" style="width: 16px; height: 16px; margin-right: 5px;"> Binance coin(BNB)
+                        </div>
+                        <div class="custom-option" data-value="ETH">
+                            <img src="/assets/svg/bitcoin-sv-bsv-logo.png" alt="BSV" style="width: 16px; height: 16px; margin-right: 5px;"> Bitcoin SV(BSV) 2928
+                        </div>
+                        <div class="custom-option" data-value="BNB">
+                            <img src="/assets/svg/uniswap-uni-logo.png" alt="UNI" style="width: 16px; height: 16px; margin-right: 5px;"> Uniswap(UNI) 564
+                        </div>
+                        <div class="custom-option" data-value="ADA">
+                            <img src="/assets/svg/nem-xem-logo.png" alt="XEM" style="width: 16px; height: 16px; margin-right: 5px;"> Nem(XEM) 0.75
+                        </div>
+                    </div>
+                </div>
+                <select id="coinSelect" style="display: none;">
+                    <option value="BTC">Binance coin(BNB)</option>
+                    <option value="BNB">Uniswap(UNI) </option>
+                    <option value="ETH">Bitcoin SV(BSV) </option>
+                    <option value="ADA">Nem(XEM) </option>
+                </select>
+            </div>
         </div>
-    </div>
         <div class="left-header" style="display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 0.5em; ">
             <div class="timer" style="padding-bottom:0.4em;">
-                <div data-v-3e4c6499=""   style="color: white;">Time remaining </div>
-                <div data-v-3e4c6499="" class="TimeLeft__C-time" style="font-size: 0.1em;">
+                <div data-v-3e4c6499="" style="color: white;">Time remaining </div>
+                <div data-v-3e4c6499="" class="TimeLeft__C-time">
                     <div data-v-3e4c6499="" style="font-size: 10em;">0</div>
                     <div data-v-3e4c6499="" style="font-size: 10em;">0</div>
                     <div data-v-3e4c6499="" style="font-size: 10em;">:</div>
@@ -46,35 +195,39 @@
                     <div data-v-3e4c6499="" style="font-size: 10em;">9</div>
                 </div>
             </div>
-       
+
         </div>
     </div>
-  
+
     <!-- Chart container with info panel -->
-    
-    <div data-v-4aca9bd1="" class="Betting__C-numC number-box" style="position: relative; height: 66vh;  background-color:rgba(11, 4, 47, 0.832);width: 100%;padding: 0;padding-top: 0; margin-top: 0; width: 100%;">
+
+    <div data-v-4aca9bd1="" class="Betting__C-numC number-box" style="position: relative; height: 66vh;  background-color:rgba(11, 4, 47, 0.832);width: 100%;padding: 0;padding-top: 0; margin-top: 1em; width: 100%;">
         <div class="chart-info-panel" style="position: absolute; top: 10px; left: 10px; z-index: 100; background: rgba(33, 32, 32, 0.2); color: white; padding: 8px 12px; border-radius: 4px; font-size: 12px;">
             <div>Current: <span id="currentPriceDisplay">0.00</span></div>
             <div>Change: <span id="priceChangeDisplay">0.00%</span></div>
             <div>Time: <span id="currentTimeDisplay">00:00:00</span></div>
         </div>
-        <canvas class="priceChart" class="price-canvas" style="width: 100%; padding-left: 0; margin-left: 0; border: none;"></canvas>
-          
+        <canvas class="priceChart" class="price-canvas" style="width: 100%; padding-left: 0; margin: 0; border: none;"></canvas>
+        <button id="resetScroll" style="display: none; position: absolute; right: 20px; top: 10px; background: rgba(0,0,0,0.7); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
+            Reset View
+          </button>
     </div>
-   
+
 
     <!-- Bet Amount Input -->
-    <div class="below-chart" style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.3em; margin-bottom:0; padding-right:0 ;">
-    <div class="bet-amount-container" style="padding: 0 2em; display: flex; justify-content: space-around; align-items: center; ">
-        <!-- <div style="color: white; margin-bottom: 8px;">Trade Amount</div> -->
-        <div style="display: flex; align-items: center; gap: 10px; padding-top: 0.3em;">
-            <button class="amount-btn minus-btn" style="padding: 8px 15px; background:  #122855;  color: white; border: none; border-radius: 4px; cursor: pointer;">-</button>
-            <input placeholder="Enter Trade Amount" type="number" id="betAmountInput" value="50" min="1" style=" padding: 8px; width: 5em; border-radius: 4px; border: 1px solid #ccc; background: #05294d; color: white; text-align: center;">
-            <button class="amount-btn plus-btn" style="padding: 8px 15px; background:  #122855; color: white; border: none; border-radius: 4px; cursor: pointer;">+</button>
+    <div class="below-chart" style="display: flex; justify-content: space-around; align-items: center; margin-top: 0.3em; margin-bottom:0;margin-inline: 0; padding-right:1em ;">
+        <div class="bet-amount-container" style="padding: 0 2em; display: flex; justify-content: space-around; align-items: center; ">
+            <!-- <div style="color: white; margin-bottom: 8px;">Trade Amount</div> -->
+            <div style="display: flex; align-items: center; gap: 10px; padding: 0;">
+                <button class="amount-btn minus-btn" style="padding: 8px 5px; background:  #122855;  color: white; border: none; border-radius: 4px; cursor: pointer;">-</button>
+                <input placeholder="Enter Trade Amount" type="number" id="betAmountInput" value="50" min="1" style=" padding: 8px; width: 5em; border-radius: 4px; border: 1px solid #ccc; background: #05294d; color: white; text-align: center;">
+                <button class="amount-btn plus-btn" style="padding: 8px 5px; background:  #122855; color: white; border: none; border-radius: 4px; cursor: pointer;">+</button>
+            </div>
+        </div>
+        <div class="timerblock">
+        <%- include('./e_tab_time.ejs') -%>
         </div>
     </div>
-        <%- include('./e_tab_time.ejs') -%> 
-</div>  
     <!-- Multiplier Selection -->
     <!-- <div class="multiplier-container" style="margin: 15px 0; padding: 0 2em;">
         <div style="color: white; margin-bottom: 8px;">Multiplier</div>
@@ -89,11 +242,26 @@
     </div> -->
 
     <!-- Buy/Sell buttons -->
-    <div data-v-4aca9bd1="" class="Betting__C-foot btn-box" style="margin-top: 2em; display: flex; gap: 10px; margin-inline:2em;  background-color:rgba(11, 4, 47, 0.832); margin-bottom: 0;">
-        <div data-v-4aca9bd1="" class="Betting__C-foot-b bet_button" data-join="l" data-css-value="13" style="display: flex; justify-content: space-around; align-items: center; flex: 1; background: #10b981; color: white;text-align: center; border-radius: 6px; cursor: pointer; font-weight: bold;">Up <i class="fa-solid fa-arrow-up"></i></div>
-        <div data-v-4aca9bd1="" class="Betting__C-foot-s bet_button" data-join="n" data-css-value="14" style="display: flex; justify-content: space-around; align-items: center; flex: 1; background: #ef4444; color: white; text-align: center; border-radius: 6px; cursor: pointer; font-weight: bold;">Down  <i class="fa-solid fa-arrow-down"></i> </div>
+    <div data-v-4aca9bd1="" class="Betting__C-foot btn-box" style="margin-top: 0.5em; display: flex; justify-content: space-around;  background-color:rgba(11, 4, 47, 0.832); margin-bottom: 0;padding-left: 0.2em; padding-right: 0.2em; width: 100%; align-items: center; margin-bottom: 1em;">
+        <div data-v-4aca9bd1="" class="Betting__C-foot-b bet_button" data-join="l" data-css-value="13" style="display: flex; justify-content: space-around; align-items: center;  background: #10b981; color: white;text-align: center; border-radius: 6px; cursor: pointer;  width: 10em;">
+            <div class="left_part" style="display: flex; font-size: 1.2em; justify-content: center; align-items: center; gap: 0.3em; flex: 2;" >
+                <i class="fa-solid fa-up-long" style="padding-right: 0.2em;"></i> Up
+            </div>
+            <div class="right_part" style="display: flex; justify-content: end; flex: 2; ">
+                <span style="font-size: 0.5em; color: rgb(250, 250, 250); line-height: normal; padding-right: 0.3em;" class="gameTypeBig">(if the rate rises after)</span>
+            </div>
+        </div>
+        <div data-v-4aca9bd1="" class="Betting__C-foot-s bet_button" data-join="n" data-css-value="14" style="display: flex; justify-content: space-around; align-items: center;  background: #ef4444; color: white; text-align: center; border-radius: 6px; cursor: pointer; width: 10em; align-items: center;">
+            <div class="right_part" style="display: flex;flex: 2; justify-content: end;">
+                <span style="font-size: 0.5em; color: rgb(255, 255, 255); line-height: normal; padding-left: 0.3em;" class="gameTypeSmall">(if the rate falls after)</span> </i>
+            </div>
+            <div class="left_part" style="display: flex; font-size: 1.2em; justify-content: center; align-items: center; gap: 0.3em; flex: 2;">
+                  Down<i class="fa-solid fa-down-long"></i>
+            </div>
+        
+        </div>
     </div>
-           <!-- <div style="display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; justify-content: start; align-items: center; margin-bottom: 5em; ">
+    <!-- <div style="display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; justify-content: start; align-items: center; margin-bottom: 5em; ">
             <span style="color: white; font-size: 1.2em;">Quick Treds:</span>
             <button class="quick-amount-btn" data-amount="50" style="padding: 8px 12px; background: #05294d; color: white; border: 1px solid #3f9368; border-radius: 4px; cursor: pointer;">50</button>
             <button class="quick-amount-btn" data-amount="100" style="padding: 8px 12px; background: #05294d; color: white; border: 1px solid #3f9368; border-radius: 4px; cursor: pointer;">100</button>
@@ -109,3 +277,127 @@
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-crosshair"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<style>
+    .custom-select-wrapper {
+        position: relative;
+        width: 100%;
+        cursor: pointer;
+    }
+    
+    .custom-select-trigger {
+        padding: 5px;
+        width: 100%;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+        font-size: 10px;
+        background: #05294d;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .custom-select-trigger .arrow {
+        width: 0;
+        height: 0;
+        border-left: 5px solid transparent;
+        border-right: 5px solid transparent;
+        border-top: 5px solid white;
+        margin-left: 10px;
+    }
+    
+    .custom-options {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: #05294d;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        z-index: 1000;
+        max-height: 200px;
+        overflow-y: auto;
+        display: none;
+    }
+    
+    .custom-option {
+        padding: 5px;
+        font-size: 10px;
+        color: white;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+    }
+    
+    .custom-option:hover {
+        background: rgba(255, 255, 255, 0.1);
+    }
+    
+    .custom-select-wrapper.open .custom-options {
+        display: block;
+    }
+    
+    .custom-select-wrapper.open .custom-select-trigger .arrow {
+        transform: rotate(180deg);
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const selectWrapper = document.querySelector('.custom-select-wrapper');
+        const selectTrigger = document.querySelector('.custom-select-trigger');
+        const options = document.querySelectorAll('.custom-option');
+        const hiddenSelect = document.getElementById('coinSelect');
+
+        selectTrigger.addEventListener('click', function() {
+            selectWrapper.classList.toggle('open');
+        });
+
+        options.forEach(option => {
+            option.addEventListener('click', function() {
+                const value = this.getAttribute('data-value');
+                const text = this.textContent.trim();
+                const imgSrc = this.querySelector('img').src;
+                const imgAlt = this.querySelector('img').alt;
+
+                // Update trigger
+                selectTrigger.innerHTML = `
+                    <img src="${imgSrc}" alt="${imgAlt}" style="width: 16px; height: 16px; margin-right: 5px;">
+                    <span>${text}</span>
+                    <div class="arrow"></div>
+                `;
+
+                // Update hidden select
+                hiddenSelect.value = value;
+
+                // Trigger change event
+                const event = new Event('change');
+                hiddenSelect.dispatchEvent(event);
+
+                selectWrapper.classList.remove('open');
+            });
+        });
+
+        // Close when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!selectWrapper.contains(e.target)) {
+                selectWrapper.classList.remove('open');
+            }
+        });
+
+        // Initialize with first option
+        const firstOption = options[0];
+        const firstValue = firstOption.getAttribute('data-value');
+        const firstText = firstOption.textContent.trim();
+        const firstImgSrc = firstOption.querySelector('img').src;
+        const firstImgAlt = firstOption.querySelector('img').alt;
+
+        selectTrigger.innerHTML = `
+            <img src="${firstImgSrc}" alt="${firstImgAlt}" style="width: 16px; height: 16px; margin-right: 5px;">
+            <span>${firstText}</span>
+            <div class="arrow"></div>
+        `;
+        hiddenSelect.value = firstValue;
+    });
+</script>

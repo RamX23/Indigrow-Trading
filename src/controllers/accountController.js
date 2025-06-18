@@ -138,6 +138,7 @@ const login = async (req, res) => {
 const register = async (req, res) => {
   try {
     const schema = Joi.object({
+      fullName: Joi.string().required(),
       phoneNumber: Joi.string().length(10).required(),
       pwd: Joi.string().min(6).required(),
       invitecode: Joi.string().required(),
@@ -149,7 +150,7 @@ const register = async (req, res) => {
       return res.status(400).json({ message: error.details[0].message });
     }
 
-    let { phoneNumber, pwd, invitecode, dialCode } = req.body;
+    let { fullName,phoneNumber, pwd, invitecode, dialCode } = req.body;
 
     let id_user = utils.generateUniqueNumberCodeByDigit(7);
 
@@ -167,7 +168,7 @@ const register = async (req, res) => {
     }
 
     let otp = utils.generateUniqueNumberCodeByDigit(6);
-    let name_user = "Member" + utils.generateUniqueNumberCodeByDigit(5);
+    let name_user = fullName;
     let code = utils.generateUniqueNumberCodeByDigit(5) + id_user;
     let bonus_money = process.env.BONUS_MONEY_ON_REGISTER;
 

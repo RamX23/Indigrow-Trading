@@ -1114,7 +1114,7 @@ textarea {
 }
 .content {
   padding: 0 0.32rem;
-  background: var(--bg_color_L1) !important;
+  background: #130c43;
 }
 @font-face {
   font-family: bahnschrift;

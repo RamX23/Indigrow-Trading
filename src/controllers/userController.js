@@ -2106,7 +2106,7 @@ const listWithdraw = async (req, res) => {
 //        FROM minutes_1
 //        WHERE phone = ?
 //        UNION ALL
-//        SELECT id_product AS id, get AS money, 'positive' AS type, 'Bet Win' AS name, time
+//        SELECT id_product AS id,`get` AS money, 'positive' AS type, 'Bet Win' AS name, time
 //        FROM minutes_1
 //        WHERE phone = ? AND status = 1
 //        UNION ALL
@@ -2161,13 +2161,14 @@ const constructTransactionsQuery = (
       count: `SELECT COUNT(*) AS totalCount FROM trx_wingo_bets WHERE phone = ? AND time >= ? AND time <= ?`,
     },
     "Bet Win": {
-      query: `SELECT id_product AS id, get AS money, 'positive' AS type, 'Win' AS name, time FROM minutes_1 WHERE phone = ? AND get > 0 AND time >= ? AND time <=?`,
-      count: `SELECT COUNT(*) AS totalCount FROM minutes_1 WHERE phone = ? AND get > 0 AND time >= ? AND time <=?`,
+      query: `SELECT id_product AS id, \`get\` AS money, 'positive' AS type, 'Win' AS name, time FROM minutes_1 WHERE phone = ? AND \`get\` > 0 AND time >= ? AND time <=?`,
+      count: `SELECT COUNT(*) AS totalCount FROM minutes_1 WHERE phone = ? AND \`get\` > 0 AND time >= ? AND time <=?`,
     },
     "trxBet Win": {
-      query: `SELECT id_product AS id, get AS money, 'positive' AS type, 'Win' AS name, time FROM trx_wingo_bets WHERE phone = ? AND get > 0 AND time >= ? AND time <=?`,
-      count: `SELECT COUNT(*) AS totalCount FROM trx_wingo_bets WHERE phone = ? AND get > 0 AND time >= ? AND time <=?`,
+      query: `SELECT id_product AS id, \`get\` AS money, 'positive' AS type, 'Win' AS name, time FROM trx_wingo_bets WHERE phone = ? AND \`get\` > 0 AND time >= ? AND time <=?`,
+      count: `SELECT COUNT(*) AS totalCount FROM trx_wingo_bets WHERE phone = ? AND \`get\` > 0 AND time >= ? AND time <=?`,
     },
+    
     Recharge: {
       query: `SELECT id_order AS id, money, 'positive' AS type, 'Recharge' AS name, time FROM recharge WHERE phone = ? AND status = 1 AND time >= ? AND time <=?`,
       count: `SELECT COUNT(*) AS totalCount FROM recharge WHERE phone = ? AND status = 1 AND time >= ? AND time <=?`,
@@ -2177,7 +2178,7 @@ const constructTransactionsQuery = (
       count: `SELECT COUNT(*) AS totalCount FROM withdraw WHERE phone = ? AND status = 1 AND time >= ? AND time <=?`,
     },
     Commissions: {
-      query: `SELECT commission_id AS id, SUM(money) AS money, 'positive' AS type, 'Commission' AS name, time FROM commissions WHERE phone = ? AND time >= ? AND time <=? GROUP BY time`,
+      query: `SELECT commission_id AS id, SUM(money) AS money, 'positive' AS type, 'Commission' AS name, time FROM commissions WHERE phone = ? AND time >= ? AND time <=? GROUP BY time,commission_id`,
       count: `SELECT COUNT(*) AS totalCount FROM (SELECT time FROM commissions WHERE phone = ? AND time >= ? AND time <=? GROUP BY time) AS grouped`,
     },
     "Gift Vouchers": {

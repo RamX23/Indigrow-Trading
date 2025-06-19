@@ -654,6 +654,7 @@ const adminOverrideSubordinates = async (req, res) => {
       [userPhone, JSON.stringify(overrideData), now]
     );
 
+    subordinatesDataAPI();
     return res.status(200).json({ message: "Override saved successfully" });
   } catch (error) {
     console.error("Error in adminOverrideSubordinates:", error);

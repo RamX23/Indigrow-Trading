@@ -147,15 +147,11 @@ socket.on('timeUpdate', (data) => {
 
 function countDownTimer({ GAME_TYPE_ID }) {
   const getTimeMSS = (countDownDate) => {
-      var now = new Date().getTime();
-      // console.log(now);
-      var distance = countDownDate - now;
-      var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-      var minute = Math.ceil(minutes % parseInt(GAME_TYPE_ID));
-      var seconds1 = Math.floor((distance % (1000 * 60)) / 10000);
-      var seconds2 = Math.floor(((distance % (1000 * 60)) / 1000) % 10);
-
-      return { minute, seconds1, seconds2 };
+    return {
+      minute: TimeManager.currentTime.minute2,
+      seconds1: TimeManager.currentTime.second1,
+      seconds2: TimeManager.currentTime.second2
+    };
   };
 
   var countDownDate = new Date("2030-07-16T23:59:59.9999999+03:00").getTime();
@@ -1662,7 +1658,7 @@ function timerJoin(params = "", addHours = 0) {
   if (params) {
     date = new Date(Number(params));
   } else {
-    date = new Date();
+    date = new Date(TimeManager.currentTime.raw);
   }
   date.setHours(date.getHours() + addHours);
 
@@ -1738,13 +1734,13 @@ function getCurrentPricePoint() {
     return null;
   }
 
-  const now = new Date();
+  const now = new Date(TimeManager.currentTime.raw);
   now.setSeconds(1, 0); // Align to 1st second
   const timestamp = now.getTime();
 
   const result = {
     coin: currentCoin,
-    price: parseFloat(currentPrice.toFixed(2)),
+    price: parseFloat(currentPrice.toFixed(3)),
     timestamp: timestamp
   };
 
@@ -3539,8 +3535,13 @@ function resetChartScroll() {
   
   if (!lastPoint) return;
   
-  const viewDuration = 20 * 1000; // 20 seconds of historical data
-  const lookAhead = 0.1 * 60 * 1000; // 6 seconds of look ahead
+  const serverNow = TimeManager.currentTime.raw;
+  const viewDuration = 20 * 1000;
+  const lookAhead = 0.1 * 60 * 1000;
+
+
+  // const viewDuration = 20 * 1000; // 20 seconds of historical data
+  // const lookAhead = 0.1 * 60 * 1000; // 6 seconds of look ahead
   const targetMin = lastPoint.x - (viewDuration - lookAhead);
   const targetMax = lastPoint.x + lookAhead;
   

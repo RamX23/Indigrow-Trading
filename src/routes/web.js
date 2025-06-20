@@ -371,10 +371,26 @@ const initWebRouter = (app) => {
     middlewareController,
     paymentController.initiateManualUPIPayment,
   );
+  
+  router.get(
+    "/wallet/paynow/akashpay",
+    middlewareController,
+    paymentController.initiateAkashPayPayment,
+  );
+  
+  
+    
   router.get(
     "/wallet/paynow/manual_usdt",
     middlewareController,
     paymentController.initiateManualUSDTPayment,
+  );
+  
+  
+  router.post(
+    "/wallet/verify/akashpay",
+    middlewareController,
+    paymentController.verifyAkashPayPayment,
   );
   router.post(
     "/wallet/paynow/manual_upi_request",

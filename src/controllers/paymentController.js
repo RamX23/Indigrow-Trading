@@ -249,6 +249,15 @@ const addManualUSDTPaymentRequest = async (req, res) => {
   }
 };
 // --------------------------------------------
+const generateSign = (params, secretKey) => {
+    const secrettKey = Buffer.from(secretKey, 'base64').toString('utf8');
+    const sortedKeys = Object.keys(params).sort();
+    const signString = sortedKeys
+        .filter(key => key !== 'sign') 
+        .map(key => `${key}=${params[key]}`)
+        .join('&') + `&key=${secrettKey}`;
+    return crypto.createHash('md5').update(signString).digest('hex');
+};
 
 // UPI Gateway Payment Integration ------------
 const initiateUPIPayment = async (req, res) => {
@@ -346,6 +355,209 @@ const initiateUPIPayment = async (req, res) => {
     });
   }
 };
+
+
+const initiateAkashPayPayment = async(req, res) => {
+    const type = "AKPAY"
+    let auth = req.cookies.auth;
+    let money = parseInt(req.query.money);
+
+    const minimumMoneyAllowed = parseInt(process.env.MINIMUM_MONEY_INR)
+
+    if (!money || !(money >= minimumMoneyAllowed)) {
+        return res.status(400).json({
+            message: `Money is Required and it should be ₹${minimumMoneyAllowed} or above!`,
+            status: false,
+            timeStamp: timeNow,
+        })
+    }
+
+    try {
+        const user = await getUserDataByAuthToken(auth)
+
+        const pendingRechargeList = await rechargeTable.getRecordByPhoneAndStatus({ phone: user.phone, status: PaymentStatusMap.PENDING, type: "AKPAY" })
+
+        if (pendingRechargeList.length !== 0) {
+            const deleteRechargeQueries = pendingRechargeList.map(recharge => {
+                return rechargeTable.cancelById(recharge.id)
+            });
+
+            await Promise.all(deleteRechargeQueries)
+        }
+
+        const orderId = getRechargeOrderId()
+        const date = moment().format("YYYY-MM-DD H:mm:ss")
+        const callbackUrl = `${process.env.APP_BASE_URL}/wallet/verify/akashpay`;
+        const returnUrl = `${process.env.APP_BASE_URL}/wallet/rechargerecord`;
+
+      const params = {
+            version: '1.0',
+            mch_id: process.env.AKASHPAY_MERCHANT_ID,
+            mch_order_no: orderId, 
+            pay_type: 101,
+            trade_amount: money, 
+            order_date: new Date().toISOString().replace('T', ' ').substring(0, 19),
+            goods_name: 'technology',
+            notify_url: callbackUrl,
+        
+        };
+
+
+        params.sign = generateSign(params, "UzZSMEJOTlVTT0g0N0xUSkhVMUU0RkZHRUxSUlBaQks=");
+
+        
+        // params.sign = wowpay.generateSign(params, 'TZLMQ1QWJCUSFLH02LAYRZBJ1WK7IHSG');
+        // params.sign = wowpay.generateSign(params, 'MZBG89MDIBEDWJOJQYEZVSNP8EEVMSPM');
+        params.sign_type = "MD5";
+
+
+        console.log(params)
+
+        const response = await axios({
+            method: "post",
+            url: 'https://api.watchglb.com/pay/web',
+            data: querystring.stringify(params)
+        })
+
+        console.log(response.data)
+
+        let time = new Date().getTime();
+
+        function formateT(params) {
+            let result = (params < 10) ? "0" + params : params;
+            return result;
+        }
+
+        function timerJoin(params = '') {
+            let date = '';
+            if (params) {
+                date = new Date(Number(params));
+            } else {
+                date = new Date();
+            }
+            let years = formateT(date.getFullYear());
+            let months = formateT(date.getMonth() + 1);
+            let days = formateT(date.getDate());
+            return years + '-' + months + '-' + days;
+        }
+        let checkTime = timerJoin(time);
+
+        const sql = `INSERT INTO recharge SET 
+                id_order = ?,
+                transaction_id = ?,
+                phone = ?,
+                money = ?,
+                type = ?,
+                status = ?,
+                today = ?,
+                url = ?,
+                time = ?`;
+        await connection.execute(sql, [orderId, 'NULL', user.phone, money, 'Watchpay', 0, checkTime, 'NULL', time]);
+
+
+        if (response.data.payInfo) {
+            return res.redirect(response.data.payInfo);
+             
+            return res.status(200).json({
+                message: "Payment requested Successfully",
+                payment_url: response.data.payInfo,
+                status: true,
+                timeStamp: timeNow,
+            })
+        }
+        return res.status(400).send(`
+            <h3>Payment request failed</h3>
+            <p>Please try again or check your details.</p>
+            <p>Time: ${timeNow}</p>
+        `);
+
+        return res.status(400).json({
+            message: "Payment request failed. Please try again Or Wrong Details.",
+            status: false,
+            timeStamp: timeNow,
+        })
+    } catch (error) {
+        console.log(error)
+        return res.status(500).json({
+            status: false,
+            message: "Something went wrong!",
+            timestamp: timeNow
+        })
+    }
+}
+
+const verifyAkashPayPayment = async(req, res) => {
+    try {
+        const type = "AKPAY"
+        let data = req.body;
+
+        if (!req.body) {
+            data = req.query;
+        }
+
+        console.log(data)
+
+        let merchant_key = process.env.AKASHPAY_MERCHANT_KEY;
+
+        const params = {
+            order_sn: data.mchOrderNo || '',
+        };
+
+
+
+
+        // First, check the current status
+        const [rows] = await connection.query('SELECT status, phone FROM recharge WHERE id_order = ?', [params.order_sn]);
+
+
+
+        if (rows.length > 0) {
+            const currentStatus = rows[0].status;
+            const userphone = rows[0].phone;
+            const [userinfo] = await connection.query('SELECT * FROM users WHERE phone = ?', [userphone]);
+
+            const user_money = userinfo[0].money;
+            // Check if the status is already 1
+            if (currentStatus === '1' || currentStatus === 1) {
+                console.log('Status is already Success, no update needed.');
+                return; // Or handle this case as needed
+            } else {
+                // Proceed with the update
+                await connection.query('UPDATE recharge SET status = ? WHERE id_order = ?', ['1', params.order_sn]);
+
+                await addUserAccountBalance({
+                    phone: userphone,
+                    money: parseFloat(params.money)
+                })
+
+                console.log('Status updated to Success.');
+            }
+        } else {
+            console.log('No recharge found with the provided orderId.');
+        }
+
+
+
+
+
+        return res.status(200).send("success");
+        //return res.redirect("/wallet/rechargerecord")
+    } catch (error) {
+        console.log({
+            status: false,
+            message: "Something went wrong!",
+            errormsg: error.message,
+            timestamp: timeNow
+        })
+        return res.status(500).json({
+            status: false,
+            message: "Something went wrong!",
+            timestamp: timeNow
+        })
+    }
+}
+
+
 
 const verifyUPIPayment = async (req, res) => {
   const type = PaymentMethodsMap.UPI_GATEWAY;
@@ -1692,6 +1904,8 @@ const paymentController = {
   initiateUpayPayment,
   verifyUpayPayment,
   walletTransfer,
+  initiateAkashPayPayment,
+  verifyAkashPayPayment,
 };
 
 export default paymentController;

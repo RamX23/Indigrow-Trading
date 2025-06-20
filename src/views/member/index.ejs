@@ -4524,11 +4524,7 @@
       }
    });
 
-   document.querySelector("#reload_money_btn").addEventListener("click", () => {
-      fetchUser().then(() => {
-         setUserInfoDisplay("money_amount_display", userInfoTypes.balance, value => `₹ ${value}`);
-      });
-   });
+
 </script>
 
 </html>

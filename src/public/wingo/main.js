@@ -118,20 +118,20 @@ socket.on('timeUpdate', (data) => {
 };
   
   TimeManager.gameTimers = data.sessions;
-
+ let gameType=getGameType();
     // Start countdown on first update if not already started
     if (!countdownStarted) {
       countdownStarted = true;
-      cownDownTimer();
+      countDownTimer(gameType);
     }
   
   
   // Log each second change
   if (!TimeManager.lastUpdate || 
       TimeManager.lastUpdate.second2 !== data.second2) {
-    console.log(
-      `[TimeUpdate] New time received: ${data.minute1}${data.minute2}:${data.second1}${data.second2}`
-    );
+    // console.log(
+    //   `[TimeUpdate] New time received: ${data.minute1}${data.minute2}:${data.second1}${data.second2}`
+    // );
   }
   
   // Get current timer
@@ -157,7 +157,7 @@ function countDownTimer({ GAME_TYPE_ID }) {
   var countDownDate = new Date("2030-07-16T23:59:59.9999999+03:00").getTime();
 
   countDownInterval1 = setInterval(function() {
-    console.log("Current time is",TimeManager.currentTime);
+    // console.log("Current time is",TimeManager.currentTime);
       const { minute, seconds1, seconds2 } = getTimeMSS(countDownDate);
 
       // Update timer display
@@ -584,11 +584,32 @@ function showTrendData(list_orders) {
       </div>`);
   }
 
+  const NumberList = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
   const html = list_orders
     .map((order, index) => {
-      const isBig = parseInt(order.amount) >= 5;
-      const NumberList = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
+      // const isBig = parseInt(order.amount) >= 5;
       const isLastOrder = index === list_orders.length - 1;
+
+      // Validate and normalize order.amount
+      let amount = order.amount;
+      let isBig = false;
+      let displayAmount = amount;
+
+      // Map non-numeric amounts to appropriate values
+      if (amount === 'n') {
+        displayAmount = 'Down';
+        isBig = false;
+      } else if (amount === 'l') {
+        displayAmount = 'Up';
+        isBig = true;
+      } else if (amount === 'd') {
+        displayAmount = 'Draw';
+        isBig = false;
+      } else {
+        // Assume numeric amount
+        amount = parseInt(amount);
+        isBig = amount >= 5;
+      }
 
       return `
         <div data-v-54016b1c="" issuenumber="${order.period}" number="${order.amount}" colour="${isBig ? "red" : "green"}" rowid="${index}">
@@ -2166,8 +2187,16 @@ let hasUserScrolled = false; // Tracks if the user has scrolled the chart
 // Initialize chart with session line plugin
 function initializeChart() {
   const canvas = document.getElementsByClassName('priceChart')[0];
-  // console.log(canvas);
+  if (!canvas) {
+    console.warn('Canvas element with class="priceChart" not found in the DOM.');
+    return;
+  }
   const ctx = canvas.getContext('2d');
+
+  if (!ctx) {
+    console.warn('Failed to get 2D context for canvas.');
+    return;
+  }
   
   // Variables for drag scrolling
   let isDraggingChart = false;
@@ -2534,13 +2563,13 @@ function initializeChart() {
 
   // Add event listeners for drag scrolling
   canvas.addEventListener('mousedown', handleDragStart);
-  canvas.addEventListener('touchstart', handleDragStart);
+  canvas.addEventListener('touchstart', handleDragStart,{ passive: true });
   
   document.addEventListener('mousemove', handleDragMove);
-  document.addEventListener('touchmove', handleDragMove);
+  document.addEventListener('touchmove', handleDragMove, { passive: true });
   
   document.addEventListener('mouseup', handleDragEnd);
-  document.addEventListener('touchend', handleDragEnd);
+  document.addEventListener('touchend', handleDragEnd,{ passive: true });
   
   // Prevent page scrolling when touching chart
   canvas.addEventListener('touchstart', (e) => {
@@ -2758,7 +2787,9 @@ function initializeChart() {
       }
     }, sessionLinePlugin, trackingLinePlugin]
   });
-}function initializeChart() {
+}
+
+function initializeChart() {
   const canvas = document.getElementsByClassName('priceChart')[0];
   // console.log(canvas);
   const ctx = canvas.getContext('2d');
@@ -2772,26 +2803,26 @@ function initializeChart() {
   function getSessionStartPrice(coin, sessionStartTime) {
     try {
         if (!coinData || !coinData[coin] || !Array.isArray(coinData[coin])) {
-            console.warn('Invalid coin data structure for coin:', coin);
+            // console.warn('Invalid coin data structure for coin:', coin);
             return null;
         }
 
         const dataPoints = coinData[coin];
         if (dataPoints.length === 0) {
-            console.warn('No data points available for coin:', coin);
+            // console.warn('No data points available for coin:', coin);
             return null;
         }
 
         // Validate sessionStartTime
         const sessionStartDate = new Date(sessionStartTime);
         if (isNaN(sessionStartDate.getTime())) {
-            console.warn('Invalid sessionStartTime:', sessionStartTime);
+            // console.warn('Invalid sessionStartTime:', sessionStartTime);
             return null;
         }
 
         // Ensure sessionStartTime is aligned to :01 seconds
         if (sessionStartDate.getSeconds() !== 1) {
-            console.warn('Session start time not aligned to :01, adjusting from:', sessionStartDate.toISOString());
+            // console.warn('Session start time not aligned to :01, adjusting from:', sessionStartDate.toISOString());
             sessionStartDate.setSeconds(1, 0);
         }
 
@@ -2803,7 +2834,7 @@ function initializeChart() {
         for (const point of dataPoints) {
             // Skip invalid points
             if (!point || point.x === undefined || point.y === undefined) {
-                console.warn('Invalid data point:', point);
+                // console.warn('Invalid data point:', point);
                 continue;
             }
 
@@ -2817,7 +2848,7 @@ function initializeChart() {
 
         // If no point found within a reasonable window (e.g., 2 seconds), log and return null
         if (!closestPoint || minDiff > 2000) {
-            console.warn(`No valid data point found near ${sessionStartDate.toISOString()} for coin ${coin}`);
+            // console.warn(`No valid data point found near ${sessionStartDate.toISOString()} for coin ${coin}`);
             return null;
         }
 
@@ -3519,11 +3550,11 @@ canvas.addEventListener('touchend', () => {
   initialDistance = null;
 });
 
-document.getElementById('resetScroll').addEventListener('click', function() {
-  resetChartScroll();
+document.addEventListener('click', function(event) {
+  if (event.target.id === 'resetScroll') {
+    resetChartScroll();
+  }
 });
-
-
 
 function resetChartScroll() {
   if (!window.chart) return;

@@ -27,7 +27,7 @@ const getGameType = () => {
   return urlParams.get("game_type") || "1";
 };
 
-socket=io();
+var socket=io();
 
 
 const TimeManager = {
@@ -112,7 +112,7 @@ function cownDownTimer() {
   setInterval(function () {
     TimeManager.currentTime.raw.getTime();
     var now = TimeManager.currentTime.raw.getTime();
-    console.log(TimeManager.currentTime);
+    // console.log(TimeManager.currentTime);
     var distance = countDownDate - now;
     var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
     var minute = Math.ceil(minutes % i);

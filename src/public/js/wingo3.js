@@ -440,8 +440,8 @@ function totalMoney() {
   let money = parseInt(
     $(".Betting__Popup-body-money-main").attr("data-current-money"),
   );
-  console.log($("#van-field-1-input").val());
-  console.log(money);
+
+
   let total = value * money;
   $("#popup_total_bet_money").text(total + ".00");
 }
@@ -457,7 +457,7 @@ function alertBox(join, cssValueNumber, addText) {
   $(".popup-join > div").addClass(`Betting__Popup-${cssValueNumber}`);
 
   let activeXData = $(".Betting__C-multiple-r.active").attr("data-x");
-  console.log(activeXData);
+
   $("#van-field-1-input").val(activeXData);
   $("div.Betting__Popup-body-x-btn").removeClass("bgcolor");
   $(`div.Betting__Popup-body-x-btn[data-x="${activeXData}"]`).addClass(
@@ -729,10 +729,10 @@ $("#game_history__bottom_nav .previous_page").click(function (e) {
   e.preventDefault();
   $("#my_bets__bottom_nav .previous_page").addClass("block-click");
   $(".Loading").fadeIn(0);
-  console.log(Game_History_Pages);
+
   const currentPage = parseInt($("#number_result__gameHistory").text());
   const previousPage = 1 <= currentPage - 1 ? currentPage - 1 : currentPage;
-  console.log(previousPage);
+
   initGameHistoryTab(previousPage);
   $(".Loading").fadeOut(0);
   $("#my_bets__bottom_nav .previous_page").removeClass("block-click");
@@ -742,11 +742,11 @@ $("#game_history__bottom_nav .next_page").click(function (e) {
   e.preventDefault();
   $("#my_bets__bottom_nav .previous_page").addClass("block-click");
   $(".Loading").fadeIn(0);
-  console.log(Game_History_Pages);
+
   const currentPage = parseInt($("#number_result__gameHistory").text());
   const nextPage =
     Game_History_Pages >= currentPage + 1 ? currentPage + 1 : currentPage;
-  console.log(nextPage);
+
   initGameHistoryTab(nextPage);
   $(".Loading").fadeOut(0);
   $("#my_bets__bottom_nav .previous_page").removeClass("block-click");

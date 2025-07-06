@@ -741,7 +741,7 @@ const approveAndInitiateAquapayWithdrawalRequest = async (req, res) => {
         remark: "Payout is initiated from auto withdrawal system",
         username: process.env.AQUA_PAY_USERNAME,
         password: password,
-        callbackUrl: `${process.env.APP_BASE_URL}/api/withdrawal/aqua_callback`,
+        callbackUrl: `${process.env.APP_BASE_URL}`/api/withdrawal/aqua_callback,
       },
     });
 

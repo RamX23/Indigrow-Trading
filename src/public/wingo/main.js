@@ -2136,10 +2136,6 @@ if (update.prices[currentCoin] !== undefined) {
 if (window.chart) {
   updateChart();
 }
-
-if (window.chart) {
-  window.chart.update('none');
-}
 });
 // Handle end point setting confirmation
 socket.on('endPointSet', ({ session, coin, price, startTime, duration }) => {
@@ -2187,296 +2183,280 @@ if (session === getCurrentGameSession()) {
 //   socket.emit('setEndPoint', { session, coin, price });
 // }
 
-
-
-// let currentCoin = 'BTC';
-// let currentPrice = coinConfigs[currentCoin].basePrice;
-// let previousPrice = currentPrice;
-let animationState = {};
-const POINT_ANIMATION_DURATION = 700;
-let hasUserScrolled = false;
-let lastUpdateTime = 0;
-const TARGET_FRAME_RATE = 30;
-const FRAME_INTERVAL = 1000 / TARGET_FRAME_RATE;
-
-// Initialize the chart
+let hasUserScrolled = false; // Tracks if the user has scrolled the chart
+// Initialize chart with session line plugin
 function initializeChart() {
-  const canvas = document.getElementsByClassName('priceChart')[0];
-  if (!canvas) return;
-  
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return;
+const canvas = document.getElementsByClassName('priceChart')[0];
+if (!canvas) {
+  // console.warn('Canvas element with class="priceChart" not found in the DOM.');
+  return;
+}
+const ctx = canvas.getContext('2d');
 
-  // Smooth Animation Plugin
-  const smoothAnimationPlugin = {
-    id: 'smoothAnimation',
-    afterDatasetsUpdate: function(chart) {
-      const now = Date.now();
-      const points = coinData[currentCoin];
-      
-      if (!points || points.length < 2) return;
-      
-      const lastPoint = points[points.length - 1];
-      const prevPoint = points[points.length - 2];
-      
-      // Always show full line
-      chart.data.datasets[0].data = points;
-      
-      // Animate the last segment
-      if (!animationState.startTime) {
-        animationState = {
-          startTime: now,
-          startPoint: {...prevPoint},
-          targetPoint: {...lastPoint}
-        };
-      }
-      
-      const elapsed = now - animationState.startTime;
-      const progress = Math.min(elapsed / POINT_ANIMATION_DURATION, 1);
-      
-      // Only animate the last segment
-      const animatedPoint = getInterpolatedPoint(
-        animationState.startPoint,
-        animationState.targetPoint,
-        progress
-      );
-      
-      // Update the point dataset with animated position
-      chart.data.datasets[1].data = [animatedPoint];
-      
-      // Continue animation if not complete
-      if (progress < 1) {
-        requestAnimationFrame(() => {
-          chart.update('none');
-        });
-      } else {
-        // Reset for next animation
-        animationState = {};
-      }
-    }
-  };
-
-  // Tracking Line Plugin
-  const trackingLinePlugin = {
-    id: 'alwaysVisibleTrackingLine',
-    afterDatasetsDraw(chart) {
-      const ctx = chart.ctx;
-      const yAxis = chart.scales.y;
-      const xAxis = chart.scales.x;
-      const chartArea = chart.chartArea;
-      
-      // Get the last data point
-      const data = chart.data.datasets[0].data;
-      if (!data || data.length === 0) return;
-      
-      const lastPoint = data[data.length - 1];
-      
-      // Calculate positions
-      const xPos = xAxis.getPixelForValue(lastPoint.x);
-      const yPos = yAxis.getPixelForValue(lastPoint.y);
-      
-      // Only draw if within visible x-range
-      if (xPos < chartArea.left || xPos > chartArea.right) return;
-      
-      ctx.save();
-      
-      // Vertical line (full height)
-      ctx.beginPath();
-      ctx.moveTo(xPos, chartArea.top);
-      ctx.lineTo(xPos, chartArea.bottom);
-      ctx.strokeStyle = coinConfigs[currentCoin].color;
-      ctx.lineWidth = 1;
-      ctx.setLineDash([3, 3]);
-      ctx.stroke();
-      
-      // Horizontal line (full width)
-      ctx.beginPath();
-      ctx.moveTo(chartArea.left, yPos);
-      ctx.lineTo(chartArea.right, yPos);
-      ctx.stroke();
-      
-      // Price indicator box (always right-aligned)
-      const priceText = lastPoint.y.toFixed(4);
-      const boxWidth = ctx.measureText(priceText).width + 16;
-      const boxHeight = 24;
-      const radius = boxHeight / 2;
-      const boxX = chartArea.right + 10;
-      
-      // Draw box
-      ctx.fillStyle = coinConfigs[currentCoin].color;
-      ctx.beginPath();
-      ctx.moveTo(boxX, yPos - radius);
-      ctx.lineTo(boxX + boxWidth - radius, yPos - radius);
-      ctx.arc(boxX + boxWidth - radius, yPos, radius, -Math.PI/2, Math.PI/2);
-      ctx.lineTo(boxX, yPos + radius);
-      ctx.arc(boxX + radius, yPos, radius, Math.PI/2, 3*Math.PI/2);
-      ctx.closePath();
-      ctx.fill();
-      
-      // Draw text
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 12px Arial';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(priceText, boxX + (boxWidth / 2), yPos);
-      
-      // Connecting line
-      ctx.beginPath();
-      ctx.moveTo(chartArea.right, yPos);
-      ctx.lineTo(boxX, yPos);
-      ctx.strokeStyle = coinConfigs[currentCoin].color;
-      ctx.lineWidth = 1;
-      ctx.stroke();
-      
-      ctx.restore();
-    }
-  };
-
-  // Create the chart
-  window.chart = new Chart(ctx, {
-    type: 'line',
-    data: {
-      datasets: [{
-        label: `${coinConfigs[currentCoin].name} Price`,
-        data: coinData[currentCoin],
-        borderColor: coinConfigs[currentCoin].color,
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-        borderWidth: 1,
-        tension: 0.1,
-        fill: true,
-        pointRadius: 0,
-        pointHoverRadius: 2
-      }, 
-      {
-        data: [coinData[currentCoin][coinData[currentCoin].length - 1]],
-        borderColor: coinConfigs[currentCoin].color,
-        backgroundColor: coinConfigs[currentCoin].color,
-        borderWidth: 2,
-        pointRadius: 3,
-        pointHoverRadius: 4,
-        showLine: false
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      animation: {
-        duration: 0 // Disable built-in animations
-      },
-      layout: {
-        padding: {
-          left: 0,
-          right: 60
-        }
-      },
-      scales: {
-        x: {
-          type: 'time',
-          time: {
-            unit: 'minute',
-            stepSize: 1,
-            displayFormats: {
-              minute: 'HH:mm:ss',
-              second: 'HH:mm:ss'
-            }
-          },
-          bounds: 'ticks',
-          ticks: {
-            source: 'auto',
-            autoSkip: true,
-            maxRotation: 0,
-            minRotation: 0,
-            color: 'rgba(255, 255, 255, 0.7)'
-          },
-          grid: {
-            color: 'rgba(255, 255, 255, 0.1)',
-            drawBorder: false
-          },
-          min: function() {
-            const data = this.chart.data.datasets[0].data;
-            if (data.length === 0) return Date.now() - 30000;
-            return data[0].x;
-          },
-          max: function() {
-            const data = this.chart.data.datasets[0].data;
-            if (data.length === 0) return Date.now();
-            return data[data.length - 1].x + 5000;
-          }
-        },
-        y: {
-          position: 'right',
-          grid: {
-            color: 'rgba(255, 255, 255, 0.1)',
-            drawBorder: false
-          },
-          ticks: {
-            color: 'rgba(255, 255, 255, 0.7)',
-            callback: function(value) {
-              return value.toFixed(2);
-            },
-            padding: 12,
-            maxTicksLimit: 8
-          },
-          min: function() {
-            const range = getDynamicYRange();
-            return range.min;
-          },
-          max: function() {
-            const range = getDynamicYRange();
-            return range.max;
-          }
-        }
-      },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          enabled: true,
-          mode: 'index',
-          intersect: false
-        },
-        decimation: {
-          enabled: true,
-          algorithm: 'lttb',
-          samples: 100
-        },
-        zoom: {
-          pan: {
-            enabled: true,
-            mode: 'x',
-            threshold: 10
-          },
-          zoom: {
-            wheel: {
-              enabled: true,
-              speed: 0.1
-            },
-            pinch: {
-              enabled: true
-            },
-            mode: 'x'
-          }
-        }
-      },
-      interaction: {
-        mode: 'nearest',
-        axis: 'x',
-        intersect: false
-      }
-    },
-    plugins: [smoothAnimationPlugin, trackingLinePlugin]
-  });
-
-  // Start continuous updates
-  requestAnimationFrame(continuousUpdate);
+if (!ctx) {
+  // console.warn('Failed to get 2D context for canvas.');
+  return;
 }
 
-// Helper Functions
-function getInterpolatedPoint(startPoint, endPoint, progress) {
-  return {
-    x: startPoint.x + (endPoint.x - startPoint.x) * progress,
-    y: startPoint.y + (endPoint.y - startPoint.y) * progress
-  };
+// Variables for drag scrolling
+let isDraggingChart = false;
+let lastDragPosition = null;
+let dragStartX = null;
+let momentum = 0;
+let lastTimestamp = 0;
+const FRICTION = 0.95; // Friction coefficient for momentum scrolling
+const MIN_MOMENTUM = 0.1;
+
+// Session line plugin
+function getSessionStartPrice(coin, sessionStartTime) {
+  try {
+      if (!coinData || !coinData[coin] || !Array.isArray(coinData[coin])) {
+          // console.warn('Invalid coin data structure for coin:', coin);
+          return null;
+      }
+
+      const dataPoints = coinData[coin];
+      if (dataPoints.length === 0) {
+          // console.warn('No data points available for coin:', coin);
+          return null;
+      }
+
+      // Validate sessionStartTime
+      const sessionStartDate = new Date(sessionStartTime);
+      if (isNaN(sessionStartDate.getTime())) {
+          // console.warn('Invalid sessionStartTime:', sessionStartTime);
+          return null;
+      }
+
+      // Ensure sessionStartTime is aligned to :01 seconds
+      if (sessionStartDate.getSeconds() !== 1) {
+          // console.warn('Session start time not aligned to :01, adjusting from:', sessionStartDate.toISOString());
+          sessionStartDate.setSeconds(1, 0);
+      }
+
+      const targetTime = sessionStartDate.getTime();
+      let closestPoint = null;
+      let minDiff = Infinity;
+
+      // Search for the closest data point at or after the target time
+      for (const point of dataPoints) {
+          // Skip invalid points
+          if (!point || point.x === undefined || point.y === undefined) {
+              // console.warn('Invalid data point:', point);
+              continue;
+          }
+
+          // Only consider points at or after the session start time
+          const timeDiff = point.x - targetTime;
+          if (timeDiff >= 0 && timeDiff < minDiff) {
+              minDiff = timeDiff;
+              closestPoint = point;
+          }
+      }
+
+      // If no point found within a reasonable window (e.g., 2 seconds), log and return null
+      if (!closestPoint || minDiff > 2000) {
+          // console.warn(`No valid data point found near ${sessionStartDate.toISOString()} for coin ${coin}`);
+          return null;
+      }
+
+      // console.log(`Found price ${closestPoint.y} at time ${new Date(closestPoint.x).toISOString()} for session start ${sessionStartDate.toISOString()}`);
+      return closestPoint.y;
+  } catch (error) {
+      console.error('Error in getSessionStartPrice:', error);
+      return null;
+  }
 }
+
+const sessionLinePlugin = {
+  id: 'sessionLine',
+  afterDatasetsDraw(chart) {
+      try {
+          const ctx = chart.ctx;
+          const xAxis = chart.scales.x;
+          const yAxis = chart.scales.y;
+
+          // Get current coin from select element
+          const coinSelect = document.getElementById('coinSelect');
+          const currentCoin = coinSelect ? coinSelect.value : 'BTC';
+
+          // Get current game type duration in milliseconds
+          const gameType = getGameType();
+          let sessionDuration;
+          switch (gameType) {
+              case '1': sessionDuration = 60 * 1000; break;
+              case '3': sessionDuration = 180 * 1000; break;
+              case '5': sessionDuration = 300 * 1000; break;
+              case '10': sessionDuration = 600 * 1000; break;
+              default: sessionDuration = 60 * 1000;
+          }
+
+          // Get current server time
+          const serverNow = TimeManager.currentTime.raw;
+          if (!serverNow || isNaN(serverNow)) {
+              // console.warn('Invalid server time:', serverNow);
+              return; // Exit early if server time is invalid
+          }
+
+          // Create aligned date
+          const alignedNow = new Date(serverNow);
+          if (isNaN(alignedNow.getTime())) {
+              // console.warn('Invalid alignedNow date:', alignedNow);
+              return; // Exit early if alignedNow is invalid
+          }
+
+          // Calculate the exact start of the current session period
+          const sessionStartTime = new Date(
+              Math.floor(alignedNow.getTime() / sessionDuration) * sessionDuration
+          );
+          sessionStartTime.setSeconds(1, 0); // Force to :01 second
+
+          // Validate sessionStartTime
+          if (isNaN(sessionStartTime.getTime())) {
+              // console.warn('Invalid sessionStartTime:', sessionStartTime);
+              return; // Exit early if sessionStartTime is invalid
+          }
+
+          const sessionEndTime = new Date(sessionStartTime.getTime() + sessionDuration);
+
+          // Validate sessionEndTime
+          if (isNaN(sessionEndTime.getTime())) {
+              // console.warn('Invalid sessionEndTime:', sessionEndTime);
+              return; // Exit early if sessionEndTime is invalid
+          }
+
+          // Log for debugging
+          // console.log("Session timing:", {
+          //     start: sessionStartTime.toISOString(),
+          //     end: sessionEndTime.toISOString(),
+          //     now: new Date(serverNow).toISOString()
+          // });
+
+          // Only draw if any part of the session is in the visible range
+          if (sessionEndTime.getTime() < xAxis.min || sessionStartTime.getTime() > xAxis.max) {
+              return;
+          }
+
+          // Get the start price for this session
+          // console.log(sessionStartTime.getTime());
+          const startPrice = getSessionStartPrice(currentCoin, sessionStartTime.getTime());
+          if (startPrice === null || startPrice === undefined) {
+              // console.warn('Could not determine session start price');
+              return;
+          }
+
+          // Draw the session line
+          ctx.save();
+
+          // Calculate the visible start and end points
+          const visibleStartX = Math.max(xAxis.getPixelForValue(sessionStartTime.getTime()), xAxis.left);
+          const visibleEndX = Math.min(xAxis.getPixelForValue(sessionEndTime.getTime()), xAxis.right);
+          const y = yAxis.getPixelForValue(startPrice);
+
+          // Draw the horizontal line for the entire session duration
+          ctx.beginPath();
+          ctx.moveTo(visibleStartX, y);
+          ctx.lineTo(visibleEndX, y);
+          ctx.strokeStyle = 'rgba(255, 255, 0, 0.5)';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+
+          // Draw a yellow circle at the session start point
+          ctx.beginPath();
+          ctx.arc(visibleStartX, y, 5, 0, Math.PI * 2);
+          ctx.fillStyle = 'yellow';
+          ctx.fill();
+          ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+
+          // Add label near the start point
+          ctx.fillStyle = 'white';
+          ctx.font = 'bold 12px Arial';
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'bottom';
+          ctx.fillText('Session Price', visibleStartX + 10, y - 5);
+
+          ctx.restore();
+      } catch (error) {
+          console.error('Error in sessionLinePlugin:', error);
+      }
+  }
+};
+
+const trackingLinePlugin = {
+  id: 'trackingLine',
+  afterDatasetsDraw(chart) {
+    const ctx = chart.ctx;
+    const dataset = chart.data.datasets[0];
+    const meta = chart.getDatasetMeta(0);
+    const yAxis = chart.scales.y;
+    
+    if (!dataset.data.length) return;
+
+    const lastIndex = dataset.data.length - 1;
+    const lastPoint = meta.data[lastIndex];
+    if (!lastPoint) return;
+
+    const currentPrice = dataset.data[lastIndex].y;
+    const priceText = currentPrice.toFixed(2);
+    const x = lastPoint.x;
+    const y = lastPoint.y;
+    const chartArea = chart.chartArea;
+
+    ctx.save();
+
+    // Draw tracking lines (added back)
+    ctx.strokeStyle = coinConfigs[currentCoin].color;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]);
+    ctx.globalAlpha = 1;
+    
+    // Vertical line
+    ctx.beginPath();
+    ctx.moveTo(x, chartArea.top);
+    ctx.lineTo(x, chartArea.bottom);
+    ctx.stroke();
+    
+    // Horizontal line
+    ctx.beginPath();
+    ctx.moveTo(chartArea.left, y);
+    ctx.lineTo(chartArea.right, y);
+    ctx.stroke();
+
+    // Draw capsule-shaped indicator (unchanged)
+    const textWidth = ctx.measureText(priceText).width;
+    const capsuleWidth = textWidth + 16;
+    const capsuleHeight = 24;
+    const radius = capsuleHeight / 2;
+    const capsuleX = chart.chartArea.right + 50;
+    const capsuleY = y;
+    
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = coinConfigs[currentCoin].color;
+    ctx.beginPath();
+    ctx.arc(capsuleX - capsuleWidth/2 + radius, capsuleY, radius, Math.PI/2, Math.PI*3/2);
+    ctx.arc(capsuleX + capsuleWidth/2 - radius, capsuleY, radius, Math.PI*3/2, Math.PI/2);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 12px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(priceText, capsuleX, capsuleY);
+
+    // Connector line (modified to connect to horizontal line)
+    ctx.strokeStyle = coinConfigs[currentCoin].color;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(chartArea.right, y);
+    ctx.lineTo(capsuleX - capsuleWidth/2, y);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+};
 
 function getDynamicYRange() {
   const visibleData = coinData[currentCoin].filter(point => {
@@ -2504,152 +2484,400 @@ function getDynamicYRange() {
   };
 }
 
-function continuousUpdate(timestamp) {
-  if (!window.chart) return;
+let animationState = {
+  currentPoint: null,
+  startTime: null,
+  isAnimating: false,
+  previousLastPoint: null
+};
+const POINT_ANIMATION_DURATION = 700; 
+
+function getInterpolatedPoint(startPoint, endPoint, progress) {
+  return {
+    x: startPoint.x + (endPoint.x - startPoint.x) * progress,
+    y: startPoint.y + (endPoint.y - startPoint.y) * progress
+  };
+}
+
+// Drag handlers
+function handleDragStart(e) {
+  if (e.touches && e.touches.length > 1) return;
   
-  // Throttle updates to target frame rate
-  if (timestamp - lastUpdateTime >= FRAME_INTERVAL) {
-    // Get current time and data
-    const now = Date.now();
-    const data = coinData[currentCoin];
+  isDragging = true;
+  lastDragPosition = e.clientX || e.touches[0].clientX;
+  lastTimestamp = performance.now();
+  momentum = 0;
+  canvas.style.cursor = 'grabbing';
+  
+  // Cancel any ongoing animations
+  cancelAnimationFrame(animationFrameId);
+}
+
+function scrollChartByPixels(pixelDelta) {
+  const xScale = window.chart.scales.x;
+  const pixelRange = xScale.max - xScale.min;
+  const pixelToTimeRatio = pixelRange / window.chart.width;
+  const timeDelta = pixelDelta * pixelToTimeRatio;
+  
+  let newMin = xScale.min - timeDelta;
+  let newMax = xScale.max - timeDelta;
+  
+  // Boundary checks
+  const data = window.chart.data.datasets[0].data;
+  if (data.length > 0) {
+    const firstPoint = data[0].x;
+    const lastPoint = data[data.length - 1].x;
     
-    // If we have data, ensure the chart shows up to current time
-    if (data && data.length > 0) {
-      const lastDataTime = data[data.length - 1].x;
-      
-      // If data is recent, keep chart flowing
-      if (now - lastDataTime < 5000) { // 5 second threshold
-        window.chart.options.scales.x.max = now;
-      }
+    if (newMin < firstPoint) {
+      const adjustment = firstPoint - newMin;
+      newMin = firstPoint;
+      newMax -= adjustment;
+      momentum = 0; // Kill momentum at boundaries
+    } else if (newMax > lastPoint) {
+      const adjustment = newMax - lastPoint;
+      newMin += adjustment;
+      newMax = lastPoint;
+      momentum = 0; // Kill momentum at boundaries
     }
+  }
+  
+  window.chart.options.scales.x.min = newMin;
+  window.chart.options.scales.x.max = newMax;
+  window.chart.update('none');
+}
+
+
+let animationFrameId;
+function applyMomentumScrolling() {
+  if (Math.abs(momentum) < MIN_MOMENTUM) return;
+  
+  // Apply friction
+  momentum *= FRICTION;
+  
+  // Continue scrolling
+  scrollChartByPixels(momentum * 16); // 16ms frame time
+  
+  // Schedule next frame
+  animationFrameId = requestAnimationFrame(applyMomentumScrolling);
+}
+
+function handleDragMove(e) {
+  if (!isDragging || !window.chart) return;
+  
+  const currentX = e.clientX || e.touches[0].clientX;
+  const now = performance.now();
+  const deltaTime = now - lastTimestamp;
+  
+  // Calculate velocity for momentum scrolling
+  if (deltaTime > 0) {
+    const deltaX = currentX - lastDragPosition;
+    momentum = deltaX / deltaTime;
+  }
+  
+  lastDragPosition = currentX;
+  lastTimestamp = now;
+  
+  scrollChartByPixels(lastDragPosition - currentX);
+  hasUserScrolled = true;
+  document.getElementById('resetScroll').style.display = 'inline-block';
+}
+
+
+function handleDragEnd() {
+  isDragging = false;
+  canvas.style.cursor = 'crosshair';
+  
+  // Apply momentum if significant movement
+  if (Math.abs(momentum) > 2) {
+    applyMomentumScrolling();
+  }
+}
+
+// Add event listeners for drag scrolling
+canvas.addEventListener('mousedown', handleDragStart);
+canvas.addEventListener('touchstart', handleDragStart,{ passive: true });
+
+document.addEventListener('mousemove', handleDragMove);
+document.addEventListener('touchmove', handleDragMove, { passive: true });
+
+document.addEventListener('mouseup', handleDragEnd);
+document.addEventListener('touchend', handleDragEnd,{ passive: true });
+
+// Prevent page scrolling when touching chart
+canvas.addEventListener('touchstart', (e) => {
+  if (e.touches.length === 1) {
+    e.preventDefault();
+  }
+}, { passive: false });
+
+function handleDragMove(e) {
+  if (!isDraggingChart || !window.chart) return;
+  
+  const currentX = e.clientX || e.touches[0].clientX;
+  const deltaX = currentX - lastDragPosition;
+  lastDragPosition = currentX;
+  
+  const xScale = window.chart.scales.x;
+  const pixelRange = xScale.max - xScale.min;
+  const pixelToTimeRatio = pixelRange / window.chart.width;
+  
+  // Calculate new min/max based on drag distance
+  const timeDelta = deltaX * pixelToTimeRatio;
+  const newMin = xScale.min - timeDelta;
+  const newMax = xScale.max - timeDelta;
+  
+  // Check boundaries (don't scroll past data)
+  const data = window.chart.data.datasets[0].data;
+  if (data.length > 0) {
+    const firstPoint = data[0].x;
+    const lastPoint = data[data.length - 1].x;
     
-    // Smoothly update the chart
-    window.chart.update('none');
-    lastUpdateTime = timestamp;
-  }
-  
-  requestAnimationFrame(continuousUpdate);
-}
-
-function updatePriceInfo() {
-  const priceChange = (currentPrice - previousPrice).toFixed(2);
-  const currentPriceEl = document.getElementById('currentPriceDisplay');
-  const priceChangeEl = document.getElementById('priceChangeDisplay');
-  
-  if (currentPriceEl) {
-    currentPriceEl.textContent = currentPrice.toFixed(4);
-  }
-  
-  if (priceChangeEl) {
-    priceChangeEl.textContent = `${priceChange}`;
-    priceChangeEl.style.color = priceChange > 0 ? '#10b981' : 
-                               priceChange < 0 ? '#ef4444' : '#6b7280';
-  }
-}
-
-// Socket Event Handlers
-socket.on('priceUpdate', (update) => {
-  // Update coin data with interpolation
-  Object.keys(update.prices).forEach(coin => {
-    // Add interpolated points between updates for smoothness
-    if (coinData[coin].length > 0) {
-      const lastPoint = coinData[coin][coinData[coin].length - 1];
-      const timeDiff = update.timestamp - lastPoint.x;
+    // Don't allow scrolling past the data
+    if (newMin < firstPoint) {
+      const adjustment = firstPoint - newMin;
+      window.chart.options.scales.x.min = firstPoint;
+      window.chart.options.scales.x.max = newMax - adjustment;
+    } else if (newMax > lastPoint) {
+      const adjustment = newMax - lastPoint;
+      window.chart.options.scales.x.min = newMin - adjustment;
+      window.chart.options.scales.x.max = lastPoint;
       
-      // Add interpolated points if gap is too large
-      if (timeDiff > 1000) {
-        const steps = Math.min(5, Math.floor(timeDiff / 200));
-        for (let i = 1; i <= steps; i++) {
-          const fraction = i / (steps + 1);
-          const interpolatedPrice = lastPoint.y + 
-            (update.prices[coin] - lastPoint.y) * fraction;
-          coinData[coin].push({
-            x: lastPoint.x + (timeDiff * fraction),
-            y: interpolatedPrice
+      // If user scrolls back to the current point, reset auto-scroll
+      if (Math.abs(newMax - lastPoint) < 5000) { // 5-second threshold
+        hasUserScrolled = false;
+        document.getElementById('resetScroll').style.display = 'none';
+      }
+    } else {
+      window.chart.options.scales.x.min = newMin;
+      window.chart.options.scales.x.max = newMax;
+    }
+  } else {
+    window.chart.options.scales.x.min = newMin;
+    window.chart.options.scales.x.max = newMax;
+  }
+  
+  window.chart.update('none');
+  hasUserScrolled = true;
+  document.getElementById('resetScroll').style.display = 'inline-block';
+}
+
+window.chart = new Chart(ctx, {
+  type: 'line',
+  data: {
+    datasets: [{
+      label: ` Price`,
+      data: coinData[currentCoin],
+      borderColor: coinConfigs[currentCoin].color,
+      backgroundColor: 'rgba(59, 130, 246, 0.1)',
+      borderWidth: 0.5,
+      tension: 0.1,
+      fill: true,
+      pointRadius: 0,
+      pointHoverRadius: 2
+    }, 
+    {
+      data: [coinData[currentCoin][coinData[currentCoin].length - 1]],
+      borderColor: coinConfigs[currentCoin].color,
+      backgroundColor: coinConfigs[currentCoin].color,
+      borderWidth: 2,
+      pointRadius: 3,
+      pointHoverRadius: 4,
+      showLine: true,
+      animation: {
+        duration: 1000,
+        easing: 'easeOutQuad',
+        properties: ['x', 'y']
+      }
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    layout: {
+      padding: {
+        left: 0,
+        right: 6
+      }
+    },
+    animation: false,
+    transitions: {
+      active: {
+        animation: {
+          duration: 1000
+        }
+      }
+    },
+    scales: {
+      x: {
+        type: 'time',
+        time: {
+          unit: 'minute',
+          stepSize: 3,
+          minUnit: 'second',
+          displayFormats: {
+            day: 'D MMM',
+            minute: 'HH:mm'
+          }
+        },
+        ticks: {
+          color: 'rgba(255, 255, 255, 0.5)',
+          font: {
+            size: 12
+          }
+        },
+        grid: {
+          display: true,
+          color: 'rgba(255, 255, 255, 0.1)',
+          drawBorder: false
+        },
+        min: () => Date.now() - 30 * 1000,
+        max: () => Date.now()
+      },
+      y: {
+        beginAtZero: false,
+        position: 'right',
+        grid: {
+          display: true,
+          color: 'rgba(255, 255, 255, 0.1)',
+          drawBorder: false
+        },
+        ticks: {
+          color: 'rgba(255, 255, 255, 0.5)',
+          callback: function(value) {
+            return value.toFixed(2);
+          },
+          padding: 12,
+          maxTicksLimit: 8
+        },
+        min: function() {
+          const range = getStableYRange();
+          return range.min;
+        },
+        max: function() {
+          const range = getStableYRange();
+          return range.max;
+        }
+      }
+    },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        enabled: true,
+        mode: 'index',
+        intersect: false
+      },
+      crosshair: false,
+      zoom: {
+        pan: {
+          enabled: true,
+          mode: 'x',
+          modifierKey: null,
+          threshold: 10,
+          onPan: ({chart}) => {
+            hasUserScrolled = true;
+            document.getElementById('resetScroll').style.display = 'inline-block';
+          }
+        },
+        zoom: {
+          wheel: {
+            enabled: true,
+            speed: 0.1,
+            modifierKey: 'ctrl',
+            onZoom: ({chart}) => {
+              hasUserScrolled = true;
+              document.getElementById('resetScroll').style.display = 'inline-block';
+            }
+          },
+          pinch: {
+            enabled: true
+          },
+          mode: 'x',
+          onZoom: ({chart}) => {
+            hasUserScrolled = true;
+            document.getElementById('resetScroll').style.display = 'inline-block';
+          }
+        }
+      }
+    },
+    interaction: {
+      mode: 'nearest',
+      axis: 'x',
+      intersect: false
+    }
+  },
+  plugins: [{
+    id: 'sequentialAnimation',
+    afterDatasetsUpdate: function(chart) {
+      const now = Date.now();
+      const points = coinData[currentCoin];
+      
+      if (!points || points.length === 0) return;
+      
+      const currentLastPoint = points[points.length - 1];
+      
+      // Initialize animation if not running
+      if (!animationState.isAnimating) {
+        if (!animationState.previousLastPoint) {
+          // First render - show all data
+          chart.data.datasets[0].data = points;
+          chart.data.datasets[1].data = [currentLastPoint];
+          animationState.previousLastPoint = currentLastPoint;
+          return;
+        }
+        
+        // Start new animation if point changed
+        if (currentLastPoint.x !== animationState.previousLastPoint.x || 
+            currentLastPoint.y !== animationState.previousLastPoint.y) {
+          animationState = {
+            currentPoint: {...animationState.previousLastPoint},
+            startTime: now,
+            isAnimating: true,
+            previousLastPoint: animationState.previousLastPoint,
+            targetPoint: currentLastPoint,
+            originalData: [...points.slice(0, -1)]
+          };
+        }
+      }
+      
+      // Handle ongoing animation
+      if (animationState.isAnimating) {
+        const elapsed = now - animationState.startTime;
+        const progress = Math.min(elapsed / POINT_ANIMATION_DURATION, 1);
+        
+        // Animate point movement
+        animationState.currentPoint = getInterpolatedPoint(
+          animationState.previousLastPoint,
+          animationState.targetPoint,
+          progress
+        );
+        
+        // Update point dataset (datasets[1]) to show animated position
+        chart.data.datasets[1].data = [animationState.currentPoint];
+        
+        // Update line dataset (datasets[0]) to grow gradually
+        const lineData = [...animationState.originalData, animationState.currentPoint];
+        chart.data.datasets[0].data = lineData;
+        
+        // When animation completes, finalize both datasets
+        if (progress >= 1) {
+          chart.data.datasets[0].data = points;
+          chart.data.datasets[1].data = [currentLastPoint];
+          animationState.previousLastPoint = currentLastPoint;
+          animationState.isAnimating = false;
+        }
+        
+        // Continue animation on next frame
+        if (progress < 1) {
+          requestAnimationFrame(() => {
+            chart.update('none');
           });
         }
       }
     }
-    
-    // Add the actual update point
-    coinData[coin].push({
-      x: update.timestamp,
-      y: update.prices[coin]
-    });
-    
-    // Trim old data
-    const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
-    coinData[coin] = coinData[coin].filter(point => point.x >= oneDayAgo);
-  });
-
-  // Update current price if it's for the active coin
-  if (update.prices[currentCoin] !== undefined) {
-    previousPrice = currentPrice;
-    currentPrice = update.prices[currentCoin];
-    updatePriceInfo();
-  }
+  }, sessionLinePlugin, trackingLinePlugin]
 });
-
-// Coin Selection Handler
-document.getElementById('coinSelect')?.addEventListener('change', function() {
-  currentCoin = this.value;
-  if (window.chart) {
-    window.chart.data.datasets[0].label = `${coinConfigs[currentCoin].name} Price`;
-    window.chart.data.datasets[0].borderColor = coinConfigs[currentCoin].color;
-    window.chart.data.datasets[1].borderColor = coinConfigs[currentCoin].color;
-    window.chart.data.datasets[1].backgroundColor = coinConfigs[currentCoin].color;
-    updateChart();
-  }
-});
-
-// Reset Scroll Function
-function resetChartScroll() {
-  if (!window.chart) return;
-
-  const xScale = window.chart.scales.x;
-  const startMin = xScale.min;
-  const startMax = xScale.max;
-  const lastPoint = coinData[currentCoin][coinData[currentCoin].length - 1];
-
-  if (!lastPoint) return;
-
-  const viewDuration = 20 * 1000; // 20 seconds of historical data
-  const lookAhead = 0.1 * 60 * 1000; // 6 seconds of look ahead
-  const targetMin = lastPoint.x - (viewDuration - lookAhead);
-  const targetMax = lastPoint.x + lookAhead;
-
-  const startTime = performance.now();
-  const duration = 300;
-
-  const animateReset = (timestamp) => {
-    const elapsed = timestamp - startTime;
-    const progress = Math.min(elapsed / duration, 1);
-    const easeProgress = easeOutQuad(progress);
-    
-    window.chart.options.scales.x.min = startMin + (targetMin - startMin) * easeProgress;
-    window.chart.options.scales.x.max = startMax + (targetMax - startMax) * easeProgress;
-    window.chart.update('none');
-    
-    if (progress < 1) {
-      requestAnimationFrame(animateReset);
-    } else {
-      hasUserScrolled = false;
-      document.getElementById('resetScroll').style.display = 'none';
-    }
-  };
-
-  requestAnimationFrame(animateReset);
 }
 
-function easeOutQuad(t) {
-  return t * (2 - t);
-}
-
-// Initialize the chart when DOM is ready
-document.addEventListener('DOMContentLoaded', function() {
-  initializeChart();
-  updatePriceInfo();
-});
 let chartUpdateTimeout;
 function debouncedUpdateChart() {
   clearTimeout(chartUpdateTimeout);

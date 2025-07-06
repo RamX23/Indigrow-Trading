@@ -113,9 +113,9 @@
   font-weight: 700;
   letter-spacing: 0.05333rem;
   border-radius: 0.58667rem;
-  border: none;
+  border: 2px solid white;
   background: -webkit-linear-gradient(top, #22275b 0%, #2b3270 100%);
-  background: linear-gradient(180deg, #22275b 0%, #2b3270 100%);
+  /* background: linear-gradient(180deg, #22275b 0%, #2b3270 100%); */
   box-shadow: 0 0.05333rem #61a9ff;
   display: -webkit-box;
   display: -webkit-flex;

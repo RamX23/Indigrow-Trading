@@ -1,0 +1,54 @@
+<style>
+  .GameList__C {
+    display: flex;
+    /* gap: 6px; */
+    /* padding: 8px; */
+    /* border-radius: 8px; */
+    /* margin-top: 0.6em; */
+    /* background-color: rgb(16, 12, 51); */
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .GameList__C div {
+    padding-block:6px;
+    cursor: pointer;
+    background: #122855; 
+    color: #fff;
+    border: 2px solid rgba(0, 0, 0, 0.1);
+    font-size: 0.3rem;
+    font-weight: 500;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    /* transition: all 0.2s ease; */
+    text-align: center;
+    padding: 0.4em;
+    /* min-width: 1.2rem; */
+}
+  
+.GameList__C div:hover {
+    background: linear-gradient(135deg, #3a4b6d, #2c3a58);
+}
+
+/* Add this for active state */
+.GameList__C div.active {
+    background: linear-gradient(135deg, #1e88e5, #0d47a1);
+    border-color: rgba(255, 255, 255, 0.5);
+    font-weight: bold;
+    /* box-shadow: 0 0 10px rgba(30, 136, 229, 0.7);
+    transform: scale(1.05);
+    transition: all 0.3s ease; */
+}
+  </style>
+  
+  <!-- <div class="GameList__C">
+    <div class="min_t_1" onclick="selectActiveClockByGameType(1)">1Min</div>
+    <div class="min_t_3" onclick="selectActiveClockByGameType(3)">3Min</div>
+    <div class="min_t_5" onclick="selectActiveClockByGameType(5)">5Min</div>
+    <div class="min_t_10" onclick="selectActiveClockByGameType(10)">10Min</div>
+  </div> -->
+  <div class="GameList__C">
+    <div class="min_t_1" onclick="selectActiveClockByGameType(1)">1Min</div>
+    <div class="min_t_3" style="display: none;">3Min</div>
+    <div class="min_t_5" style="display: none;">5Min</div>
+    <div class="min_t_10" style="display: none;">10Min</div>
+  </div>

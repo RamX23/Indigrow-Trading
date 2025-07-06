@@ -225,10 +225,12 @@ const totalJoin = async (req, res) => {
       `SELECT * FROM minutes_2 WHERE game = "${game}" AND status = 0 ORDER BY id ASC `,
       [auth],
     );
+
     const [winGo1] = await connection.execute(
       `SELECT * FROM wingo WHERE status = 0 AND game = '${game}' ORDER BY id DESC LIMIT 1 `,
       [],
     );
+    
     const [winGo10] = await connection.execute(
       `SELECT * 
       FROM wingo w 

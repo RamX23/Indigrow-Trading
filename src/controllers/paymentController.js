@@ -507,7 +507,7 @@ const verifyAkashPayPayment = async(req, res) => {
 
 
         // First, check the current status
-        const [rows] = await connection.query('SELECT status, phone FROM recharge WHERE id_order = ?', [params.order_sn]);
+        const [rows] = await connection.query('SELECT * FROM recharge WHERE id_order = ?', [params.order_sn]);
 
 
 
@@ -527,7 +527,8 @@ const verifyAkashPayPayment = async(req, res) => {
 
                 await addUserAccountBalance({
                     phone: userphone,
-                    money: parseFloat(params.money)
+                    money: parseFloat(rows[0].money),
+                    invite: userinfo[0].invite
                 })
 
                 console.log('Status updated to Success.');

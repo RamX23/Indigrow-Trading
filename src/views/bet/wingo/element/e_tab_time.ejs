@@ -31,7 +31,7 @@
 
 /* Add this for active state */
 .GameList__C div.active {
-    background: linear-gradient(135deg, #1e88e5, #0d47a1);
+    background: linear-gradient(135deg, #142e45, #192639);
     border-color: rgba(255, 255, 255, 0.5);
     font-weight: bold;
     /* box-shadow: 0 0 10px rgba(30, 136, 229, 0.7);
@@ -40,9 +40,15 @@
 }
   </style>
   
-  <div class="GameList__C">
+  <!-- <div class="GameList__C">
     <div class="min_t_1" onclick="selectActiveClockByGameType(1)">1Min</div>
     <div class="min_t_3" onclick="selectActiveClockByGameType(3)">3Min</div>
     <div class="min_t_5" onclick="selectActiveClockByGameType(5)">5Min</div>
     <div class="min_t_10" onclick="selectActiveClockByGameType(10)">10Min</div>
+  </div> -->
+  <div class="GameList__C">
+    <div class="min_t_1" onclick="selectActiveClockByGameType(1)">1Min</div>
+    <div class="min_t_3" style="display: none;">3Min</div>
+    <div class="min_t_5" style="display: none;">5Min</div>
+    <div class="min_t_10" style="display: none;">10Min</div>
   </div>

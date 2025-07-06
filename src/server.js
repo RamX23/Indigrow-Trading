@@ -15,7 +15,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-const port = process.env.PORT || 5001;
+const port = process.env.PORT || 5003;
 
 // Shared data structure to store endpoint data
 const ENDPOINT_DATA = {

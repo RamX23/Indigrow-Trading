@@ -1415,7 +1415,7 @@ const infoUserBank = async (req, res) => {
 
     // *****************************************BET LOSS CALCULATIONS*****************************************
     const [wingoLossResult] = await connection.query(
-      `SELECT SUM(money) AS totalMoney,SUM(fee) AS totalFees FROM minutes_1 WHERE phone = '${userInfo.phone}' ${betTimeInterval}`,
+      `SELECT SUM(money) AS totalMoney,SUM(fee) AS totalFees FROM minutes_2 WHERE phone = '${userInfo.phone}' ${betTimeInterval}`,
     );
     const wingoLossMoney =
       parseFloat(wingoLossResult[0].totalMoney) +
@@ -1596,7 +1596,7 @@ const withdrawal3 = async (req, res) => {
     [userInfo.phone],
   );
   const [minutes_1] = await connection.query(
-    "SELECT * FROM minutes_1 WHERE phone = ?",
+    "SELECT * FROM minutes_2 WHERE phone = ?",
     [userInfo.phone],
   );
   let total = 0;
@@ -1772,7 +1772,7 @@ const transfer = async (req, res) => {
     [userInfo.phone],
   );
   const [minutes_1] = await connection.query(
-    "SELECT * FROM minutes_1 WHERE phone = ? ",
+    "SELECT * FROM minutes_2 WHERE phone = ? ",
     [userInfo.phone],
   );
   let total = 0;
@@ -1947,6 +1947,7 @@ const listRecharge = async (req, res) => {
     "SELECT * FROM recharge WHERE phone = ? ORDER BY id DESC ",
     [userInfo.phone],
   );
+  console.log(recharge);
   return res.status(200).json({
     message: "Receive success",
     datas: recharge,
@@ -2153,22 +2154,21 @@ const constructTransactionsQuery = (
 ) => {
   const queries = {
     Bets: {
-      query: `SELECT id_product AS id, (money + fee) AS money, 'negative' AS type, 'Bet' AS name, time FROM minutes_1 WHERE phone = ? AND time >= ? AND time <= ?`,
-      count: `SELECT COUNT(*) AS totalCount FROM minutes_1 WHERE phone = ? AND time >= ? AND time <= ?`,
+      query: `SELECT id_product AS id, (money + fee) AS money, 'negative' AS type, 'Bet' AS name, time FROM minutes_2 WHERE phone = ? AND time >= ? AND time <= ?`,
+      count: `SELECT COUNT(*) AS totalCount FROM minutes_2 WHERE phone = ? AND time >= ? AND time <= ?`,
     },
     "trxBets": {
       query: `SELECT id_product AS id, (money + fee) AS money, 'negative' AS type, 'Bet' AS name, time FROM trx_wingo_bets WHERE phone = ? AND time >= ? AND time <= ?`,
       count: `SELECT COUNT(*) AS totalCount FROM trx_wingo_bets WHERE phone = ? AND time >= ? AND time <= ?`,
     },
     "Bet Win": {
-      query: `SELECT id_product AS id, \`get\` AS money, 'positive' AS type, 'Win' AS name, time FROM minutes_1 WHERE phone = ? AND \`get\` > 0 AND time >= ? AND time <=?`,
-      count: `SELECT COUNT(*) AS totalCount FROM minutes_1 WHERE phone = ? AND \`get\` > 0 AND time >= ? AND time <=?`,
+      query: `SELECT id_product AS id, \`get\` AS money, 'positive' AS type, 'Win' AS name, time FROM minutes_2 WHERE phone = ? AND \`get\` > 0 AND time >= ? AND time <=?`,
+      count: `SELECT COUNT(*) AS totalCount FROM minutes_2 WHERE phone = ? AND \`get\` > 0 AND time >= ? AND time <=?`,
     },
     "trxBet Win": {
       query: `SELECT id_product AS id, \`get\` AS money, 'positive' AS type, 'Win' AS name, time FROM trx_wingo_bets WHERE phone = ? AND \`get\` > 0 AND time >= ? AND time <=?`,
       count: `SELECT COUNT(*) AS totalCount FROM trx_wingo_bets WHERE phone = ? AND \`get\` > 0 AND time >= ? AND time <=?`,
     },
-    
     Recharge: {
       query: `SELECT id_order AS id, money, 'positive' AS type, 'Recharge' AS name, time FROM recharge WHERE phone = ? AND status = 1 AND time >= ? AND time <=?`,
       count: `SELECT COUNT(*) AS totalCount FROM recharge WHERE phone = ? AND status = 1 AND time >= ? AND time <=?`,
@@ -2198,7 +2198,7 @@ const constructTransactionsQuery = (
   if (filterType === "All") {
     // Construct combined queries and total count queries
     const selectedQueries = Object.values(queries)
-      .map((query) => `(${query.query})`)
+      .map((query) => query.query)
       .join(" UNION ALL ");
 
     const totalCountQueries = Object.values(queries)
@@ -2206,7 +2206,7 @@ const constructTransactionsQuery = (
       .join(" + ");
 
     const transactionsQuery = `
-       SELECT * FROM (${selectedQueries}) AS combined
+       (${selectedQueries})
        ORDER BY time DESC
        LIMIT ${limit} OFFSET ${offset}
      `;
@@ -2226,14 +2226,14 @@ const constructTransactionsQuery = (
       totalCountQuery,
       params,
     };
-  } if (filterType === 'Bets' || filterType === 'Bet Win') {
+  } else if (filterType === 'Bets' || filterType === 'Bet Win') {
     const selectedQuery = `${queries[filterType]?.query || ''} UNION ALL ${queries[`trx${filterType}`]?.query || ''}`;
     const totalCountQueries = `(${queries[filterType]?.count || '0'}) + (${queries[`trx${filterType}`]?.count || '0'})`;
 
     const totalCountQuery = `
        SELECT ${totalCountQueries} AS totalCount
      `;
-    const transactionsQuery = `${selectedQuery}
+    const transactionsQuery = `(${selectedQuery})
        ORDER BY time DESC
        LIMIT ${limit} OFFSET ${offset}
      `;
@@ -2243,7 +2243,6 @@ const constructTransactionsQuery = (
       totalCountQuery,
       params,
     };
-
   } else {
     // Handle specific filterType
     const selectedQuery = queries[filterType]?.query;
@@ -2251,7 +2250,7 @@ const constructTransactionsQuery = (
 
     if (selectedQuery && totalCountQuery) {
       const transactionsQuery = `
-         ${selectedQuery}
+         (${selectedQuery})
          ORDER BY time DESC
          LIMIT ${limit} OFFSET ${offset}
        `;

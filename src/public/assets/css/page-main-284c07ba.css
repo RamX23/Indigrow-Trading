@@ -4986,7 +4986,8 @@ html:lang(ar) .gverify-container-content-item-tip svg[data-v-1911143a] {
   flex-direction: column;
   width: 100%;
   height: 5.84rem;
-  background: var(--main_gradient-color);
+  /* background: var(--main_gradient-color); */
+  background-image: "/assets/png/gift_heroimage.png";
 }
 .redeem-container-header-belly[data-v-695ca243] {
   display: -webkit-box;
@@ -4994,8 +4995,8 @@ html:lang(ar) .gverify-container-content-item-tip svg[data-v-1911143a] {
   display: flex;
 }
 .redeem-container-header-belly img[data-v-695ca243] {
-  width: 10rem;
-  height: 4.86667rem;
+  width: 100%;
+  height: 5rem;
   background-position: cover;
 }
 .redeem-container-content[data-v-695ca243] {

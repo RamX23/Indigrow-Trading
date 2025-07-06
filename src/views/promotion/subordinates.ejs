@@ -4016,7 +4016,7 @@
       <div data-v-61888f52="" data-v-221aa0df="" class="infiniteScroll" id="refreshce41d255739942ba8c915b35d4badc1e">
         <div data-v-221aa0df="" class="subordinate__container-content">
           <div data-v-221aa0df="" class="subordinate__container-content__item ar-1px-b">
-            Loading...
+           
           </div>
         </div>
         <div data-v-61888f52="" class="infiniteScroll__loading">
@@ -4032,53 +4032,145 @@
 
 
 </body>
-
 <script>
   $(document).ready(function () {
+    console.log('[Subordinates] Document ready, initializing...');
+    
+    // Debug: Log initial state
+    console.debug('[Subordinates] Initializing loading state');
     $(".ar-loading-view").fadeIn();
+    
     const tabs = $("[id^='van-tabs-']");
+    
+    // Debug: Verify tabs selection
+    console.debug(`[Subordinates] Found ${tabs.length} tabs`);
+    
     tabs.click(async function (e) {
-      tabs.removeClass("van-tab--active");
-      $(this).addClass("van-tab--active");
-      const value = $(this).text().toLowerCase().trim();
-      $(".ar-loading-view").fadeIn();
-      await loadData(value);
+      try {
+        console.log(`[Subordinates] Tab clicked: ${$(this).text().trim()}`);
+        
+        // Update UI state
+        tabs.removeClass("van-tab--active");
+        $(this).addClass("van-tab--active");
+        
+        const value = $(this).text().toLowerCase().trim();
+        console.debug(`[Subordinates] Loading data for: ${value}`);
+        
+        $(".ar-loading-view").fadeIn();
+        await loadData(value);
+      } catch (error) {
+        console.error('[Subordinates] Tab click error:', error);
+        showError("Failed to load tab data");
+      }
     });
 
     function showData(data) {
+      console.debug(`[Subordinates] Showing ${data.length} items`);
+      
       const container = $(".subordinate__container-content");
-      if (data.length === 0) return;
+      
+      if (data.length === 0) {
+        console.debug('[Subordinates] No data to display');
+        container.html('<div class="no-data">No subordinates found</div>');
+        return;
+      }
 
-      // Generate the full HTML content
-      let htmlContent = "";
-      data.forEach((item) => {
-        htmlContent += `
-    <div data-v-221aa0df="" class="subordinate__container-content__item ar-1px-b">
-      <div data-v-221aa0df="">
-        <span data-v-221aa0df="">${item.phone}</span><span data-v-221aa0df="">UID:${item.uid}</span>
-      </div>
-      <div data-v-221aa0df="">
-        <span data-v-221aa0df="">Direct subordinates</span><span data-v-221aa0df="">${item.time}</span>
-      </div>
-    </div>
-  `;
-      });
+      try {
+        // Use document fragment for better performance
+        const fragment = document.createDocumentFragment();
+        
+        data.forEach((item) => {
+          const itemDiv = document.createElement('div');
+          itemDiv.className = 'subordinate__container-content__item ar-1px-b';
+          itemDiv.innerHTML = `
+            <div>
+              <span>${escapeHtml(item.phone)}</span>
+              <span>UID:${escapeHtml(item.uid)}</span>
+            </div>
+            <div>
+              <span>Direct subordinates</span>
+              <span>${escapeHtml(item.time)}</span>
+            </div>
+          `;
+          fragment.appendChild(itemDiv);
+        });
 
-      // Set the full HTML content of the container
-      container.html(htmlContent);
+        // Clear and append in one operation
+        container.empty().append(fragment);
+        
+        console.debug('[Subordinates] Data rendered successfully');
+      } catch (error) {
+        console.error('[Subordinates] Error rendering data:', error);
+        showError("Error displaying data");
+      }
+    }
+
+    // Basic HTML escaping for security
+    function escapeHtml(unsafe) {
+      return unsafe
+        .toString()
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function showError(message) {
+      console.error(`[Subordinates] Showing error: ${message}`);
+      $(".subordinate__container-content").html(
+        `<div class="error-message">${message}</div>`
+      );
+      $(".ar-loading-view").fadeOut();
     }
 
     async function loadData(type) {
+      console.log(`[Subordinates] Loading data for type: ${type}`);
+      
       try {
-        const response = await axios.get(`/api/subordinates?type=${type}`);
+        const startTime = performance.now();
+        const response = await axios.get(`/api/subordinates?type=${type}`, {
+          timeout: 10000 // 10 second timeout
+        });
+        
+        const loadTime = performance.now() - startTime;
+        console.debug(`[Subordinates] API response received in ${loadTime.toFixed(2)}ms`, response.data);
+        
+        if (!response.data || !response.data.users) {
+          throw new Error('Invalid response format');
+        }
+        
         const users = response.data.users;
+        console.debug(`[Subordinates] Received ${users.length} users`);
+        
         showData(users);
-        $(".ar-loading-view").fadeOut();
       } catch (error) {
-        console.error(error);
+        console.error('[Subordinates] Error loading data:', error);
+        
+        if (error.response) {
+          // The request was made and the server responded with a status code
+          console.error('[Subordinates] Server responded with:', error.response.status, error.response.data);
+          showError(`Server error: ${error.response.status}`);
+        } else if (error.request) {
+          // The request was made but no response was received
+          console.error('[Subordinates] No response received');
+          showError("Network error - please try again");
+        } else {
+          // Something happened in setting up the request
+          console.error('[Subordinates] Request setup error:', error.message);
+          showError("Failed to load data");
+        }
+      } finally {
+        console.debug('[Subordinates] Hiding loading state');
+        $(".ar-loading-view").fadeOut();
       }
     }
-    loadData("today");
+
+    // Initial load
+    console.debug('[Subordinates] Performing initial load');
+    loadData("today").catch(error => {
+      console.error('[Subordinates] Initial load failed:', error);
+    });
   });
 </script>
 

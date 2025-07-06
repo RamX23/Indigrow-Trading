@@ -4158,17 +4158,16 @@
                                 </div>
                             </div>
                         </div> -->
-                        <div data-v-4f3d8608="" class="Recharge__container-tabcard__items" type="usdt_manual">
+                        <!-- <div data-v-4f3d8608="" class="Recharge__container-tabcard__items" type="usdt_manual">
                             <div data-v-4f3d8608="" class="centers">
                                 <div data-v-4f3d8608="" class="Recharge__container-tabcard__top"><img data-v-4f3d8608=""
                                         class="img"
                                         src="https://ossimg.Big-Mumadmin888.com/bigmumbai/payNameIcon/payNameIcon_202308241247227g2d.png"
                                         alt=""></div>
                                 <div data-v-4f3d8608="" class="Recharge__container-tabcard__bot">USDT
-                                    <!-- <span v-if="item.maxRechargeRifts && item.maxRechargeRifts > 0">{{ item?.maxRechargeRifts * 100 }}%</span> -->
                                 </div>
                             </div>
-                        </div>
+                        </div> -->
                     </div>
                 </div><!-- 支付方式组件 -->
                 <div data-v-9e03166f="" class="Recharge__content"><!--  选择通道  -->
@@ -4470,14 +4469,14 @@
         const USDT_INR_EXCHANGE_RATE = parseInt(`<%=USDT_INR_EXCHANGE_RATE%>`)
 
         const PaymentMethodsMap = {
-            USDT_MANUAL: "usdt_manual",
+            // USDT_MANUAL: "usdt_manual",
             UPI_MANUAL: "upi_manual",
             SUNPAY: "sunpay",
             RSPAY: "rspay",
         }
 
         const QuickMoneyForRegular = `
-            <div data-v-9e03166f="" class="Recharge__content-paymoney__money-list__item" data-money="110">
+            <div data-v-9e03166f="" class="Recharge__content-paymoney__money-list__item" data-money="100">
                 <div data-v-9e03166f="" class="amount">
                     <span data-v-9e03166f="">₹</span>
                     100
@@ -4696,16 +4695,6 @@
                     ChannelOptions.innerHTML = UPIChannels
                     $(`#usdt_to_inr_inp`).hide()
                     break;
-                case PaymentMethodsMap.USDT_MANUAL:
-                    inputMoney = '10'
-                    MoneyAmountInput.value = '10'
-                    selectedPaymentMethod = PaymentMethodsMap.USDT_MANUAL
-                    QuickMoneyOptions.innerHTML = QuickMoneyForUSDT
-                    ChannelOptions.innerHTML = USDTChannels
-                    $("#currency_indicator").text("$")
-                    $("#usdt_inr_amount").text(`${(10 * USDT_INR_EXCHANGE_RATE) || 0}`)
-                    $(`#usdt_to_inr_inp`).show()
-                    break;
                 default:
                     inputMoney = '300'
                     MoneyAmountInput.value = '300'
@@ -4754,21 +4743,8 @@
     const minimumMoneyAllowedUSDT = 100;
     const minimumMoneyAllowedINR = 100;
 
-    if (selectedPaymentMethod === PaymentMethodsMap.USDT_MANUAL) {
-        $("#usdt_inr_amount").text(`${(Number(inputMoney) * USDT_INR_EXCHANGE_RATE) || 0}`)
-    }
 
-    if (selectedPaymentMethod === PaymentMethodsMap.USDT_MANUAL) {
-        if (inputMoney < minimumMoneyAllowedUSDT) {
-            $("#deposit_fund_btn").removeClass("rechage_active")
-            return;
-        }
-    } else {
-        if (inputMoney < minimumMoneyAllowedINR) {
-            $("#deposit_fund_btn").removeClass("rechage_active")
-            return;
-        }
-    }
+
 
     $("#deposit_fund_btn").addClass("rechage_active");
 
@@ -4788,9 +4764,7 @@
             const minimumMoneyAllowedUSDT = parseInt(`<%=MINIMUM_MONEY_USDT%>`)
             const minimumMoneyAllowedINR = parseInt(`<%=MINIMUM_MONEY_INR%>`)
 
-            if (selectedPaymentMethod === PaymentMethodsMap.USDT_MANUAL) {
-                $("#usdt_inr_amount").text(`${(Number(amount) * USDT_INR_EXCHANGE_RATE) || 0}`)
-            }
+
 
             if (selectedPaymentMethod === PaymentMethodsMap.USDT_MANUAL) {
                 if (parseInt(amount) < minimumMoneyAllowedUSDT) {
@@ -4850,13 +4824,6 @@
                     }
                     handleManualUPIPaymentRequest(inputMoney)
                     // handleManualRSPayPaymentRequest(inputMoney)
-                    break;
-                case PaymentMethodsMap.USDT_MANUAL:
-                    if (!inputMoney || !(inputMoney >= minimumMoneyAllowedUSDT)) {
-                        alertMessage(`Money is Required and it should be USDT ${minimumMoneyAllowedUSDT} or above!`)
-                        return
-                    }
-                    handleManualUSDTPaymentRequest(inputMoney)
                     break;
                 case PaymentMethodsMap.UPI_MANUAL:
                     if (!inputMoney || !(inputMoney >= minimumMoneyAllowedINR)) {

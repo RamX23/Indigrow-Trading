@@ -19,145 +19,214 @@ function getOrdinal(n) {
   return n + (s[(v - 20) % 10] || s[v] || s[0]);
 }
 
-const getSubordinateDataByPhone = async (phone) => {
-  const [[row_1]] = await connection.execute(
-    "SELECT COUNT(*) AS `count` FROM `recharge` WHERE `phone` = ? AND `status` = ?",
-    [phone, PaymentStatusMap.SUCCESS],
-  );
-  const rechargeQuantity = row_1.count;
-  const [[row_2]] = await connection.execute(
-    "SELECT SUM(money) AS `sum` FROM `recharge` WHERE `phone` = ? AND `status` = ?",
-    [phone, PaymentStatusMap.SUCCESS],
-  );
-  const rechargeAmount = row_2.sum;
-
-  const [[row_3]] = await connection.execute(
-    "SELECT SUM(money) AS `sum` FROM `recharge` WHERE `phone` = ? AND `status` = ? ORDER BY id LIMIT 1 ",
-    [phone, PaymentStatusMap.SUCCESS],
-  );
-  const firstRechargeAmount = row_3.sum;
-
-  const [gameWingo] = await connection.query(
-    "SELECT SUM(money) as totalBettingAmount FROM minutes_1 WHERE phone = ?",
-    [phone],
-  );
-  const gameWingoBettingAmount = gameWingo[0].totalBettingAmount || 0;
-
-  const [gameK3] = await connection.query(
-    "SELECT SUM(money) as totalBettingAmount FROM result_k3 WHERE phone = ?",
-    [phone],
-  );
-  const gameK3BettingAmount = gameK3[0].totalBettingAmount || 0;
-
-  const [game5D] = await connection.query(
-    "SELECT SUM(money) as totalBettingAmount FROM result_5d WHERE phone = ?",
-    [phone],
-  );
-  const game5DBettingAmount = game5D[0].totalBettingAmount || 0;
-
-  return {
-    rechargeQuantity,
-    rechargeAmount,
-    firstRechargeAmount,
-    bettingAmount:
-      parseInt(gameWingoBettingAmount) +
-      parseInt(gameK3BettingAmount) +
-      parseInt(game5DBettingAmount),
-  };
+const debugLog = (message, data = null) => {
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`[DEBUG] ${message}`, data ? JSON.stringify(data, null, 2) : '');
+  }
 };
 
-const getSubordinatesListDataByCode = async (code, startDate) => {
-  let [subordinatesList] = startDate
-    ? await connection.execute(
-        "SELECT `code`, `phone`, `id_user`, `level`, `time` FROM `users` WHERE `invite` = ? AND time <= ?",
-        [code, startDate],
-      )
-    : await connection.execute(
-        "SELECT `code`, `phone`, `id_user`, `time` FROM `users` WHERE `invite` = ?",
-        [code],
-      );
+const getSubordinateDataByPhone = async (phone, dbConnection) => {
+  try {
+    debugLog(`Fetching subordinate data for phone: ${phone}`);
+    
+    const [[row_1]] = await dbConnection.execute(
+      "SELECT COUNT(*) AS `count` FROM `recharge` WHERE `phone` = ? AND `status` = ?",
+      [phone, PaymentStatusMap.SUCCESS]
+    ).catch(error => handleDbError(error, 'getSubordinateDataByPhone - recharge count'));
+    
+    const rechargeQuantity = row_1.count || 0;
+    debugLog(`Recharge quantity for ${phone}:`, rechargeQuantity);
 
-  let subordinatesCount = subordinatesList.length;
-  let subordinatesRechargeQuantity = 0;
-  let subordinatesRechargeAmount = 0;
-  let subordinatesWithDepositCount = 0;
-  let subordinatesFirstDepositAmount = 0;
-  let subordinatesWithBettingCount = 0;
-  let subordinatesBettingAmount = 0;
+    const [[row_2]] = await dbConnection.execute(
+      "SELECT SUM(money) AS `sum` FROM `recharge` WHERE `phone` = ? AND `status` = ?",
+      [phone, PaymentStatusMap.SUCCESS]
+    ).catch(error => handleDbError(error, 'getSubordinateDataByPhone - recharge sum'));
+    
+    const rechargeAmount = row_2.sum || 0;
+    debugLog(`Recharge amount for ${phone}:`, rechargeAmount);
 
-  for (let index = 0; index < subordinatesList.length; index++) {
-    const subordinate = subordinatesList[index];
-    const {
+    const [[row_3]] = await dbConnection.execute(
+      "SELECT SUM(money) AS `sum` FROM `recharge` WHERE `phone` = ? AND `status` = ? ORDER BY id LIMIT 1",
+      [phone, PaymentStatusMap.SUCCESS]
+    ).catch(error => handleDbError(error, 'getSubordinateDataByPhone - first recharge'));
+    
+    const firstRechargeAmount = row_3.sum || 0;
+    debugLog(`First recharge amount for ${phone}:`, firstRechargeAmount);
+
+    const [gameWingo] = await dbConnection.query(
+      "SELECT SUM(money) as totalBettingAmount FROM minutes_1 WHERE phone = ?",
+      [phone]
+    ).catch(error => handleDbError(error, 'getSubordinateDataByPhone - gameWingo'));
+    
+    const gameWingoBettingAmount = gameWingo[0].totalBettingAmount || 0;
+
+    const [gameK3] = await dbConnection.query(
+      "SELECT SUM(money) as totalBettingAmount FROM result_k3 WHERE phone = ?",
+      [phone]
+    ).catch(error => handleDbError(error, 'getSubordinateDataByPhone - gameK3'));
+    
+    const gameK3BettingAmount = gameK3[0].totalBettingAmount || 0;
+
+    const [game5D] = await dbConnection.query(
+      "SELECT SUM(money) as totalBettingAmount FROM result_5d WHERE phone = ?",
+      [phone]
+    ).catch(error => handleDbError(error, 'getSubordinateDataByPhone - game5D'));
+    
+    const game5DBettingAmount = game5D[0].totalBettingAmount || 0;
+
+    const result = {
       rechargeQuantity,
       rechargeAmount,
-      bettingAmount,
       firstRechargeAmount,
-    } = await getSubordinateDataByPhone(subordinate.phone);
+      bettingAmount:
+        parseInt(gameWingoBettingAmount) +
+        parseInt(gameK3BettingAmount) +
+        parseInt(game5DBettingAmount),
+    };
+    
+    debugLog(`Final subordinate data for ${phone}:`, result);
+    return result;
+  } catch (error) {
+    console.error(`Error in getSubordinateDataByPhone for ${phone}:`, error);
+    return {
+      rechargeQuantity: 0,
+      rechargeAmount: 0,
+      firstRechargeAmount: 0,
+      bettingAmount: 0,
+    };
+  }
+};
 
-    subordinatesRechargeQuantity += parseInt(rechargeQuantity) || 0;
-    subordinatesRechargeAmount += parseInt(rechargeAmount) || 0;
-    subordinatesList[index]["rechargeQuantity"] =
-      parseInt(rechargeQuantity) || 0;
-    subordinatesList[index]["rechargeAmount"] = parseInt(rechargeAmount) || 0;
-    subordinatesList[index]["bettingAmount"] = parseInt(bettingAmount) || 0;
-    subordinatesList[index]["firstRechargeAmount"] =
-      parseInt(firstRechargeAmount) || 0;
-    subordinatesList[index]["level"] = subordinatesList[index]["level"] || 0;
-    subordinatesList[index]["commission"] =
-      subordinatesList[index]["commission"] || 0;
-    subordinatesWithBettingCount += parseInt(bettingAmount) > 0 ? 1 : 0;
-    subordinatesBettingAmount += parseInt(bettingAmount);
-    subordinatesFirstDepositAmount += parseInt(firstRechargeAmount) || 0;
+const getSubordinatesListDataByCode = async (code, startDate, dbConnection) => {
+  try {
+    debugLog(`Fetching subordinates for code: ${code}`, { startDate });
+    
+    let [subordinatesList] = startDate
+      ? await dbConnection.execute(
+          "SELECT `code`, `phone`, `id_user`, `level`, `time` FROM `users` WHERE `invite` = ? AND time <= ?",
+          [code, startDate]
+        ).catch(error => handleDbError(error, 'getSubordinatesListDataByCode - with date'))
+      : await dbConnection.execute(
+          "SELECT `code`, `phone`, `id_user`, `level`, `time` FROM `users` WHERE `invite` = ?",
+          [code]
+        ).catch(error => handleDbError(error, 'getSubordinatesListDataByCode - without date'));
 
-    if (rechargeAmount > 0) {
-      subordinatesWithDepositCount++;
+    debugLog(`Found ${subordinatesList.length} subordinates for code ${code}`);
+
+    let subordinatesCount = subordinatesList.length;
+    let subordinatesRechargeQuantity = 0;
+    let subordinatesRechargeAmount = 0;
+    let subordinatesWithDepositCount = 0;
+    let subordinatesFirstDepositAmount = 0;
+    let subordinatesWithBettingCount = 0;
+    let subordinatesBettingAmount = 0;
+
+    for (let index = 0; index < subordinatesList.length; index++) {
+      const subordinate = subordinatesList[index];
+      debugLog(`Processing subordinate ${index + 1}/${subordinatesList.length}`, subordinate);
+      
+      const {
+        rechargeQuantity,
+        rechargeAmount,
+        bettingAmount,
+        firstRechargeAmount,
+      } = await getSubordinateDataByPhone(subordinate.phone, dbConnection);
+
+      subordinatesRechargeQuantity += parseInt(rechargeQuantity) || 0;
+      subordinatesRechargeAmount += parseInt(rechargeAmount) || 0;
+      subordinatesList[index]["rechargeQuantity"] = parseInt(rechargeQuantity) || 0;
+      subordinatesList[index]["rechargeAmount"] = parseInt(rechargeAmount) || 0;
+      subordinatesList[index]["bettingAmount"] = parseInt(bettingAmount) || 0;
+      subordinatesList[index]["firstRechargeAmount"] = parseInt(firstRechargeAmount) || 0;
+      subordinatesList[index]["level"] = subordinatesList[index]["level"] || 0;
+      subordinatesList[index]["commission"] = subordinatesList[index]["commission"] || 0;
+      subordinatesWithBettingCount += parseInt(bettingAmount) > 0 ? 1 : 0;
+      subordinatesBettingAmount += parseInt(bettingAmount);
+      subordinatesFirstDepositAmount += parseInt(firstRechargeAmount) || 0;
+
+      if (rechargeAmount > 0) {
+        subordinatesWithDepositCount++;
+      }
     }
-  }
 
-  return {
-    subordinatesList,
-    subordinatesCount,
-    subordinatesRechargeQuantity,
-    subordinatesRechargeAmount,
-    subordinatesWithDepositCount,
-    subordinatesWithBettingCount,
-    subordinatesBettingAmount,
-    subordinatesFirstDepositAmount,
-  };
+    const result = {
+      subordinatesList,
+      subordinatesCount,
+      subordinatesRechargeQuantity,
+      subordinatesRechargeAmount,
+      subordinatesWithDepositCount,
+      subordinatesWithBettingCount,
+      subordinatesBettingAmount,
+      subordinatesFirstDepositAmount,
+    };
+    
+    debugLog(`Final subordinates data for code ${code}:`, result);
+    return result;
+  } catch (error) {
+    console.error(`Error in getSubordinatesListDataByCode for code ${code}:`, error);
+    return {
+      subordinatesList: [],
+      subordinatesCount: 0,
+      subordinatesRechargeQuantity: 0,
+      subordinatesRechargeAmount: 0,
+      subordinatesWithDepositCount: 0,
+      subordinatesWithBettingCount: 0,
+      subordinatesBettingAmount: 0,
+      subordinatesFirstDepositAmount: 0,
+    };
+  }
 };
 
-const getOneLevelTeamSubordinatesData = async (directSubordinatesList) => {
-  let oneLevelTeamSubordinatesCount = 0;
-  let oneLevelTeamSubordinatesRechargeQuantity = 0;
-  let oneLevelTeamSubordinatesRechargeAmount = 0;
-  let oneLevelTeamSubordinatesWithDepositCount = 0;
-  let oneLevelTeamSubordinatesList = [];
+const getOneLevelTeamSubordinatesData = async (directSubordinatesList, dbConnection) => {
+  try {
+    debugLog('Processing one level team subordinates', { count: directSubordinatesList.length });
+    
+    let oneLevelTeamSubordinatesCount = 0;
+    let oneLevelTeamSubordinatesRechargeQuantity = 0;
+    let oneLevelTeamSubordinatesRechargeAmount = 0;
+    let oneLevelTeamSubordinatesWithDepositCount = 0;
+    let oneLevelTeamSubordinatesList = [];
 
-  for (const directSubordinate of directSubordinatesList) {
-    const indirectSubordinatesData = await getSubordinatesListDataByCode(
-      directSubordinate.code,
-    );
-    oneLevelTeamSubordinatesList = [
-      ...oneLevelTeamSubordinatesList,
-      ...indirectSubordinatesData.subordinatesList,
-    ];
-    oneLevelTeamSubordinatesCount += indirectSubordinatesData.subordinatesCount;
-    oneLevelTeamSubordinatesRechargeQuantity +=
-      indirectSubordinatesData.subordinatesRechargeQuantity;
-    oneLevelTeamSubordinatesRechargeAmount +=
-      indirectSubordinatesData.subordinatesRechargeAmount;
-    oneLevelTeamSubordinatesWithDepositCount +=
-      indirectSubordinatesData.subordinatesWithDepositCount;
+    for (const directSubordinate of directSubordinatesList) {
+      debugLog(`Processing subordinate: ${directSubordinate.phone}`);
+      const indirectSubordinatesData = await getSubordinatesListDataByCode(
+        directSubordinate.code,
+        null,
+        dbConnection
+      );
+      
+      oneLevelTeamSubordinatesList = [
+        ...oneLevelTeamSubordinatesList,
+        ...indirectSubordinatesData.subordinatesList,
+      ];
+      oneLevelTeamSubordinatesCount += indirectSubordinatesData.subordinatesCount;
+      oneLevelTeamSubordinatesRechargeQuantity += indirectSubordinatesData.subordinatesRechargeQuantity;
+      oneLevelTeamSubordinatesRechargeAmount += indirectSubordinatesData.subordinatesRechargeAmount;
+      oneLevelTeamSubordinatesWithDepositCount += indirectSubordinatesData.subordinatesWithDepositCount;
+    }
+
+    const result = {
+      oneLevelTeamSubordinatesCount,
+      oneLevelTeamSubordinatesRechargeQuantity,
+      oneLevelTeamSubordinatesRechargeAmount,
+      oneLevelTeamSubordinatesWithDepositCount,
+      oneLevelTeamSubordinatesList,
+    };
+    
+    debugLog('Final one level team subordinates data:', result);
+    return result;
+  } catch (error) {
+    console.error('Error in getOneLevelTeamSubordinatesData:', error);
+    return {
+      oneLevelTeamSubordinatesCount: 0,
+      oneLevelTeamSubordinatesRechargeQuantity: 0,
+      oneLevelTeamSubordinatesRechargeAmount: 0,
+      oneLevelTeamSubordinatesWithDepositCount: 0,
+      oneLevelTeamSubordinatesList: [],
+    };
   }
-
-  return {
-    oneLevelTeamSubordinatesCount,
-    oneLevelTeamSubordinatesRechargeQuantity,
-    oneLevelTeamSubordinatesRechargeAmount,
-    oneLevelTeamSubordinatesWithDepositCount,
-    oneLevelTeamSubordinatesList,
-  };
 };
+
 
 // const subordinatesDataAPI = async (req, res) => {
 //   try {
@@ -237,13 +306,19 @@ const getLevelUsers = (inviteMap, userCode, currentLevel, maxLevel) => {
 const getUserLevels = (rows, userCode, maxLevel = 10) => {
   const inviteMap = createInviteMap(rows);
   const usersByLevels = getLevelUsers(inviteMap, userCode, 1, maxLevel);
-
-  return { usersByLevels, level1Referrals: inviteMap[userCode] };
+  return { usersByLevels, level1Referrals: inviteMap[userCode] || [] };
 };
 
-const userStats = async (startTime, endTime, phone = "") => {
-  const [rows] = await connection.query(
-    `
+const userStats = async (startTime, endTime, phone = "", dbConnection) => {
+  try {
+    debugLog('Fetching user stats', { startTime, endTime, phone });
+    
+    if (!dbConnection) {
+      throw new Error('Database connection not provided');
+    }
+
+    const [rows] = await dbConnection.query(
+      `
       SELECT
           u.phone,
           u.invite,
@@ -302,29 +377,40 @@ const userStats = async (startTime, endTime, phone = "") => {
           u.phone, u.invite, u.code, u.time, u.id_user
       ORDER BY
           u.time DESC;
-    `,
-    [
-      startTime,
-      endTime,
-      startTime,
-      endTime,
-      startTime,
-      endTime,
-      startTime,
-      endTime,
-      phone,
-    ],
-  );
+      `,
+      [
+        startTime,
+        endTime,
+        startTime,
+        endTime,
+        startTime,
+        endTime,
+        startTime,
+        endTime,
+        phone,
+      ]
+    ).catch(error => {
+      throw new Error(`Database query failed: ${error.message}`);
+    });
 
-  return rows;
+    debugLog('User stats query results:', { count: rows.length });
+    return rows;
+  } catch (error) {
+    console.error('Error in userStats:', error);
+    throw error; // Re-throw to be handled by caller
+  }
 };
 
 
-const getCommissionStatsByTime = async (time, phone) => {
-  const { startOfYesterdayTimestamp, endOfYesterdayTimestamp } = yesterdayTime();
-  
-  const [commissionRow] = await connection.execute(
-    `
+
+const getCommissionStatsByTime = async (time, phone, dbConnection) => {
+  try {
+    debugLog('Fetching commission stats by time', { time, phone });
+    
+    const { startOfYesterdayTimestamp, endOfYesterdayTimestamp } = yesterdayTime();
+    
+    const [commissionRow] = await dbConnection.execute(
+      `
       SELECT
           SUM(COALESCE(c.money, 0)) AS total_commission,
           SUM(CASE 
@@ -341,61 +427,81 @@ const getCommissionStatsByTime = async (time, phone) => {
           commissions c
       WHERE
           c.phone = ?
-    `,
-    [time, startOfYesterdayTimestamp, endOfYesterdayTimestamp, phone],
-  );
+      `,
+      [time, startOfYesterdayTimestamp, endOfYesterdayTimestamp, phone]
+    ).catch(error => handleDbError(error, 'getCommissionStatsByTime'));
 
-  return commissionRow?.[0] || {};
+    const result = commissionRow?.[0] || {};
+    debugLog('Commission stats results:', result);
+    return result;
+  } catch (error) {
+    console.error('Error in getCommissionStatsByTime:', error);
+    return {};
+  }
 };
 
 
 
 
 const subordinatesDataAPI = async (req, res) => {
-  let dbConnection; // Renamed to avoid confusion with the imported pool
-
+  let dbConnection;
   try {
     const authToken = req.cookies.auth;
+    debugLog('Starting subordinatesDataAPI', { authToken: authToken ? 'exists' : 'missing' });
 
-    // Get a connection from the pool
+    // Get connection from pool
     dbConnection = await connection.getConnection();
-    
+    debugLog('Database connection established');
+
     // Fetch user by auth token
-    const [userRow] = await dbConnection.query(
+    const [userRow] = await dbConnection.execute(
       "SELECT * FROM `users` WHERE `token` = ? AND `veri` = 1",
       [authToken]
-    );
+    ).catch(error => handleDbError(error, 'subordinatesDataAPI - user fetch'));
+    
     const user = userRow?.[0];
     if (!user) {
+      debugLog('Unauthorized access attempt');
       return res.status(401).json({ message: "Unauthorized" });
     }
 
+    debugLog('User found', { phone: user.phone, code: user.code });
+
     // Check for unprocessed override for this user
-    const [overrideRow] = await dbConnection.query(
+    const [overrideRow] = await dbConnection.execute(
       "SELECT * FROM subordinate_overrides WHERE user_phone = ? AND processed = 0 ORDER BY id DESC LIMIT 1",
       [user.phone]
-    );
+    ).catch(error => handleDbError(error, 'subordinatesDataAPI - override check'));
+    
     const override = overrideRow?.[0];
+    debugLog('Override check result', { hasOverride: !!override });
 
     // If override exists, apply it to the original data and mark as processed
     if (override) {
-      let overrideData;
       try {
-        overrideData = typeof override.data === 'string' ? JSON.parse(override.data) : override.data;
+        let overrideData;
+        try {
+          overrideData = typeof override.data === 'string' ? JSON.parse(override.data) : override.data;
+          debugLog('Override data parsed', overrideData);
+        } catch (parseError) {
+          console.error('Error parsing override data:', parseError);
+          throw new Error('Invalid override data format');
+        }
 
-        // Start transaction using proper MySQL2 syntax
+        // Start transaction
         await dbConnection.query("START TRANSACTION");
+        debugLog('Transaction started for override processing');
 
         try {
           // First check if record exists in subordinate_data
-          const [existingData] = await dbConnection.query(
+          const [existingData] = await dbConnection.execute(
             "SELECT id FROM subordinate_data WHERE user_phone = ?",
             [user.phone]
-          );
+          ).catch(error => handleDbError(error, 'subordinatesDataAPI - existing data check'));
 
           if (existingData.length > 0) {
-            // Update existing record
-            await dbConnection.query(
+            debugLog('Updating existing subordinate_data record');
+            await dbConnection.execute(
               `UPDATE subordinate_data SET
                 direct_subordinates_count = ?,
                 no_of_registered_subordinates = ?,
@@ -428,10 +534,10 @@ const subordinatesDataAPI = async (req, res) => {
                 overrideData.totalCommissionsYesterday,
                 user.phone
               ]
-            );
+            ).catch(error => handleDbError(error, 'subordinatesDataAPI - update existing data'));
           } else {
-            // Insert new record
-            await dbConnection.query(
+            debugLog('Inserting new subordinate_data record');
+            await dbConnection.execute(
               `INSERT INTO subordinate_data (
                 user_phone, direct_subordinates_count, no_of_registered_subordinates,
                 direct_subordinates_recharge_quantity, direct_subordinates_recharge_amount,
@@ -457,19 +563,19 @@ const subordinatesDataAPI = async (req, res) => {
                 overrideData.totalCommissionsThisWeek,
                 overrideData.totalCommissionsYesterday
               ]
-            );
+            ).catch(error => handleDbError(error, 'subordinatesDataAPI - insert new data'));
           }
 
           // Mark the override as processed
-          await dbConnection.query(
+          await dbConnection.execute(
             "UPDATE subordinate_overrides SET processed = 1 WHERE id = ?",
             [override.id]
-          );
+          ).catch(error => handleDbError(error, 'subordinatesDataAPI - mark override processed'));
 
           // Commit transaction
           await dbConnection.query("COMMIT");
+          debugLog('Override data applied and marked as processed');
 
-          console.log("Override data applied and marked as processed");
           return res.status(200).json({ 
             data: overrideData, 
             source: "override (permanent)" 
@@ -477,10 +583,12 @@ const subordinatesDataAPI = async (req, res) => {
         } catch (error) {
           // Rollback transaction if any error occurs
           await dbConnection.query("ROLLBACK");
+          debugLog('Transaction rolled back due to error', { error: error.message });
           throw error;
         }
       } catch (e) {
         console.error("Error applying override:", e);
+        debugLog('Continuing with original values after override failure');
         // Continue to compute original values if override fails
       }
     }
@@ -489,11 +597,14 @@ const subordinatesDataAPI = async (req, res) => {
     const [originalDataRow] = await dbConnection.execute(
       "SELECT * FROM subordinate_data WHERE user_phone = ?",
       [user.phone]
-    );
+    ).catch(error => handleDbError(error, 'subordinatesDataAPI - fetch original data'));
+    
     const originalData = originalDataRow?.[0];
-    console.log("This is from subordinate_data table")
+    debugLog('Existing subordinate_data record', originalData);
+
     if (originalData) {
       // Return existing data from database
+      debugLog('Returning existing data from database');
       return res.status(200).json({
         data: {
           directSubordinatesCount: originalData.direct_subordinates_count,
@@ -515,14 +626,20 @@ const subordinatesDataAPI = async (req, res) => {
     }
 
     // --- Compute original values if no data exists in database ---
+    debugLog('No existing data found, computing fresh values');
     const startOfWeek = getStartOfWeekTimestamp();
     const { startOfYesterdayTimestamp, endOfYesterdayTimestamp } = yesterdayTime();
 
-    const commissions = await getCommissionStatsByTime(startOfWeek, user.phone);
+    debugLog('Fetching commission stats');
+    const commissions = await getCommissionStatsByTime(startOfWeek, user.phone, dbConnection);
 
-    const userStatsData = await userStats(startOfYesterdayTimestamp, endOfYesterdayTimestamp);
+    debugLog('Fetching user stats');
+    const userStatsData = await userStats(startOfYesterdayTimestamp, endOfYesterdayTimestamp, user.phone, dbConnection);
+    
+    debugLog('Calculating user levels');
     const { usersByLevels = [], level1Referrals = [] } = getUserLevels(userStatsData, user.code);
 
+    debugLog('Calculating direct subordinates metrics');
     const directSubordinatesCount = level1Referrals.length;
     const noOfRegisteredSubordinates = level1Referrals.filter(
       (user) => user.time >= startOfYesterdayTimestamp
@@ -536,9 +653,10 @@ const subordinatesDataAPI = async (req, res) => {
       0
     );
     const directSubordinatesWithDepositCount = level1Referrals.filter(
-      (user) => user.total_deposit_number === 1
+      (user) => user.total_deposit_number > 0
     ).length;
 
+    debugLog('Calculating team subordinates metrics');
     const teamSubordinatesCount = usersByLevels.length;
     const noOfRegisterAllSubordinates = usersByLevels.filter(
       (user) => user.time >= startOfYesterdayTimestamp
@@ -552,7 +670,7 @@ const subordinatesDataAPI = async (req, res) => {
       0
     );
     const teamSubordinatesWithDepositCount = usersByLevels.filter(
-      (user) => user.total_deposit_number === 1
+      (user) => user.total_deposit_number > 0
     ).length;
 
     const totalCommissions = commissions?.total_commission || 0;
@@ -576,61 +694,81 @@ const subordinatesDataAPI = async (req, res) => {
       totalCommissionsYesterday,
     };
 
-    await dbConnection.execute(
-      `INSERT INTO subordinate_data (
-        user_phone, direct_subordinates_count, no_of_registered_subordinates,
-        direct_subordinates_recharge_quantity, direct_subordinates_recharge_amount,
-        direct_subordinates_with_deposit_count, team_subordinates_count,
-        no_of_register_all_subordinates, team_subordinates_recharge_quantity,
-        team_subordinates_recharge_amount, team_subordinates_with_deposit_count,
-        total_commissions, total_commissions_this_week, total_commissions_yesterday,
-        last_updated
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
-      ON DUPLICATE KEY UPDATE
-        direct_subordinates_count = VALUES(direct_subordinates_count),
-        no_of_registered_subordinates = VALUES(no_of_registered_subordinates),
-        direct_subordinates_recharge_quantity = VALUES(direct_subordinates_recharge_quantity),
-        direct_subordinates_recharge_amount = VALUES(direct_subordinates_recharge_amount),
-        direct_subordinates_with_deposit_count = VALUES(direct_subordinates_with_deposit_count),
-        team_subordinates_count = VALUES(team_subordinates_count),
-        no_of_register_all_subordinates = VALUES(no_of_register_all_subordinates),
-        team_subordinates_recharge_quantity = VALUES(team_subordinates_recharge_quantity),
-        team_subordinates_recharge_amount = VALUES(team_subordinates_recharge_amount),
-        team_subordinates_with_deposit_count = VALUES(team_subordinates_with_deposit_count),
-        total_commissions = VALUES(total_commissions),
-        total_commissions_this_week = VALUES(total_commissions_this_week),
-        total_commissions_yesterday = VALUES(total_commissions_yesterday),
-        last_updated = NOW()`,
-      [
-        user.phone,
-        computedData.directSubordinatesCount,
-        computedData.noOfRegisteredSubordinates,
-        computedData.directSubordinatesRechargeQuantity,
-        computedData.directSubordinatesRechargeAmount,
-        computedData.directSubordinatesWithDepositCount,
-        computedData.teamSubordinatesCount,
-        computedData.noOfRegisterAllSubordinates,
-        computedData.teamSubordinatesRechargeQuantity,
-        computedData.teamSubordinatesRechargeAmount,
-        computedData.teamSubordinatesWithDepositCount,
-        computedData.totalCommissions,
-        computedData.totalCommissionsThisWeek,
-        computedData.totalCommissionsYesterday,
-      ]
-    );
+    debugLog('Computed data ready for saving', computedData);
+
+    try {
+      await dbConnection.execute(
+        `INSERT INTO subordinate_data (
+          user_phone, direct_subordinates_count, no_of_registered_subordinates,
+          direct_subordinates_recharge_quantity, direct_subordinates_recharge_amount,
+          direct_subordinates_with_deposit_count, team_subordinates_count,
+          no_of_register_all_subordinates, team_subordinates_recharge_quantity,
+          team_subordinates_recharge_amount, team_subordinates_with_deposit_count,
+          total_commissions, total_commissions_this_week, total_commissions_yesterday,
+          last_updated
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+        ON DUPLICATE KEY UPDATE
+          direct_subordinates_count = VALUES(direct_subordinates_count),
+          no_of_registered_subordinates = VALUES(no_of_registered_subordinates),
+          direct_subordinates_recharge_quantity = VALUES(direct_subordinates_recharge_quantity),
+          direct_subordinates_recharge_amount = VALUES(direct_subordinates_recharge_amount),
+          direct_subordinates_with_deposit_count = VALUES(direct_subordinates_with_deposit_count),
+          team_subordinates_count = VALUES(team_subordinates_count),
+          no_of_register_all_subordinates = VALUES(no_of_register_all_subordinates),
+          team_subordinates_recharge_quantity = VALUES(team_subordinates_recharge_quantity),
+          team_subordinates_recharge_amount = VALUES(team_subordinates_recharge_amount),
+          team_subordinates_with_deposit_count = VALUES(team_subordinates_with_deposit_count),
+          total_commissions = VALUES(total_commissions),
+          total_commissions_this_week = VALUES(total_commissions_this_week),
+          total_commissions_yesterday = VALUES(total_commissions_yesterday),
+          last_updated = NOW()`,
+        [
+          user.phone,
+          computedData.directSubordinatesCount,
+          computedData.noOfRegisteredSubordinates,
+          computedData.directSubordinatesRechargeQuantity,
+          computedData.directSubordinatesRechargeAmount,
+          computedData.directSubordinatesWithDepositCount,
+          computedData.teamSubordinatesCount,
+          computedData.noOfRegisterAllSubordinates,
+          computedData.teamSubordinatesRechargeQuantity,
+          computedData.teamSubordinatesRechargeAmount,
+          computedData.teamSubordinatesWithDepositCount,
+          computedData.totalCommissions,
+          computedData.totalCommissionsThisWeek,
+          computedData.totalCommissionsYesterday,
+        ]
+      ).catch(error => handleDbError(error, 'subordinatesDataAPI - save computed data'));
+
+      debugLog('Computed data saved to database');
+    } catch (saveError) {
+      console.error('Error saving computed data:', saveError);
+      // Continue to return the data even if save fails
+    }
 
     return res.status(200).json({
       data: computedData,
       source: "computed",
     });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: error.message });
+    console.error('Error in subordinatesDataAPI:', error);
+    return res.status(500).json({ 
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   } finally {
     // Make sure to release the connection back to the pool
-    if (dbConnection) dbConnection.release();
+    if (dbConnection) {
+      try {
+        await dbConnection.release();
+        debugLog('Database connection released');
+      } catch (releaseError) {
+        console.error('Error releasing database connection:', releaseError);
+      }
+    }
   }
 };
+
 
 
 const adminOverrideSubordinates = async (req, res) => {
@@ -665,12 +803,18 @@ const adminOverrideSubordinates = async (req, res) => {
 
 
 const subordinatesDataByTimeAPI = async (req, res) => {
+  let dbConnection;
   try {
     const authToken = req.cookies.auth;
-    const [userRow] = await connection.execute(
+    
+    // Get database connection
+    dbConnection = await connection.getConnection();
+    
+    const [userRow] = await dbConnection.execute(
       "SELECT `code`,phone, `invite` FROM `users` WHERE `token` = ? AND `veri` = 1",
-      [authToken],
+      [authToken]
     );
+    
     const user = userRow?.[0];
     const startDate = +req.query.startDate;
     const endDate = getTimeBasedOnDate(startDate);
@@ -680,70 +824,60 @@ const subordinatesDataByTimeAPI = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
-    // const levelFilter = "";
-
-    // console.log("===================", req.query.startDate, searchFromUid, levelFilter);
 
     if (!user) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-    const userStatsData = await userStats(startDate, endDate, user.phone);
-    // console.time('getUserLevels'); // Start the timer
+
+    // Pass dbConnection to userStats
+    const userStatsData = await userStats(startDate, endDate, user.phone, dbConnection);
+    
     const { usersByLevels = [] } = getUserLevels(userStatsData, user.code);
-    // console.timeEnd('getUserLevels'); //
-    // const filteredUsers = usersByLevels.filter(user => user.time >= startDate && user.id_user.includes(searchFromUid) && (levelFilter !== "All" ? user.user_level === +levelFilter : true));
+    
     const filteredUsers = usersByLevels.filter(
       (user) =>
         user.id_user.includes(searchFromUid) &&
-        (levelFilter !== "All" ? user.user_level === +levelFilter : true),
+        (levelFilter !== "All" ? user.user_level === +levelFilter : true)
     );
-    // const usersFilterByPositiveData = filteredUsers.filter(
-    //   (user) =>
-    //     user.total_deposit_number > 0 ||
-    //     user.total_deposit_amount > 0 ||
-    //     user.total_bets > 0,
-    // );
 
     const sortedUsersByBet = filteredUsers.sort((a, b) => b.total_bet_amount - a.total_bet_amount);
 
+    // Rest of your processing...
     const subordinatesRechargeQuantity = filteredUsers.reduce(
       (acc, curr) => acc + curr.total_deposit_number,
-      0,
+      0
     );
+    
     const subordinatesRechargeAmount = filteredUsers.reduce(
       (acc, curr) => acc + +curr.total_deposit_amount,
-      0,
+      0
     );
-    /**********************for bets ********************************** */
+
     const subordinatesWithBetting = filteredUsers.filter(
-      (user) => user.total_bets > 0,
+      (user) => user.total_bets > 0
     );
+    
     const subordinatesWithBettingCount = subordinatesWithBetting.length;
     const subordinatesBettingAmount = subordinatesWithBetting
       .reduce((acc, curr) => acc + +curr.total_bet_amount, 0)
       .toFixed();
 
-    /**********************for first deposit ********************************** */
     const subordinatesWithFirstDeposit = filteredUsers.filter(
-      (user) => user.total_deposit_number === 1,
+      (user) => user.total_deposit_number === 1
     );
-    const subordinatesWithFirstDepositCount =
-      subordinatesWithFirstDeposit.length;
-    const subordinatesWithFirstDepositAmount =
-      subordinatesWithFirstDeposit.reduce(
-        (acc, curr) => acc + +curr.total_deposit_amount,
-        0,
-      );
+    
+    const subordinatesWithFirstDepositCount = subordinatesWithFirstDeposit.length;
+    const subordinatesWithFirstDepositAmount = subordinatesWithFirstDeposit.reduce(
+      (acc, curr) => acc + +curr.total_deposit_amount,
+      0
+    );
 
-    //for pagination
-    const paginatedUsers = sortedUsersByBet.slice(
-      offset,
-      offset + limit,
-    );
+    // Pagination
+    const paginatedUsers = sortedUsersByBet.slice(offset, offset + limit);
     const totalUsers = sortedUsersByBet.length;
     const totalPages = Math.ceil(totalUsers / limit);
 
-    res.json({
+    return res.json({
       status: true,
       meta: {
         totalPages,
@@ -751,7 +885,6 @@ const subordinatesDataByTimeAPI = async (req, res) => {
       },
       data: {
         usersByLevels: paginatedUsers,
-
         subordinatesRechargeQuantity,
         subordinatesRechargeAmount,
         subordinatesWithBettingCount,
@@ -762,49 +895,67 @@ const subordinatesDataByTimeAPI = async (req, res) => {
       message: "Successfully fetched subordinates data",
     });
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({ message: error.message });
+    console.error('Error in subordinatesDataByTimeAPI:', error);
+    return res.status(500).json({ 
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  } finally {
+    if (dbConnection) {
+      try {
+        await dbConnection.release();
+      } catch (releaseError) {
+        console.error('Error releasing database connection:', releaseError);
+      }
+    }
   }
 };
 
 const subordinatesAPI = async (req, res) => {
+  let dbConnection;
   try {
     const authToken = req.cookies.auth;
-    const [userRow] = await connection.execute(
+    
+    // Get database connection
+    dbConnection = await connection.getConnection();
+    
+    const [userRow] = await dbConnection.execute(
       "SELECT `code`,phone, `invite` FROM `users` WHERE `token` = ? AND `veri` = 1",
-      [authToken],
+      [authToken]
     );
+    
     const type = req.query.type || "today";
-
-    const { startOfYesterdayTimestamp, endOfYesterdayTimestamp } =
-      yesterdayTime();
-    const { startOfMonthTimestamp, endOfMonthTimestamp } = monthTime();
-
-    const startDate =
-      type === "today"
-        ? getTodayStartTime()
-        : type === "yesterday"
-          ? startOfYesterdayTimestamp
-          : type === "this month"
-            ? startOfMonthTimestamp
-            : "";
-    const endDate =
-      type === "today"
-        ? new Date().getTime()
-        : type === "yesterday"
-          ? endOfYesterdayTimestamp
-          : type === "this month"
-            ? endOfMonthTimestamp
-            : "";
-
     const user = userRow?.[0];
 
     if (!user) {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const userStatsData = await userStats(startDate, endDate, user.phone);
-    // console.time('getUserLevels'); // Start the timer
+    // Get time ranges
+    const { startOfYesterdayTimestamp, endOfYesterdayTimestamp } = yesterdayTime();
+    const { startOfMonthTimestamp, endOfMonthTimestamp } = monthTime();
+
+    // Determine date range
+    let startDate, endDate;
+    switch (type) {
+      case "today":
+        startDate = getTodayStartTime();
+        endDate = Date.now();
+        break;
+      case "yesterday":
+        startDate = startOfYesterdayTimestamp;
+        endDate = endOfYesterdayTimestamp;
+        break;
+      case "this month":
+        startDate = startOfMonthTimestamp;
+        endDate = endOfMonthTimestamp;
+        break;
+      default:
+        return res.status(400).json({ message: "Invalid type parameter" });
+    }
+
+    // Pass dbConnection to userStats
+    const userStatsData = await userStats(startDate, endDate, user.phone, dbConnection);
     const { level1Referrals } = getUserLevels(userStatsData, user.code);
 
     const users = level1Referrals
@@ -822,21 +973,34 @@ const subordinatesAPI = async (req, res) => {
             timeZone: "UTC",
           })
           .replace(",", "");
-        if (user.time >= startDate)
-          return { phone: phoneFormat, uid, time: timeUtc };
-        else return null;
+        
+        return user.time >= startDate 
+          ? { phone: phoneFormat, uid, time: timeUtc }
+          : null;
       })
       .filter(Boolean);
 
-    res.status(200).json({
+    return res.status(200).json({
       status: true,
       type,
       users,
       message: "Successfully fetched subordinates data",
     });
+
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({ message: error.message });
+    console.error('Error in subordinatesAPI:', error);
+    return res.status(500).json({ 
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  } finally {
+    if (dbConnection) {
+      try {
+        await dbConnection.release();
+      } catch (releaseError) {
+        console.error('Error releasing database connection:', releaseError);
+      }
+    }
   }
 };
 

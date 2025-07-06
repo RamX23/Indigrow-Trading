@@ -3580,12 +3580,12 @@
             <div data-v-9cb7105e="" class="transRecord__container-content__item" style="background: linear-gradient(135deg, rgba(10, 30, 60, 0.9) 0%, rgba(30, 60, 100, 0.9) 100%);">
                      <div data-v-9cb7105e="" class="transRecord__container-content__card" style="background: linear-gradient(135deg, rgba(10, 30, 60, 0.9) 0%, rgba(30, 60, 100, 0.9) 100%); ">
                         <div data-v-9cb7105e="" class="transRecord__container-content__card-top card-background" style="background: rgba(255, 255, 255,0.1);">
-                           <h3 data-v-9cb7105e="" style="color:white">${data.name}</h3>
+                           <h3 data-v-9cb7105e="" style="color:white">${data.name === "Bet" ? "Loss" : data.name}</h3>
                         </div>
                         <div data-v-9cb7105e="" class="transRecord__container-content__card-mid" style="background: linear-gradient(135deg, rgba(10, 30, 60, 0.9) 0%, rgba(30, 60, 100, 0.9) 100%);">
                            <div data-v-9cb7105e="" class="line">
                               <div data-v-9cb7105e="" class="left">Detail</div>
-                              <div data-v-9cb7105e="" class="right" style="color:white">${data.name}</div>
+                              <div data-v-9cb7105e="" class="right" style="color:white">${data.name === "Bet" ? "Loss" : "Win" }</div>
                            </div>
                            <div data-v-9cb7105e="" class="line">
                               <div data-v-9cb7105e="" class="left">Time</div>

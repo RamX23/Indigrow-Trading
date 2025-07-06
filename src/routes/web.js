@@ -389,7 +389,6 @@ const initWebRouter = (app) => {
   
   router.post(
     "/wallet/verify/akashpay",
-    middlewareController,
     paymentController.verifyAkashPayPayment,
   );
   router.post(

@@ -1600,32 +1600,29 @@
       <!---->
       <div data-v-b42d759c="" class="resgister__C" style="--76181987: 'Roboto', 'Inter', sans-serif">
          <div data-v-19888208="" data-v-b42d759c="" class="navbar">
-            <div data-v-19888208="" class="navbar-fixed" style="background: rgb(255, 255, 255)">
-               <div data-v-19888208="" class="navbar__content">
-              
-                  <div data-v-19888208="" class="navbar__content-center">
-                     <div data-v-12a80a3e="" class="headLogo" style="display: flex; justify-content: center; align-items: center;">
-                        <h2 style="font-weight: 1000;">Register</h2>
-                     </div>
-                  </div>
-                  <div data-v-19888208="" class="navbar__content-right">
-                     <div data-v-8800aff6="" data-v-b42d759c=""><!----></div>
-                  </div>
+           <div data-v-19888208="" class="navbar-fixed" style="background-color: rgb(10, 24, 70)">
+             <div data-v-19888208="" class="navbar__content" style="display: flex; justify-content: space-between; align-items: center; width: 100%; position: relative;">
+               <!-- Logo on the left -->
+        
+               
+               <!-- Register title truly centered -->
+               <div data-v-19888208="" class="navbar__content-center" style="margin: 0 auto;">
+                 <div data-v-12a80a3e="" class="headLogo">
+                   <h2 style="font-weight: 1000; margin: 0;">Register</h2>
+                 </div>
                </div>
-            </div>
+               
+               <!-- Empty div on the right for balance (same width as logo) -->
+               <div data-v-19888208="" class="navbar__content-right" style="width: 2.8em; margin-right: 1em;"></div>
+             </div>
+           </div>
          </div>
-         <!-- <div data-v-b42d759c="" class="resgister__C-heading">
-            <h1 data-v-b42d759c="" class="resgister__C-heading__title">Register</h1>
-         </div> -->
-         <!-- <div data-v-b42d759c="" class="login_container-tab">
-            <div data-v-b42d759c="" class="tab active">
-               <img data-v-bef9bff8=""
-                           src="/assets/png/cellphone-35529171.png"
-                           class="phoneInput__container-label__icon" />
-               <div data-v-b42d759c="" class="font30 phonefont30active">Register your phone</div>
-            </div> -->
-            <!---->
-         </div>
+       </div>
+
+       <div data-v-12a80a3e="" class="headLogo" style="display: flex; justify-content: center; align-items: center; padding-top: 0.5em; font-size: 3em;">
+         <!-- <h2 style="font-weight: 1000;">IndiGrow</h2> -->
+         <img src="/assets/png/Splash Screen - Indigrow Trading.png" style="height: 1.5em;" alt="" srcset="">
+      </div>
          <div data-v-b42d759c="" class="resgister__C-form">
             <div data-v-b42d759c="" class="tab-content activecontent">
                <div data-v-51d668f5="" data-v-b42d759c="" class="register__container">
@@ -1758,6 +1755,7 @@
             </div>
          </div>
       </div>
+
       <!-- <div class="customer" id="customerId" onclick="location.href='/support'"
          style="--76181987: 'Roboto', 'Inter', sans-serif; --17a7a9f6: bahnschrift"><img class=""
             data-origin="https://bigmumbai4.com/assets/png/icon_sevice-af9dd176.png"
@@ -1785,6 +1783,7 @@
             </div>
          </button>
       </div>
+   
       <!---->
    </div>
    <!----><!----><!----><!---->
@@ -2046,7 +2045,7 @@ $("#phone_number").on('input', function() {
 
 
 // Improved alertMessage function with better styling and timing
-function alertMessage(text, type = 'error') {
+function alertMessage(text, type) {
   // Remove any existing alerts first
   $('.message_alert_root').remove();
   
@@ -2230,7 +2229,7 @@ function validateForm(fullName, phoneNumber, password, confirmPassword, invite, 
 
           setTimeout(() => {
             $(".Loading").fadeOut(10);
-            alertMessage(response.message);
+            alertMessage(response.message,'success');
           }, 100);
 
           setTimeout(() => {
@@ -2277,7 +2276,6 @@ $("#phone_number").on('input', function() {
          method: "GET",
          success: function (response) {
             // Handle success response
-
             const html = response.map((country) => {
                return `
                   <div data-v-482b13c8="" class="dropdown__list-item" onclick="setDialCode('${country.dial_code}')">
@@ -2296,18 +2294,6 @@ $("#phone_number").on('input', function() {
       });
    </script>
 
-   <div class="splash_root">
-      <div class="splash_screen">
-         <div class="main_box">
-            <img src="/assets/png/game_dice_bigmumbai-fed4a459.png" alt="" class="splash_img" />
-            <h2 class="splash__text">Withdraw fast, safe and stable</h2>
-         </div>
-
-         <div class="logo_box">
-            <img class="logo__image" src="/h5setting_202308141709544lm1.png" alt="" />
-         </div>
-      </div>
-   </div>
 
    <style>
       .top_game {
@@ -2323,38 +2309,9 @@ $("#phone_number").on('input', function() {
          gap: 5px;
       }
 
-      .splash_root {
-         width: 100vw;
-         height: 100vh;
-         top: 0px;
-         bottom: 0px;
-         left: 0px;
-         right: 0px;
-         position: fixed;
-         z-index: 100000;
-         display: flex;
-         align-items: center;
-         justify-content: center;
-      }
 
-      .splash_screen {
-         width: 100vw;
-         height: 100vh;
-         background: #f3f3f8;
-         background-image: radial-gradient(ellipse at top, #f3f3f8, #e4e7f2);
-         max-width: 420px;
-         display: flex;
-         align-items: center;
-         justify-content: center;
-         flex-direction: column;
-      }
 
-      .splash__text {
-         font-size: 22px;
-         text-align: center;
-         font-weight: 700;
-         color: #2b3270;
-      }
+
 
       .main_box {
          width: 80%;
@@ -2365,9 +2322,6 @@ $("#phone_number").on('input', function() {
          gap: 30px;
       }
 
-      .splash_img {
-         width: 100%;
-      }
 
       .logo_box {
          margin-top: 150px;
@@ -2379,20 +2333,7 @@ $("#phone_number").on('input', function() {
       }
    </style>
    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-   <script>
-      const initFunc = () => {
-         if (sessionStorage.getItem("splash") === "true") {
-            $(".splash_root").fadeOut(0)
-            return
-         }
-         $(".splash_root").css("display", "flex")
-         setTimeout(function () {
-            $(".splash_root").fadeOut(300)
-            sessionStorage.setItem("splash", "true")
-         }, 1200)
-      }
-      initFunc()
-   </script>
+
 </body>
 
 </html>

@@ -153,7 +153,7 @@
     <div class="chart-header" style="display: flex;  align-items: center; justify-content: space-between; margin-top: 0em; padding-top: 0; padding-inline: 1em; ">
         <!-- Coin selection dropdown -->
         <div class="right-header" style="display: flex; justify-content: center; align-items: center; flex-direction: column; gap: 0.2em; padding-left: 1em;">
-            <div class="period" style="color: white; font-weight: bold;">Period</div>
+            <div class="period" style="color: white; font-weight: bold;">Trade</div>
             <div data-v-4aca9bd1="" class="Betting__C-coin-select" style="width: 3.5rem;">
                 <div class="custom-select-wrapper">
                     <div class="custom-select-trigger">
@@ -215,16 +215,16 @@
 
 
     <!-- Bet Amount Input -->
-    <div class="below-chart" style="display: flex; justify-content: space-around; align-items: center;  margin-bottom:0.5em;margin-inline: 0; padding-right:1em ;">
-        <div class="bet-amount-container" style="padding: 0 1em; display: flex; justify-content: space-around; align-items: center; ">
+    <div class="below-chart" style="display: flex; justify-content: space-between;  align-items: center;  margin-bottom:0.5em;margin-inline: 0;">
+        <div class="bet-amount-container" style="padding: 0 1em; display: flex; justify-content: space-around; align-items: center;  width: 100%; justify-content: center;">
             <!-- <div style="color: white; margin-bottom: 8px;">Trade Amount</div> -->
             <div style="display: flex; align-items: center; gap: 10px; padding: 0;">
                 <button class="amount-btn minus-btn" style="padding: 8px 5px; background:  #122855;  color: white; border: none; border-radius: 4px; cursor: pointer;">-</button>
-                <input placeholder="Enter Trade Amount" type="number" id="betAmountInput" value="50" min="1" style=" padding: 8px; width: 5em; border-radius: 4px; border: 1px solid #ccc; background: #05294d; color: white; text-align: center;">
+                <input placeholder="Enter Trade Amount" type="number" id="betAmountInput" value="20" min="1" style=" padding: 8px; width: 5em; border-radius: 4px; border: 1px solid #ccc; background: #05294d; color: white; text-align: center;">
                 <button class="amount-btn plus-btn" style="padding: 8px 5px; background:  #122855; color: white; border: none; border-radius: 4px; cursor: pointer;">+</button>
             </div>
         </div>
-        <div class="timerblock">
+        <div class="timerblock" style="display: block; width: 100%; justify-content: center;">
         <%- include('./e_tab_time.ejs') -%>
         </div>
     </div>

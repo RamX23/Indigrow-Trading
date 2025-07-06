@@ -4144,11 +4144,7 @@
                         src="https://ossimg.tirangaagent.com/Tiranga/payNameIcon/WithBeforeImgIcon2_20231130131452em6p.png">
                   </div><span data-v-9bae072d=""> BANK CARD</span>
                </div>
-               <div data-v-9bae072d="" class="" type="USDT_ADDRESS">
-                  <div data-v-9bae072d=""><img data-v-9bae072d=""
-                        src="https://ossimg.tirangaagent.com/Tiranga/payNameIcon/WithBeforeImgIcon_20231130131415dtww.png">
-                  </div><span data-v-9bae072d="">USDT</span>
-               </div>
+
             </div><!-- upi --><!--v-if--><!-- c2cupi --><!--银行卡模块--><!--v-if-->
             <div data-v-ef5c8333="" data-v-80a607a5="" class="addWithdrawType">
                <div data-v-ef5c8333="" class="addWithdrawType-top" id="main_account_info_holder"><img
@@ -4522,51 +4518,51 @@
       }
    };
 
-   const initUSDTAddress = async () => {
-      try {
-         const response = await axios({
-            method: "GET",
-            url: "/api/webapi/withdraw/usdt_address",
-         });
+   // const initUSDTAddress = async () => {
+   //    try {
+   //       const response = await axios({
+   //          method: "GET",
+   //          url: "/api/webapi/withdraw/usdt_address",
+   //       });
 
-         if (response?.data?.account?.isAvailable) {
-            document.querySelector(".addWithdrawType-top[data-v-ef5c8333]").style.height = "2.66667rem";
-            document.querySelector("#main_account_info_holder").innerHTML = `
-                     <div class="account_info_container">
-                         <div class="account_info_field">
-                             <div class="account_info_field_name">
-                                 USDT Address:
-                             </div>
-                             <div class="account_info_field_value">
-                                 ${response?.data?.account?.usdtAddress}
-                             </div>
-                         </div>
-                         <div class="account_info_field">
-                             <div class="account_info_field_name">
-                                 Address Alias:
-                             </div>
-                             <div class="account_info_field_value">
-                                 ${response?.data?.account?.addressAlias}
-                             </div>
-                         </div>
+   //       if (response?.data?.account?.isAvailable) {
+   //          document.querySelector(".addWithdrawType-top[data-v-ef5c8333]").style.height = "2.66667rem";
+   //          document.querySelector("#main_account_info_holder").innerHTML = `
+   //                   <div class="account_info_container">
+   //                       <div class="account_info_field">
+   //                           <div class="account_info_field_name">
+   //                               USDT Address:
+   //                           </div>
+   //                           <div class="account_info_field_value">
+   //                               ${response?.data?.account?.usdtAddress}
+   //                           </div>
+   //                       </div>
+   //                       <div class="account_info_field">
+   //                           <div class="account_info_field_name">
+   //                               Address Alias:
+   //                           </div>
+   //                           <div class="account_info_field_value">
+   //                               ${response?.data?.account?.addressAlias}
+   //                           </div>
+   //                       </div>
 
-                         <div class="account_change_info" onclick="handleOpenAddMethod()">
-                             Change USDT Address Information
-                         </div>
-                     </div
-                 `;
-         } else {
-            document.querySelector(".addWithdrawType-top[data-v-ef5c8333]").style.height = "2.66667rem";
-            document.querySelector("#main_account_info_holder").innerHTML = `
-                     <img onclick="handleOpenAddMethod()" data-v-ef5c8333="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALAAAACwCAMAAACYaRRsAAAAM1BMVEUAAAC3u8+4vNC5vNC5vdG4vNC3us+3t8+4vNC2vM+5vNG4vM+vv8+vr8+5vNC4vNC4vNB5o5b1AAAAEHRSTlMAQN/vj59gIM+QX5AQEK+/+pPJwgAAAbpJREFUeNrt3MuSokAQRuGsKkS8/+//tMPEbCYygDCbjs7CPt8a5QjKAos0AAAAAMAHKsPUtGywRdeV7evVFg1aMZ3OFvV4akOxJVUrmi0p2hBNPlfFg5tW1Hiw6vkbey+2aFx5VRtt0W27+B4IPmk2lYelePz75M/AAdbsZIlOmpXQ5tVSvdw3b9skabRURdJk79Lsbqnukloo2BL4BoL/QzDBDsEEOwQT7BBMsEMwwQ7BBDsEf3bwTbpYonhDKZauhwb84hM6SIMdSQ8XRoK7QrBDMMEOwQQ7BBPsEEzwtmur18TgeEOVWkawb9i/u17fgWCCCSa4q90RvGzQDsPPBxftUgh+41+THS786AgmmGCC+9ndLwxuUk0MjjeMtY0JwbGGQ9+qIrh/BDsEE+wQTLBDMMEOwQR/0aHWeH/2clwc4ISWcqz11X8bDnVR+uwnZQgmmGCCCSaYYIdggh2CCXYIJtghONTQ+hgjqdCgzmKpxtCgzpukl6WqoemxpY9hs2d721OzOmaN8y2v6BG7Vzk/MEN774jnhBnavjdUfMqdof18mFk0eUqaod2mSwc31AEAAAAA3+4PU1FviV2McX8AAAAASUVORK5CYII=">
-                     <span data-v-dc48260d="" id="add_method_type_text">Add address</span>
-            `;
-         }
-      } catch (error) {
-         console.log(error);
-         alertMessage("Something went wrong!");
-      }
-   };
+   //                       <div class="account_change_info" onclick="handleOpenAddMethod()">
+   //                           Change USDT Address Information
+   //                       </div>
+   //                   </div
+   //               `;
+   //       } else {
+   //          document.querySelector(".addWithdrawType-top[data-v-ef5c8333]").style.height = "2.66667rem";
+   //          document.querySelector("#main_account_info_holder").innerHTML = `
+   //                   <img onclick="handleOpenAddMethod()" data-v-ef5c8333="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALAAAACwCAMAAACYaRRsAAAAM1BMVEUAAAC3u8+4vNC5vNC5vdG4vNC3us+3t8+4vNC2vM+5vNG4vM+vv8+vr8+5vNC4vNC4vNB5o5b1AAAAEHRSTlMAQN/vj59gIM+QX5AQEK+/+pPJwgAAAbpJREFUeNrt3MuSokAQRuGsKkS8/+//tMPEbCYygDCbjs7CPt8a5QjKAos0AAAAAMAHKsPUtGywRdeV7evVFg1aMZ3OFvV4akOxJVUrmi0p2hBNPlfFg5tW1Hiw6vkbey+2aFx5VRtt0W27+B4IPmk2lYelePz75M/AAdbsZIlOmpXQ5tVSvdw3b9skabRURdJk79Lsbqnukloo2BL4BoL/QzDBDsEEOwQT7BBMsEMwwQ7BBDsEf3bwTbpYonhDKZauhwb84hM6SIMdSQ8XRoK7QrBDMMEOwQQ7BBPsEEzwtmur18TgeEOVWkawb9i/u17fgWCCCSa4q90RvGzQDsPPBxftUgh+41+THS786AgmmGCC+9ndLwxuUk0MjjeMtY0JwbGGQ9+qIrh/BDsEE+wQTLBDMMEOwQR/0aHWeH/2clwc4ISWcqz11X8bDnVR+uwnZQgmmGCCCSaYYIdggh2CCXYIJtghONTQ+hgjqdCgzmKpxtCgzpukl6WqoemxpY9hs2d721OzOmaN8y2v6BG7Vzk/MEN774jnhBnavjdUfMqdof18mFk0eUqaod2mSwc31AEAAAAA3+4PU1FviV2McX8AAAAASUVORK5CYII=">
+   //                   <span data-v-dc48260d="" id="add_method_type_text">Add address</span>
+   //          `;
+   //       }
+   //    } catch (error) {
+   //       console.log(error);
+   //       alertMessage("Something went wrong!");
+   //    }
+   // };
 
    const handleCheckAndSelectWithdrawalMethod = () => {
       let withdrawalMethodList = Array.from(WithdrawalMethodOptions.children);
@@ -4583,10 +4579,6 @@
          case WithdrawalMethodsMap.BANK_CARD:
             document.querySelector("#currency_indicator").innerHTML = "₹";
             initBankCard();
-            break;
-         case WithdrawalMethodsMap.USDT_ADDRESS:
-            document.querySelector("#currency_indicator").innerHTML = "$";
-            initUSDTAddress();
             break;
          default:
             document.querySelector("#currency_indicator").innerHTML = "₹";
@@ -4640,9 +4632,6 @@
       switch (currentWithdrawalMethod.getAttribute("type")) {
          case WithdrawalMethodsMap.BANK_CARD:
             window.location.href = "/wallet/addBank";
-            break;
-         case WithdrawalMethodsMap.USDT_ADDRESS:
-            window.location.href = "/wallet/addAddress";
             break;
          default:
             window.location.href = "";

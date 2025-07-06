@@ -4533,31 +4533,103 @@
    });
 
    const initSubordinatesData = async () => {
+  try {
+    // Show loading state
+    $(".ar-loading-view").fadeIn();
+    
+    console.log("[Client] Fetching subordinates data...");
+    const response = await axios.get("/api/subordinates/summary");
+    
+    // Debug log the full response
+    console.log("[Client] API Response:", response);
+    
+    // Validate response structure
+    if (!response?.data?.data) {
+      throw new Error("Invalid API response structure - missing data property");
+    }
+    
+    const data = response.data.data;
+    
+    // Debug log the received data
+    console.log("[Client] Subordinates Data:", data);
+    
+    // Helper function to safely update DOM elements
+    const updateElement = (selector, value, defaultValue = "0") => {
       try {
-         const response = await axios.get("/api/subordinates/summary");
-         console.log(response)
-
-         $("#directSubordinatesCount").text(response?.data?.data?.directSubordinatesCount);
-         $("#noOfRegisteredSubordinates").text(response?.data?.data?.noOfRegisteredSubordinates);
-         $("#directSubordinatesRechargeQuantity").text(response?.data?.data?.directSubordinatesRechargeQuantity);
-         $("#directSubordinatesRechargeAmount").text(response?.data?.data?.directSubordinatesRechargeAmount);
-         $("#directSubordinatesWithDepositCount").text(response?.data?.data?.directSubordinatesWithDepositCount);
-         $("#teamSubordinatesCount").text(response?.data?.data?.teamSubordinatesCount);
-         $("#noOfRegisterAllSubordinates").text(response?.data?.data?.noOfRegisterAllSubordinates);
-         $("#teamSubordinatesRechargeQuantity").text(response?.data?.data?.teamSubordinatesRechargeQuantity);
-         $("#teamSubordinatesRechargeAmount").text(response?.data?.data?.teamSubordinatesRechargeAmount);
-         $("#teamSubordinatesWithDepositCount").text(response?.data?.data?.teamSubordinatesWithDepositCount);
-         $("#totalCommissionsThisWeek").text(response?.data?.data?.totalCommissionsThisWeek);
-         $("#totalCommissions").text(response?.data?.data?.totalCommissions);
-         $("#yesterdayCommissionAmount").text(response?.data?.data?.totalCommissionsYesterday);
-      } catch (error) {
-         console.log(error);
+        const element = $(selector);
+        if (element.length) {
+          const displayValue = value !== undefined && value !== null ? value : defaultValue;
+          element.text(displayValue);
+          console.log(`[Client] Updated ${selector} with value:`, displayValue);
+        } else {
+          console.error(`[Client] Element not found: ${selector}`);
+        }
+      } catch (e) {
+        console.error(`[Client] Error updating ${selector}:`, e);
       }
+    };
+    
+    // Update all fields with proper null checks
+    updateElement("#directSubordinatesCount", data.directSubordinatesCount);
+    updateElement("#noOfRegisteredSubordinates", data.noOfRegisteredSubordinates);
+    updateElement("#directSubordinatesRechargeQuantity", data.directSubordinatesRechargeQuantity);
+    updateElement("#directSubordinatesRechargeAmount", data.directSubordinatesRechargeAmount);
+    updateElement("#directSubordinatesWithDepositCount", data.directSubordinatesWithDepositCount);
+    updateElement("#teamSubordinatesCount", data.teamSubordinatesCount);
+    updateElement("#noOfRegisterAllSubordinates", data.noOfRegisterAllSubordinates);
+    updateElement("#teamSubordinatesRechargeQuantity", data.teamSubordinatesRechargeQuantity);
+    updateElement("#teamSubordinatesRechargeAmount", data.teamSubordinatesRechargeAmount);
+    updateElement("#teamSubordinatesWithDepositCount", data.teamSubordinatesWithDepositCount);
+    updateElement("#totalCommissionsThisWeek", data.totalCommissionsThisWeek);
+    updateElement("#totalCommissions", data.totalCommissions);
+    updateElement("#yesterdayCommissionAmount", data.totalCommissionsYesterday);
+    
+    console.log("[Client] Subordinates data successfully initialized");
+    
+  } catch (error) {
+    console.error("[Client] Error initializing subordinates data:", error);
+    
+    // Extract error message from different possible locations
+    const errorMessage = error.response?.data?.message || 
+                        error.response?.data?.error ||
+                        error.message || 
+                        "Failed to load data";
+    
+    console.error("[Client] Error details:", errorMessage);
+    
+    // Show error to user
+    $("#error-message").text(`Error: ${errorMessage}`).show().delay(5000).fadeOut();
+    
+  } finally {
+    // Always hide loading state
+    $(".ar-loading-view").fadeOut();
+  }
+};
 
-      $(".ar-loading-view").fadeOut();
-   };
+// Initialize on page load
+$(document).ready(function() {
+  console.log("[Client] Document ready, initializing subordinates data...");
+  initSubordinatesData();
+  
+  // Refresh button handler
+  $("#refresh-subordinates-btn").on("click", function() {
+    console.log("[Client] Manual refresh triggered");
+    $("#error-message").hide(); // Hide previous errors
+    initSubordinatesData();
+  });
+});
 
-   initSubordinatesData();
+
+$(document).ready(function() {
+  console.log("Document ready, initializing subordinates data...");
+  initSubordinatesData();
+  
+  // Optional: Add refresh button handler
+  $("#refresh-subordinates-btn").on("click", function() {
+    console.log("Manual refresh triggered");
+    initSubordinatesData();
+  });
+});
 </script>
 <script src="/js/client.js"></script>
 

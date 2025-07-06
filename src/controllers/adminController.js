@@ -1443,19 +1443,11 @@ const register = async (req, res) => {
     const bonus_money = process.env.BONUS_MONEY_ON_REGISTER || 0;
     const ip = utils.getIpAddress(req);
     const time = moment().valueOf();
-    const timeNow = moment().valueOf(); // Added declaration
+    const timeNow = moment().valueOf();
 
     const [check_u] = await connection.query(
       "SELECT * FROM users WHERE phone = ?",
       [phoneNumber]
-    );
-    const [check_i] = await connection.query(
-      "SELECT * FROM users WHERE code = ?",
-      [invitecode]
-    );
-    const [check_ip] = await connection.query(
-      "SELECT * FROM users WHERE ip_address = ?",
-      [ip]
     );
 
     if (check_u.length > 0) {
@@ -1465,12 +1457,44 @@ const register = async (req, res) => {
       });
     }
 
-    if (check_i.length === 0) {
-      return res.status(200).json({
-        message: "Referrer code does not exist",
-        status: false,
-      });
+    // Initialize default values for invite-related fields
+    let ctv = null;
+    let inviteCodeToUse = null;
+
+    // Only process invite code if provided
+    if (invitecode) {
+      const [check_i] = await connection.query(
+        "SELECT * FROM users WHERE code = ?",
+        [invitecode]
+      );
+
+      if (check_i.length === 0) {
+        return res.status(200).json({
+          message: "Referrer code does not exist",
+          status: false,
+        });
+      }
+
+      ctv = check_i[0].level === 2 ? check_i[0].phone : check_i[0].ctv;
+      inviteCodeToUse = invitecode;
+
+      // Only process level upgrades if invite code was provided and valid
+      if (check_i[0].name_user !== "Admin") {
+        const levels = [2, 5, 8, 11, 14, 17, 20, 23, 26, 29, 32, 35, 38, 41, 44];
+        for (let i = 0; i < levels.length; i++) {
+          if (check_i.length < levels[i]) break;
+          await connection.execute(
+            "UPDATE users SET user_level = ? WHERE code = ?",
+            [i + 1, invitecode]
+          );
+        }
+      }
     }
+
+    const [check_ip] = await connection.query(
+      "SELECT * FROM users WHERE ip_address = ?",
+      [ip]
+    );
 
     // if (check_ip.length > 3) {
     //   return res.status(200).json({
@@ -1479,9 +1503,7 @@ const register = async (req, res) => {
     //   });
     // }
 
-    const ctv = check_i[0].level === 2 ? check_i[0].phone : check_i[0].ctv;
-
-    const hashedPassword = await bcrypt.hash(pwd, 10); // saltRounds assumed as 10
+    const hashedPassword = await bcrypt.hash(pwd, 10);
 
     await connection.execute(
       `INSERT INTO users SET 
@@ -1497,7 +1519,7 @@ const register = async (req, res) => {
         0,
         bonus_money,
         code,
-        invitecode,
+        inviteCodeToUse,
         ctv,
         1,
         otp,
@@ -1513,21 +1535,13 @@ const register = async (req, res) => {
       [phoneNumber]
     );
 
-    if (check_i[0].name_user !== "Admin") {
-      const levels = [2, 5, 8, 11, 14, 17, 20, 23, 26, 29, 32, 35, 38, 41, 44];
-      for (let i = 0; i < levels.length; i++) {
-        if (check_i.length < levels[i]) break;
-        await connection.execute(
-          "UPDATE users SET user_level = ? WHERE code = ?",
-          [i + 1, invitecode]
-        );
-      }
+    // Only create turnover record if invite code was provided
+    if (invitecode) {
+      await connection.execute(
+        "INSERT INTO turn_over SET phone = ?, code = ?, invite = ?",
+        [phoneNumber, code, inviteCodeToUse]
+      );
     }
-
-    await connection.execute(
-      "INSERT INTO turn_over SET phone = ?, code = ?, invite = ?",
-      [phoneNumber, code, invitecode]
-    );
 
     const [userRows] = await connection.query(
       "SELECT * FROM users WHERE phone = ?",

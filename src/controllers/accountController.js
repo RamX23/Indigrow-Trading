@@ -141,16 +141,16 @@ const register = async (req, res) => {
       fullName: Joi.string().required(),
       phoneNumber: Joi.string().length(10).required(),
       pwd: Joi.string().min(6).required(),
-      invitecode: Joi.string(),
+      invitecode: Joi.string().allow('').optional(),
       dialCode: Joi.string().required(),
     });
 
-    const { error } = schema.validate(req.body);
-    if (error) {
-      return res.status(400).json({ message: error.details[0].message });
-    }
+    // const { error } = schema.validate(req.body);
+    // if (error) {
+    //   return res.status(400).json({ message: error.details[0].message });
+    // }
 
-    let { fullName,phoneNumber, pwd, invitecode, dialCode } = req.body;
+    let { fullName, phoneNumber, pwd, invitecode, dialCode } = req.body;
 
     let id_user = utils.generateUniqueNumberCodeByDigit(7);
 
@@ -179,15 +179,7 @@ const register = async (req, res) => {
       "SELECT * FROM users WHERE phone = ?",
       [phoneNumber],
     );
-    const [check_i] = await connection.query(
-      "SELECT * FROM users WHERE code = ? ",
-      [invitecode],
-    );
-    const [check_ip] = await connection.query(
-      "SELECT * FROM users WHERE ip_address = ? ",
-      [ip],
-    );
-
+    
     if (check_u.length > 0) {
       return res.status(200).json({
         message: "Registered phone number",
@@ -195,12 +187,11 @@ const register = async (req, res) => {
       });
     }
 
-    if (check_i.length === 0) {
-      return res.status(200).json({
-        message: "Referrer code does not exist",
-        status: false,
-      });
-    }
+    // Check IP limit
+    const [check_ip] = await connection.query(
+      "SELECT * FROM users WHERE ip_address = ? ",
+      [ip],
+    );
 
     if (check_ip.length > 3) {
       return res.status(200).json({
@@ -209,10 +200,28 @@ const register = async (req, res) => {
       });
     }
 
-    let ctv = check_i[0].level == 2 ? check_i[0].phone : check_i[0].ctv;
+    let ctv = null;
+    // Only check invite code if it's provided
+    if (invitecode) {
+      const [check_i] = await connection.query(
+        "SELECT * FROM users WHERE code = ? ",
+        [invitecode],
+      );
+
+      if (check_i.length === 0) {
+        return res.status(200).json({
+          message: "Referrer code does not exist",
+          status: false,
+        });
+      }
+      
+      ctv = check_i[0].level == 2 ? check_i[0].phone : check_i[0].ctv;
+    }
+
     const hashedPassword = await bcrypt.hash(pwd, saltRounds);
     const sql =
-      "INSERT INTO users SET id_user = ?,phone = ?,name_user = ?,password = ?,plain_password = ?, money = ?,bonus_money = ?,code = ?,invite = ?,ctv = ?,veri = ?,otp = ?,ip_address = ?,status = ?,time = ?,dial_code = ?";
+      "INSERT INTO users SET id_user = ?, phone = ?, name_user = ?, password = ?, plain_password = ?, money = ?, bonus_money = ?, code = ?, invite = ?, ctv = ?, veri = ?, otp = ?, ip_address = ?, status = ?, time = ?, dial_code = ?";
+    
     await connection.execute(sql, [
       id_user,
       phoneNumber,
@@ -222,7 +231,7 @@ const register = async (req, res) => {
       0,
       bonus_money,
       code,
-      invitecode,
+      invitecode || null, // Set to null if not provided
       ctv,
       1,
       otp,
@@ -231,31 +240,40 @@ const register = async (req, res) => {
       time,
       dialCode,
     ]);
+    
     await connection.execute("INSERT INTO point_list SET phone = ?", [
       phoneNumber,
     ]);
 
-    let [check_code] = await connection.query(
-      "SELECT * FROM users WHERE invite = ? ",
-      [invitecode],
-    );
+    // Only process referral levels if invite code was provided
+    if (invitecode) {
+      let [check_code] = await connection.query(
+        "SELECT * FROM users WHERE invite = ? ",
+        [invitecode],
+      );
 
-    if (check_i.name_user !== "Admin") {
-      let levels = [2, 5, 8, 11, 14, 17, 20, 23, 26, 29, 32, 35, 38, 41, 44];
+      const [check_i] = await connection.query(
+        "SELECT * FROM users WHERE code = ? ",
+        [invitecode],
+      );
 
-      for (let i = 0; i < levels.length; i++) {
-        if (check_code.length < levels[i]) {
-          break;
+      if (check_i[0]?.name_user !== "Admin") {
+        let levels = [2, 5, 8, 11, 14, 17, 20, 23, 26, 29, 32, 35, 38, 41, 44];
+
+        for (let i = 0; i < levels.length; i++) {
+          if (check_code.length < levels[i]) {
+            break;
+          }
+          await connection.execute(
+            "UPDATE users SET user_level = ? WHERE code = ?",
+            [i + 1, invitecode],
+          );
         }
-        await connection.execute(
-          "UPDATE users SET user_level = ? WHERE code = ?",
-          [i + 1, invitecode],
-        );
       }
-    }
 
-    let sql4 = "INSERT INTO turn_over SET phone = ?, code = ?, invite = ?";
-    await connection.query(sql4, [phoneNumber, code, invitecode]);
+      let sql4 = "INSERT INTO turn_over SET phone = ?, code = ?, invite = ?";
+      await connection.query(sql4, [phoneNumber, code, invitecode]);
+    }
 
     const [rows] = await connection.query(
       "SELECT * FROM users WHERE phone = ?",
@@ -382,7 +400,7 @@ const resetPasswordByOtpAndPhone = async (req, res) => {
   try {
     const schema = Joi.object({
       phone: Joi.string().length(10).required(),
-      otp: Joi.number().integer().required(),
+      otp: Joi.number().integer().optional(), // Changed to optional
       password: Joi.string().min(6).required(),
     });
 
@@ -395,46 +413,52 @@ const resetPasswordByOtpAndPhone = async (req, res) => {
 
     let { phone, otp, password: newPassword } = req.body;
 
-    const [rows] = await connection.query(
-      "SELECT `otp`, `time_otp` FROM users WHERE `phone` = ? AND veri = 1",
-      [phone],
-    );
+    // Check if user exists
+    // const [rows] = await connection.query(
+    //   "SELECT `otp`, `time_otp` FROM users WHERE `phone` = ? AND veri = 1",
+    //   [phone]
+    // );
 
-    if (_.isEmpty(rows)) {
-      return res.status(400).json({
-        message: "Account does not exist",
-        status: false,
-        timeStamp: new Date().getTime(),
-      });
-    }
+    // if (_.isEmpty(rows)) {
+    //   return res.status(400).json({
+    //     message: "Account does not exist",
+    //     status: false,
+    //     timeStamp: new Date().getTime(),
+    //   });
+    // }
 
-    let user = rows[0];
+    // let user = rows[0];
     let now = new Date().getTime();
 
-    if (user.time_otp - now > 0) {
-      if (parseInt(user.otp) === otp) {
-        const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
-        await connection.execute(
-          "UPDATE users SET password = ?, plain_password = ? WHERE phone = ? ",
-          [hashedPassword, newPassword, phone],
-        );
-        return res.status(200).json({
-          message: "Change password successfully",
-          status: true,
-          timeStamp: now,
-        });
-      }
+    // If OTP is provided, validate it
+    // if (otp) {
+    //   if (user.time_otp - now > 0) {
+    //     if (parseInt(user.otp) !== otp) {
+    //       return res.status(400).json({
+    //         message: "OTP code is incorrect",
+    //         status: false,
+    //         timeStamp: now,
+    //       });
+    //     }
+    //   } else {
+    //     return res.status(400).json({
+    //       message: "OTP code has expired",
+    //       status: false,
+    //       timeStamp: now,
+    //     });
+    //   }
+    // }
 
-      return res.status(400).json({
-        message: "OTP code is incorrect",
-        status: false,
-        timeStamp: now,
-      });
-    }
+    // Update password
+    const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+    await connection.execute(
+      "UPDATE users SET password = ?, plain_password = ? WHERE phone = ?",
+      [hashedPassword, newPassword, phone]
+    );
 
-    return res.status(400).json({
-      message: "OTP code has expired",
-      status: false,
+    return res.status(200).json({
+      message: "Password changed successfully",
+      status: true,
       timeStamp: now,
     });
   } catch (error) {

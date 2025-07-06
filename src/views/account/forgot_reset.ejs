@@ -4408,54 +4408,105 @@
                });
          
                // Handle password reset submission
-               $("#reset_password_submit").click(async e => {
-                  e.preventDefault();
-                  const phoneNumber = $('.dropdown__value span').text().trim() + $("#phone_number").val().trim();
-                  const password = $("#password").val().trim();
-                  const passwordConfirm = $("#password_confirm").val().trim();
-         
-                  $(".van-overlay").fadeIn(10);
-         
-                  if (!password || password.length < 8) {
-                     $(".van-overlay").fadeOut(300);
-                     alertMessage("Password must be at least 8 characters long");
-                     return;
-                  }
-         
-                  if (password !== passwordConfirm) {
-                     $(".van-overlay").fadeOut(300);
-                     alertMessage("Please enter the same password twice");
-                     return;
-                  }
-         
-                  $.ajax({
-                     type: "POST",
-                     url: "/api/reset_password",
-                     data: {
-                        phone: phoneNumber,
-                        password: password
-                     },
-                     dataType: "json",
-                     success: function (response) {
-                        if (response.status === true) {
-                           $(".van-overlay").fadeOut(300);
-                           $(".Loading").fadeIn(10);
-                           alertMessage(response.message || "Password reset successfully!");
-                           setTimeout(() => {
-                              location.href = "/login";
-                           }, 900);
-                        } else {
-                           $(".van-overlay").fadeOut(300);
-                           alertMessage(response.message || "Failed to reset password");
-                        }
-                     },
-                     error: function (xhr, status, error) {
-                        $(".van-overlay").fadeOut(300);
-                        alertMessage("Error resetting password. Please try again.");
-                     }
-                  });
-               });
-         
+               $("#reset_password_submit").click(async function(e) {
+  e.preventDefault();
+  console.log('Reset password form submitted');
+  
+  try {
+    // Get form values
+    const countryCode = $('.dropdown__value span').text().trim();
+    const phoneNumber = $("#phone_number").val().trim();
+    const fullPhone = countryCode + phoneNumber;
+    const password = $("#password").val().trim();
+    const passwordConfirm = $("#password_confirm").val().trim();
+    const user = firebase.auth().currentUser;
+    
+    // Show loading overlay
+    $(".van-overlay").fadeIn(10);
+    
+    // Frontend validation
+    const errors = [];
+    
+    if (!phoneNumber || phoneNumber.length !== 10 || !/^\d+$/.test(phoneNumber)) {
+      errors.push("Please enter a valid 10-digit phone number");
+    }
+    
+    if (!password || password.length < 8) {
+      errors.push("Password must be at least 8 characters long");
+    }
+    
+   //  if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/.test(password)) {
+   //    errors.push("Password must contain uppercase, lowercase, number and special character");
+   //  }
+    
+    if (password !== passwordConfirm) {
+      errors.push("Passwords do not match");
+    }
+    
+    if (errors.length > 0) {
+      $(".van-overlay").fadeOut(300);
+      alertMessage(errors.join("\n"));
+      return;
+    }
+    
+    // Get Firebase ID token for verification
+    let idToken;
+    try {
+      idToken = await user.getIdToken();
+      // console.log('Obtained Firebase ID token');
+    } catch (firebaseError) {
+      // console.error('Firebase token error:', firebaseError);
+      throw new Error("Authentication failed. Please verify your phone again.");
+    }
+    
+    // Make API request
+   //  console.log('Making password reset request...');
+    const response = await $.ajax({
+      type: "POST",
+      url: "/api/reset_password",
+      contentType: "application/json",
+      data: JSON.stringify({
+        phone: phoneNumber,
+        password: password,
+      //   idToken: idToken
+      }),
+      dataType: "json"
+    });
+    
+   //  console.log('API response:', response);
+    
+    if (response.status === true) {
+      $(".Loading").fadeIn(10);
+      alertMessage(response.message || "Password reset successfully!");
+      
+      // Redirect after delay
+      setTimeout(() => {
+        window.location.href = "/login";
+      }, 1500);
+    } else {
+      throw new Error(response.message || "Failed to reset password");
+    }
+    
+  } catch (error) {
+    console.error('Error in password reset:', error);
+    
+    let errorMessage = "An error occurred";
+    if (error.responseJSON) {
+      // Handle backend validation errors
+      if (error.responseJSON.errors) {
+        errorMessage = error.responseJSON.errors.join("\n");
+      } else if (error.responseJSON.message) {
+        errorMessage = error.responseJSON.message;
+      }
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+    
+    alertMessage(errorMessage);
+  } finally {
+    $(".van-overlay").fadeOut(300);
+  }
+});
                // Country code dropdown handling
                $.ajax({
                   url: "/country_codes.json",

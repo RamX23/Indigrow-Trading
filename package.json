@@ -20,7 +20,7 @@
     "database:revert_at_bonus": "node schema/revert_at_bonus.js",
     "start1": "babel-node src/server.js",
     "dev1": "nodemon --exec babel-node src/server.js",
-    "start": "node src/server.js",
+    "start": "TZ=Asia/Kolkata node src/server.js",
     "dev": "nodemon src/server.js",
     "format:check": "prettier --check .",
     "format:write": "prettier --write ."

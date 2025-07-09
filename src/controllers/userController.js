@@ -2799,6 +2799,76 @@ const updateRecharge = async (req, res) => {
   }
 };
 
+const getGiftHistory = async (req, res) => {
+  try {
+    let auth = req.cookies.auth;
+    // let code = req.body.code;
+    const timeNow = new Date().getTime(); // Assuming you have this defined somewhere
+    
+    console.log("req received",auth)
+    if (!auth) {
+      return res.status(200).json({
+        message: "Authentication failed",
+        status: false,
+        timeStamp: timeNow,
+      });
+    }
+
+    // if (!code) {
+    //   return res.status(200).json({
+    //     message: "Please provide a redemption code",
+    //     status: false,
+    //     timeStamp: timeNow,
+    //   });
+    // }
+
+    const [user] = await connection.query(
+      "SELECT `phone` FROM users WHERE `token` = ?",
+      [auth]
+    );
+
+    if (user.length === 0) {
+      return res.status(200).json({
+        message: "Authentication failed, Login again",
+        status: false,
+        timeStamp: timeNow,
+      });
+    }
+
+    let userInfo = user?.[0];
+
+    // Fetch gift history for the user
+    const [history] = await connection.query(
+      "SELECT * FROM redenvelopes_used WHERE `phone_used` = ? ORDER BY `time` DESC",
+      [userInfo.phone]
+    );
+
+    const formattedHistory = history.map(item => ({
+      id: item.id,
+      phone: item.phone,
+      phone_used: item.phone_used,
+      id_redenvelops: item.id_redenvelops,
+      amount: item.money, 
+      time: item.time,
+    }));
+
+    console.log(formattedHistory)
+
+    return res.status(200).json({
+      message: "Gift history fetched successfully",
+      status: true,
+      data: formattedHistory,
+      timeStamp: timeNow,
+    });
+  } catch (err) {
+    console.error("Error fetching gift history:", err);
+    return res.status(500).json({
+      message: "Error occurred while fetching gift history",
+      status: false,
+      timeStamp: new Date().getTime(),
+    });
+  }
+};
 const userController = {
   userInfo,
   changeUser,
@@ -2827,6 +2897,7 @@ const userController = {
   confirmRecharge,
   cancelRecharge,
   confirmUSDTRecharge,
+  getGiftHistory
 };
 
 export default userController;

@@ -1320,6 +1320,11 @@ const initWebRouter = (app) => {
   return app.use("/", router);
 };
 
+
+router.get("/api/webapi/gifts/history",
+middlewareController,
+userController.getGiftHistory
+)
 const routes = {
   initWebRouter,
 };

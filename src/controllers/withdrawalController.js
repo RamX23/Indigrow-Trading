@@ -440,6 +440,8 @@ const createWithdrawalRequest = async (req, res) => {
 
     let withdrawalMethod = req.body.withdrawalMethod;
     let amount = req.body.amount || 0;
+    let AllowedWithdrawAmount = req.body.AllowedWithdrawAmount || false;
+    let totalBetAmountRemaining = req.body.totalBetAmountRemaining || 0;
 
     if (!withdrawalMethod) {
       return res.status(400).json({
@@ -449,9 +451,19 @@ const createWithdrawalRequest = async (req, res) => {
       });
     }
 
+    if (
+      WITHDRAWAL_METHODS_MAP.BANK_CARD !== withdrawalMethod &&
+      WITHDRAWAL_METHODS_MAP.USDT_ADDRESS !== withdrawalMethod
+    ) {
+      return res.status(400).json({
+        message: "Please select a valid the Withdrawal Method!",
+        status: false,
+        timeStamp: timeNow,
+      });
+    }
+
     const user = await getUserDataByAuthToken(auth);
 
-    // Verify user has deposited at least once
     const [rechargeRow] = await connection.query(
       "SELECT * FROM recharge WHERE phone = ? AND status = 1",
       [user.phone],
@@ -465,65 +477,117 @@ const createWithdrawalRequest = async (req, res) => {
       });
     }
 
-    // Check if user has placed any bets
-    const [bettingRows] = await connection.query(
-      "SELECT COUNT(*) as betCount FROM minutes_2 WHERE phone = ?",
-      [user.phone]
-    );
+    let account = { isAvailable: false };
 
-    const hasPlacedBets = bettingRows[0].betCount > 0;
-
-    if (!hasPlacedBets) {
-      return res.status(400).json({
-        message: "You must place at least one bet before withdrawing",
-        status: false,
-        timeStamp: timeNow,
-      });
-    }
-
-    // Minimum withdrawal amount check
-    if (amount < 500) {
-      return res.status(400).json({
-        message: "Minimum withdrawal amount is ₹500",
-        status: false,
-        timeStamp: timeNow,
-      });
-    }
-
-    // Check user balance
-    if (Number(user.money) < Number(amount)) {
-      return res.status(400).json({
-        message: "Insufficient balance to fulfill the request",
-        status: false,
-        timeStamp: timeNow,
-      });
-    }
-
-    // Process withdrawal
-    await connection.query(
-      "UPDATE users SET money = money - ?, total_money = total_money - ? WHERE `phone` = ? AND money >= ?",
-      [amount, amount, user.phone, amount],
-    );
-
-    // Record withdrawal request
-    if (withdrawalMethod === WITHDRAWAL_METHODS_MAP.BANK_CARD) {
-      withdrawDB.createBankCardWithdrawalRequest({
+    if (WITHDRAWAL_METHODS_MAP.BANK_CARD === withdrawalMethod) {
+      account = await AccountDB.getUserBankCard({
         userPhoneNumber: user.phone,
-        amount: amount,
       });
     } else {
-      withdrawDB.createUSDTWithdrawalRequest({
+      account = await AccountDB.getUserUSDTAddress({
         userPhoneNumber: user.phone,
-        amount: amount,
       });
     }
 
-    return res.status(200).json({
-      message: "Withdrawal request registered successfully!",
+    if (!account.isAvailable) {
+      return res.status(400).json({
+        message: "Please add your withdrawal method first!",
+        status: false,
+        timeStamp: timeNow,
+      });
+    }
+
+    const minimumMoneyAllowed =
+      withdrawalMethod === WITHDRAWAL_METHODS_MAP.BANK_CARD
+        ? parseInt(process.env.MINIMUM_WITHDRAWAL_MONEY_INR)
+        : parseInt(process.env.MINIMUM_WITHDRAWAL_MONEY_USDT);
+
+    let actualAmount =
+      withdrawalMethod === WITHDRAWAL_METHODS_MAP.BANK_CARD
+        ? parseInt(amount)
+        : parseInt(amount) * parseInt(process.env.USDT_INR_EXCHANGE_RATE);
+
+    if (amount < minimumMoneyAllowed) {
+      return res.status(400).json({
+        message: `You can withdraw minimum balance of ${withdrawalMethod === WITHDRAWAL_METHODS_MAP.BANK_CARD ? "₹" : "$"} ${minimumMoneyAllowed}`,
+        status: false,
+        timeStamp: timeNow,
+      });
+    }
+
+    if (Number(user.money) < Number(actualAmount)) {
+      return res.status(400).json({
+        message: "The balance is not enough to fulfill the request",
+        status: false,
+        timeStamp: timeNow,
+      });
+    }
+
+    // const totalBettingAmount = await gamesDB.getTotalBettingAmount({ userPhoneNumber: user.phone })
+    // const totalDepositAmount = await depositDB.getTotalDeposit({ userPhoneNumber: user.phone })
+    // const result = totalDepositAmount - totalBettingAmount > 0 ? totalDepositAmount - totalBettingAmount : 0
+
+    if (!AllowedWithdrawAmount) {
+      return res.status(400).json({
+        message: "You must bet ₹ " + totalBetAmountRemaining + " to withdraw",
+        status: false,
+        timeStamp: timeNow,
+      });
+    }
+
+    if (withdrawalMethod === WITHDRAWAL_METHODS_MAP.BANK_CARD) {
+      const withd = await connection.query(
+        "UPDATE users SET money = money - ?, total_money = total_money - ? WHERE `phone` = ? AND money >= ?",
+        [amount, amount, user.phone, amount],
+      );
+
+      console.log(withd);
+
+      withdrawDB.createBankCardWithdrawalRequest({
+        userPhoneNumber: user.phone,
+        bankName: account.bankName,
+        recipientName: account.recipientName,
+        bankAccountNumber: account.bankAccountNumber,
+        IFSC: account.IFSC,
+        upiId: account.upiId,
+        amount: amount,
+      });
+
+      return res.status(200).json({
+        message: "Withdrawal request registered Successfully!",
+        status: true,
+        timeStamp: timeNow,
+      });
+    }
+
+    if (withdrawalMethod === WITHDRAWAL_METHODS_MAP.USDT_ADDRESS) {
+      const withd = await connection.query(
+        "UPDATE users SET money = money - ?, total_money = total_money - ? WHERE `phone` = ? AND money >= ?",
+        [actualAmount, actualAmount, user.phone, amount],
+      );
+
+      console.log(withd);
+
+      withdrawDB.createUSDTWithdrawalRequest({
+        userPhoneNumber: user.phone,
+        mainNetwork: account.mainNetwork,
+        usdtAddress: account.usdtAddress,
+        addressAlias: account.addressAlias,
+        amount: amount,
+      });
+
+      return res.status(200).json({
+        message: "Withdrawal request registered Successfully!",
+        status: true,
+        timeStamp: timeNow,
+      });
+    }
+
+    return res.status(400).json({
+      message: "Please select a valid the Withdrawal Method!",
       status: true,
       timeStamp: timeNow,
     });
-
   } catch (error) {
     console.log(error);
     return res.status(500).json({
@@ -885,6 +949,7 @@ const AccountDB = {
         isAvailable: false,
       };
     }
+    console.log(account);
 
     return {
       isAvailable: true,

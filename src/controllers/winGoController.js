@@ -1537,6 +1537,9 @@ const getOverallProfitOrLoss = async (req, res) => {
     } else {
       return res.status(400).json({ status: false, message: "Invalid period" });
     }
+    
+    console.log(user.code);
+    console.log('#####################################################################################');
 
     const [[{ amount }]] = await connection.query(
       `SELECT SUM(

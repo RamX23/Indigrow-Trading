@@ -15,6 +15,7 @@ import seedrandom from "seedrandom";
 import cron from "node-cron";
 
 const app = express();
+app.set('trust proxy', true);
 const server = http.createServer(app);
 const io = new Server(server);
 

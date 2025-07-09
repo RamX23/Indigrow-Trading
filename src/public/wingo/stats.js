@@ -225,7 +225,7 @@ document.addEventListener('DOMContentLoaded', function () {
   
 
         profitEl.textContent = `₹${Math.abs(profitOrLoss).toLocaleString()}`;
-
+         console.log(data)
         profitEl.style.color = color;
 
       })

@@ -1,7 +1,7 @@
 <html lang="en" translate="no" data-dpr="1" style="font-size: 37px;" dir="ltr">
 
 <head>
-  <script src="/app.config.js?v=1718968461132"></script>
+  <!-- <script src="/app.config.js?v=1718968461132"></script> -->
 
   <meta charset="UTF-8">
   <link rel="icon" type="image/svg+xml"
@@ -10,7 +10,7 @@
   <meta name="robots" content="noindex,nofollow">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-  <link rel="manifest" href="/manifest.tiranga.json?version=1.1">
+  <!-- <link rel="manifest" href="/manifest.tiranga.json?version=1.1"> -->
   <title>IndiGrow</title>
 
   <link rel="stylesheet" href="/assets/css/modules-b642e9bc.css">
@@ -4124,8 +4124,8 @@
 <div id="simplify-jobs-container"
   style="position: absolute; top: 0px; left: 0px; width: 0px; height: 0px; overflow: visible; z-index: 2147483647;">
 </div>
-<script id="simplify-jobs-page-script"
-  src="chrome-extension://pbanhockgagggenencehbnadejlgchfc/js/pageScript.bundle.js"></script>
+<!-- <script id="simplify-jobs-page-script"
+  src="chrome-extension://pbanhockgagggenencehbnadejlgchfc/js/pageScript.bundle.js"></script> -->
 <style>
   .message_alert_root {
 
@@ -4180,6 +4180,182 @@
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 <script>
+
+    // Debugging function
+    const debug = (message, data = null) => {
+    console.log(`[DEBUG] ${message}`, data || '');
+  };
+
+  // Function to fetch gift history with enhanced debugging
+  const fetchGiftHistory = async () => {
+    debug('Starting to fetch gift history');
+    
+    try {
+      const startTime = performance.now();
+      
+      debug('Making API request to /api/webapi/gifts/history');
+      const response = await $.ajax({
+        type: "GET",
+        url: "/api/webapi/gifts/history",
+        dataType: "json",
+        beforeSend: function(xhr) {
+          debug('AJAX request initiated');
+          xhr.setRequestHeader('X-Debug', 'true');
+        }
+      });
+
+      const duration = performance.now() - startTime;
+      debug(`API call completed in ${duration.toFixed(2)}ms`, response);
+
+      if (response.status && response.data && response.data.length > 0) {
+        debug('Received gift history data', {
+          count: response.data.length,
+          firstItem: response.data[0]
+        });
+        displayGiftHistory(response.data);
+      } else {
+        debug('No gift history data received');
+        showNoDataMessage();
+      }
+    } catch (error) {
+      debug('Error fetching gift history', {
+        error: error,
+        response: error.responseJSON || null,
+        status: error.status || null
+      });
+      
+      let errorMessage = "Failed to load gift history";
+      if (error.status === 401) {
+        errorMessage = "Please login to view history";
+      } else if (error.status === 404) {
+        errorMessage = "History service unavailable";
+      }
+      
+      alertMessage(errorMessage);
+      
+      // Show error in UI for debugging (remove in production)
+      const errorDisplay = document.createElement('div');
+      errorDisplay.style.color = 'red';
+      errorDisplay.style.padding = '10px';
+      errorDisplay.style.margin = '10px';
+      errorDisplay.style.border = '1px solid red';
+      errorDisplay.innerHTML = `
+        <strong>Debug Info:</strong><br>
+        Status: ${error.status || 'Unknown'}<br>
+        Error: ${error.responseJSON?.message || error.message || 'Unknown error'}
+      `;
+      document.querySelector('.redeem-container-record-itemsBox').appendChild(errorDisplay);
+    }
+  };
+
+  // Function to display gift history with debugging
+  const displayGiftHistory = (historyItems) => {
+    debug('Displaying gift history', { itemCount: historyItems.length });
+    
+    const itemsBox = document.querySelector('.redeem-container-record-itemsBox .infiniteScroll');
+    if (!itemsBox) {
+      debug('Error: Could not find items box element');
+      return;
+    }
+    
+    itemsBox.innerHTML = '';
+
+    const historyList = document.createElement('div');
+    historyList.className = 'history-list';
+    historyList.style.padding = '10px';
+
+    historyItems.forEach((item, index) => {
+      debug(`Processing history item ${index + 1}`, item);
+      
+      const historyItem = document.createElement('div');
+      historyItem.className = 'history-item';
+      historyItem.style = `
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 10px;
+        color: white;
+        font-family: 'Roboto', 'Inter', sans-serif;
+      `;
+
+      // Format date properly
+      let formattedDate = 'Unknown';
+      try {
+        formattedDate = new Date(item.time).toLocaleString();
+      } catch (e) {
+        debug('Error formatting date', e);
+        formattedDate = item.time || 'Unknown';
+      }
+
+      historyItem.innerHTML = `
+        <div style="display: flex; justify-content: space-between;">
+          <span style="font-weight: bold;">Amount: ₹${item.amount || '0.00'}</span>
+
+        </div>
+        <div style="margin-top: 8px; font-size: 0.9em;">
+         
+          <div>Transaction ID: ${item.id_redenvelops || 'N/A'}</div>
+        </div>
+      `;
+
+      historyList.appendChild(historyItem);
+    });
+
+    itemsBox.appendChild(historyList);
+    debug('Finished displaying gift history');
+  };
+
+  // Function to show no data message
+  const showNoDataMessage = () => {
+    debug('Showing no data message');
+    const itemsBox = document.querySelector('.redeem-container-record-itemsBox .infiniteScroll');
+    if (!itemsBox) {
+      debug('Error: Could not find items box element for no data message');
+      return;
+    }
+    
+    itemsBox.innerHTML = `
+      <div class="empty__container empty" style="text-align: center; padding: 20px; color: rgba(255,255,255,0.7);">
+        <svg class="svg-icon icon-empty" style="width: 60px; height: 60px; margin-bottom: 10px;">
+          <use xlink:href="#icon-empty"></use>
+        </svg>
+        <p>No gift history found</p>
+      </div>
+    `;
+  };
+
+  // Document ready with debugging
+  $(document).ready(function() {
+    debug('Document ready, initializing page');
+    
+    // Add loading indicator
+    const loadingIndicator = document.createElement('div');
+    loadingIndicator.innerHTML = 'Loading history...';
+    loadingIndicator.style.textAlign = 'center';
+    loadingIndicator.style.padding = '20px';
+    loadingIndicator.style.color = 'rgba(255,255,255,0.7)';
+    document.querySelector('.redeem-container-record-itemsBox .infiniteScroll').appendChild(loadingIndicator);
+    
+    debug('Calling fetchGiftHistory');
+    fetchGiftHistory();
+    
+    // Debug: Log all AJAX requests
+    $(document).ajaxSend(function(event, jqxhr, settings) {
+      debug('AJAX Request Sent', {
+        url: settings.url,
+        type: settings.type,
+        data: settings.data
+      });
+    });
+    
+    $(document).ajaxComplete(function(event, xhr, settings) {
+      debug('AJAX Request Completed', {
+        url: settings.url,
+        status: xhr.status,
+        response: xhr.responseJSON || xhr.responseText
+      });
+    });
+  });
 
   const alertMessage = (text) => {
     const msg = document.createElement('div');
